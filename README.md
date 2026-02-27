@@ -1,7 +1,7 @@
 # Grafana Network Weathermap Plugin
 
 <p align="center">
-  <img src="src/img/logo.svg" alt="Plugin Logo" width="80" height="80">
+  <img src="src/img/logo.svg" alt="Plugin Logo" width="120" height="120">
 </p>
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
