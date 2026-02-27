@@ -1,8 +1,7 @@
 # Grafana Network Weathermap Plugin
 
-![Plugin Logo](src/img/logo.svg)
+![Plugin Logo](src/img/logo.svg){ width=100px height=100px }
 
-[![npm version](https://badge.fury.io/js/tamirsuliman-weathermap-panel.svg)](https://badge.fury.io/js/tamirsuliman-weathermap-panel)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Grafana Version](https://img.shields.io/badge/Grafana-10%2B-orange)](https://grafana.com/)
 [![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://nodejs.org/)
