@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 78.63"><defs><style>.cls-1{fill:#f2b80c;}.cls-2{fill:#f2cc0c;}.cls-3{fill:#ff9830;}.cls-4{fill:#3865ab;}.cls-5{fill:#84aff1;}.cls-6{fill:none;stroke:#f2b80c;stroke-miterlimit:10;stroke-width:2px;}</style></defs><g id="Layer_2" data-name="Layer 2"><g id="Layer_1-2" data-name="Layer 1"><polygon class="cls-1" points="61.09 69.16 56.43 71.83 22.38 12.01 27.05 9.34 61.09 69.16"/><polygon class="cls-2" points="70.33 68.07 65.66 70.74 31.61 10.93 36.28 8.25 70.33 68.07"/><polygon class="cls-3" points="51.2 68.68 46.53 71.35 12.48 11.53 17.15 8.86 51.2 68.68"/><rect class="cls-4" x="6.11" width="39.15" height="15.27" rx="7.63"/><rect class="cls-5" x="13.3" y="4.87" width="25.76" height="5" rx="2.5"/><rect class="cls-4" y="35.23" width="34.47" height="22.77" rx="3.01"/><polyline class="cls-6" points="5.56 49.87 6.54 47.82 8.28 49.87 9.18 45.29 10.99 51.4 12.8 49.87 14.84 45.29 15.52 50.63 18.23 47.58 19.14 44.53 20.04 43 20.95 48.34 21.85 49.87 23.21 47.82 24.57 49.1 25.48 46.82 27.29 49.1 28.19 48.34 29.09 49.1 30 49.93"/><rect class="cls-4" x="35.85" y="63.37" width="39.15" height="15.27" rx="7.63"/><rect class="cls-5" x="42.45" y="68.29" width="25.76" height="5" rx="2.5"/></g></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 78.63" role="img" aria-label="Fork network logo">
+  <defs>
+    <style>
+      .bg{fill:#0B1F3B;}
+      .pin{fill:#1F6FEB;}
+      .pin2{fill:#2DD4BF;}
+      .line{fill:none;stroke:#E6F0FF;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.95;}
+      .node{fill:#E6F0FF;}
+    </style>
+  </defs>
+
+  <!-- Background disk -->
+  <circle class="bg" cx="37.5" cy="39.3" r="33.5"/>
+
+  <!-- Map pin silhouette -->
+  <path class="pin" d="M37.5 13.2c-9.4 0-17 7.6-17 17 0 12.6 15 30.4 16 31.6.5.6 1.5.6 2 0 1-1.2 16-19 16-31.6 0-9.4-7.6-17-17-17z"/>
+
+  <!-- Inner pin highlight -->
+  <path class="pin2" d="M37.5 18.6c-6.4 0-11.6 5.2-11.6 11.6 0 8.6 9.7 20.2 11 21.7.3.4.9.4 1.2 0 1.3-1.5 11-13.1 11-21.7 0-6.4-5.2-11.6-11.6-11.6z" opacity=".95"/>
+
+  <!-- Network glyph inside pin -->
+  <path class="line" d="M31.8 30.2l11.4-5.8M31.8 30.2l11.4 6.0M43.2 24.4v11.8"/>
+  <circle class="node" cx="31.8" cy="30.2" r="2.6"/>
+  <circle class="node" cx="43.2" cy="24.4" r="2.6"/>
+  <circle class="node" cx="43.2" cy="36.2" r="2.6"/>
+
+  <!-- Small "fork" split at bottom -->
+  <path class="line" d="M37.5 61.8v7.6M37.5 69.4l-7.2 4.3M37.5 69.4l7.2 4.3"/>
+  <circle class="node" cx="30.3" cy="73.7" r="2.1"/>
+  <circle class="node" cx="44.7" cy="73.7" r="2.1"/>
+</svg>
