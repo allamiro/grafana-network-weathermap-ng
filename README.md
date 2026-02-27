@@ -1,8 +1,23 @@
 # Grafana Network Weathermap Plugin
 
+![Plugin Logo](src/img/logo.svg)
+
+[![npm version](https://badge.fury.io/js/tamirsuliman-weathermap-panel.svg)](https://badge.fury.io/js/tamirsuliman-weathermap-panel)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Grafana Version](https://img.shields.io/badge/Grafana-10%2B-orange)](https://grafana.com/)
+[![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
+[![Build Status](https://img.shields.io/github/workflow/status/allamiro/grafana-network-weathermap/CI)](https://github.com/allamiro/grafana-network-weathermap/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/allamiro/grafana-network-weathermap)](https://codecov.io/gh/allamiro/grafana-network-weathermap)
+[![Downloads](https://img.shields.io/npm/dt/tamirsuliman-weathermap-panel)](https://www.npmjs.com/package/tamirsuliman-weathermap-panel)
+[![Grafana Plugin](https://img.shields.io/badge/Grafana-Plugin-FF6B00)](https://grafana.com/grafana/plugins/)
+
 A modernized, actively maintained network weathermap panel plugin for Grafana. This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
 
 ## Overview
+
+![Plugin Logo](src/img/logo.svg)
 
 This plugin brings customizable and modern-looking network weathermaps to Grafana. The design remains similar to the well-known [PHP Network Weathermap](https://www.network-weathermap.com/), while allowing for interoperability with Grafana and easy customization.
 
