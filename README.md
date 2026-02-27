@@ -32,7 +32,7 @@ This is a continuation of the original [knightss27-weathermap-panel](https://git
 
 1. **Download the plugin** from the [Grafana Marketplace](https://grafana.com/grafana/plugins/) or build from source
 2. **Extract to plugins directory**: `unzip plugin.zip -d /var/lib/grafana/plugins/`
-3. **Restart Grafana**: `sudo systemctl restart grafana-server`
+3. **Restart Grafana**
 4. **Enable the plugin** in Grafana > Configuration > Plugins
 
 #### Basic Usage
