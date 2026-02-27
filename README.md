@@ -28,6 +28,21 @@ This is a continuation of the original [knightss27-weathermap-panel](https://git
 
 ### 🚀 Quick Start
 
+#### Installation
+
+1. **Download the plugin** from the [Grafana Marketplace](https://grafana.com/grafana/plugins/) or build from source
+2. **Extract to plugins directory**: `unzip plugin.zip -d /var/lib/grafana/plugins/`
+3. **Restart Grafana**: `sudo systemctl restart grafana-server`
+4. **Enable the plugin** in Grafana > Configuration > Plugins
+
+#### Basic Usage
+
+1. **Create a new dashboard** or open an existing one
+2. **Add panel** → Search for "Network Weathermap"
+3. **Configure data sources** (Prometheus, InfluxDB, etc.)
+4. **Design your weathermap** using the visual editor
+5. **Save and enjoy** your real-time network visualization!
+
 
 
 ### 📊 More Examples
