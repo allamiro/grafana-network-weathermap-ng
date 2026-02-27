@@ -53,7 +53,7 @@ This is a continuation of the original [knightss27-weathermap-panel](https://git
 
 ## 🔄 Modernization Updates
 
-This fork modernizes the plugin for current Grafana versions with the following changes:
+This fork modernizes the original plugin for current Grafana versions with the following changes:
 
 - **Grafana 10/11 compatibility** — Updated `@grafana/data`, `@grafana/runtime`, and `@grafana/ui` to 11.x.
 - **React 18** — Upgraded from React 17 to React 18.
