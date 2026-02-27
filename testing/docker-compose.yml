@@ -1,0 +1,23 @@
+services:
+  grafana:
+    build:
+      context: grafana
+      args:
+        GRAFANA_VERSION: ${GRAFANA_VERSION:-12.4.0}
+    ports:
+      - 3101:3000
+    volumes:
+      - ../dist:/var/lib/grafana-plugins/tamirsuliman-weathermap-panel
+    environment:
+      - GF_APP_MODE=development
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=tamirsuliman-weathermap-panel
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./exporter/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+  exporter:
+    build:
+      context: exporter
+      dockerfile: Dockerfile
