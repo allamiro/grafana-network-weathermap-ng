@@ -1,0 +1,39 @@
+{
+  "type": "panel",
+  "name": "Network Weathermap",
+  "id": "tamirsuliman-weathermap-panel",
+  "info": {
+    "description": "A simple & sleek network weathermap.",
+    "author": {
+      "name": "Tamir Suliman",
+      "url": "https://github.com/allamiro"
+    },
+    "keywords": ["network weathermap", "network", "weathermap"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Github",
+        "url": "https://github.com/allamiro/grafana-network-weathermap"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/allamiro/grafana-network-weathermap/blob/main/LICENSE"
+      }
+    ],
+    "screenshots": [
+      { "name": "General Example 1", "path": "img/general-example.png" },
+      { "name": "General Example 2", "path": "img/example_00.png" },
+      { "name": "General Example 3", "path": "img/example_01.png" },
+      { "name": "General Example 4", "path": "img/example_02.png" }
+    ],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=10.0.0",
+    "plugins": []
+  }
+}

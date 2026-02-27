@@ -1,0 +1,201 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "testdata",
+        "uid": "testdata"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "weathermap": {
+          "id": "sample",
+          "version": 2,
+          "nodes": [
+            {
+              "id": "node-router-a",
+              "label": "Router A",
+              "position": [200, 200],
+              "isConnection": false,
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": { "horizontal": 15, "vertical": 10, "label": 5 },
+              "colors": {
+                "font": "#000000",
+                "background": "#FFFFFF",
+                "border": "#000000"
+              },
+              "nodeIcon": {
+                "src": "",
+                "size": { "width": 40, "height": 40 },
+                "drawInside": false
+              }
+            },
+            {
+              "id": "node-router-b",
+              "label": "Router B",
+              "position": [600, 200],
+              "isConnection": false,
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": { "horizontal": 15, "vertical": 10, "label": 5 },
+              "colors": {
+                "font": "#000000",
+                "background": "#FFFFFF",
+                "border": "#000000"
+              },
+              "nodeIcon": {
+                "src": "",
+                "size": { "width": 40, "height": 40 },
+                "drawInside": false
+              }
+            },
+            {
+              "id": "node-switch-c",
+              "label": "Switch C",
+              "position": [400, 400],
+              "isConnection": false,
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": { "horizontal": 15, "vertical": 10, "label": 5 },
+              "colors": {
+                "font": "#000000",
+                "background": "#FFFFFF",
+                "border": "#000000"
+              },
+              "nodeIcon": {
+                "src": "",
+                "size": { "width": 40, "height": 40 },
+                "drawInside": false
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "link-a-b",
+              "nodes": [
+                { "id": "node-router-a" },
+                { "id": "node-router-b" }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 1000000000,
+                  "query": "A-series",
+                  "labelOffset": 55,
+                  "anchor": "Right",
+                  "dashboardLink": ""
+                },
+                "Z": {
+                  "bandwidth": 1000000000,
+                  "query": "A-series",
+                  "labelOffset": 55,
+                  "anchor": "Left",
+                  "dashboardLink": ""
+                }
+              },
+              "stroke": 5
+            },
+            {
+              "id": "link-a-c",
+              "nodes": [
+                { "id": "node-router-a" },
+                { "id": "node-switch-c" }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 100000000,
+                  "query": "A-series",
+                  "labelOffset": 55,
+                  "anchor": "Bottom",
+                  "dashboardLink": ""
+                },
+                "Z": {
+                  "bandwidth": 100000000,
+                  "query": "A-series",
+                  "labelOffset": 55,
+                  "anchor": "Top",
+                  "dashboardLink": ""
+                }
+              },
+              "stroke": 5
+            }
+          ],
+          "scale": [
+            { "percent": 0, "color": "#5794F2" },
+            { "percent": 10, "color": "#73BF69" },
+            { "percent": 20, "color": "#FADE2A" },
+            { "percent": 30, "color": "#FF9830" },
+            { "percent": 50, "color": "#FA6400" },
+            { "percent": 70, "color": "#E02F44" },
+            { "percent": 90, "color": "#C4162A" }
+          ],
+          "settings": {
+            "panel": {
+              "backgroundColor": "#212124",
+              "panelSize": { "width": 800, "height": 600 },
+              "zoomScale": 0,
+              "offset": { "x": 0, "y": 0 },
+              "showTimestamp": true,
+              "showLegend": true
+            },
+            "link": {
+              "spacing": { "horizontal": 10, "vertical": 5 },
+              "stroke": 5,
+              "defaultUnits": "bps",
+              "label": {
+                "background": "#FFFFFF",
+                "border": "#000000",
+                "font": "#000000"
+              }
+            },
+            "tooltip": {
+              "fontSize": 10,
+              "textColor": "#CCCCDC",
+              "backgroundColor": "#1A1B1F",
+              "scaleToBandwidth": false
+            },
+            "scale": {
+              "position": { "x": 0, "y": 0 },
+              "title": "Utilization",
+              "fontSize": 10
+            },
+            "fontSizing": "fixed"
+          }
+        }
+      },
+      "title": "Sample Network Weathermap",
+      "type": "tamirsuliman-weathermap-panel"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["weathermap", "network"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Network Weathermap - Sample",
+  "uid": "weathermap-sample",
+  "version": 1
+}
