@@ -28,15 +28,13 @@ This is a continuation of the original [knightss27-weathermap-panel](https://git
 
 ### 🚀 Quick Start
 
-![Example Image 1](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/general-example.svg)
+
 
 ### 📊 More Examples
 
 ![Example Image 2](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/example_00.png)
 
-![Example Image 3](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/example_01.png)
 
-![Example Image 4](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/example_02.png)
 
 ## 🔄 Modernization Updates
 
