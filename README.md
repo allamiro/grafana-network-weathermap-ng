@@ -1,20 +1,36 @@
 # Grafana Network Weathermap Plugin
 
-![Plugin Logo](src/img/logo.svg){ width=100px height=100px }
+<p align="center">
+  <img src="src/img/logo.svg" alt="Plugin Logo" width="80" height="80">
+</p>
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Grafana Version](https://img.shields.io/badge/Grafana-10%2B-orange)](https://grafana.com/)
 [![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://nodejs.org/)
 
-A modernized, actively maintained network weathermap panel plugin for Grafana. This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
+<p align="center">
+  <strong>A modernized, actively maintained network weathermap panel plugin for Grafana</strong>
+</p>
 
-## Overview
+This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
 
-This plugin brings customizable and modern-looking network weathermaps to Grafana. The design remains similar to the well-known [PHP Network Weathermap](https://www.network-weathermap.com/), while allowing for interoperability with Grafana and easy customization.
+---
+
+## ✨ Features
+
+- 🗺️ **Customizable network weathermaps** with modern design
+- 🔄 **Grafana integration** - seamless interoperability with Grafana data sources
+- 🎨 **PHP Network Weathermap compatibility** - familiar design patterns
+- 📊 **Real-time data visualization** - dynamic updates based on your metrics
+- 🛠️ **Easy configuration** - intuitive panel editor interface
+
+## 📸 Screenshots
+
+### 🚀 Quick Start
 
 ![Example Image 1](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/general-example.svg)
 
-### More Examples
+### 📊 More Examples
 
 ![Example Image 2](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/example_00.png)
 
@@ -22,7 +38,7 @@ This plugin brings customizable and modern-looking network weathermaps to Grafan
 
 ![Example Image 4](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/example_02.png)
 
-## Modernization
+## 🔄 Modernization Updates
 
 This fork modernizes the plugin for current Grafana versions with the following changes:
 
@@ -35,14 +51,14 @@ This fork modernizes the plugin for current Grafana versions with the following 
 - **Deprecated API fixes** — Replaced `Vector.get()` with direct array indexing.
 - **Playwright E2E** — Migrated from deprecated Cypress-based `@grafana/e2e` to Playwright-based `@grafana/plugin-e2e`.
 
-## Getting Started
+## 🚀 Getting Started
 
-### Requirements
+### 📋 Requirements
 
 - Grafana >= 10.0.0
 - Node.js >= 20
 
-### Development
+### 💻 Development
 
 ```bash
 # Install dependencies
@@ -67,7 +83,7 @@ npm run lint
 npm run typecheck
 ```
 
-### Docker
+### 🐳 Docker
 
 A `docker-compose.yaml` is provided for local development and testing:
 
@@ -77,14 +93,14 @@ docker-compose up --build
 
 This starts Grafana 11 at `http://localhost:3000` with the plugin pre-loaded and provisioned dashboards available.
 
-## Provisioning
+## ⚙️ Provisioning
 
 Sample dashboards and data source configurations are included under the `provisioning/` directory. Running `docker-compose up` from a fresh environment provides a working example out of the box.
 
-## Author
+## 👤 Author
 
 **Tamir Suliman** — [allamiro@gmail.com](mailto:allamiro@gmail.com) — [GitHub](https://github.com/allamiro)
 
-## License
+## 📄 License
 
 Apache-2.0 — see [LICENSE](LICENSE) for details.
