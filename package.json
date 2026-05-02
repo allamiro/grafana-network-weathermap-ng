@@ -83,7 +83,7 @@
     "react-draggable": "^4.4.3",
     "tslib": "2.5.3",
     "typescript": "^5.4.0",
-    "uuid": "^8.3.2"
+    "uuid": "^14.0.0"
   },
   "packageManager": "npm@9.6.6"
 }
