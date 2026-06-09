@@ -174,6 +174,8 @@ test('Check edit mode display', () => {
   fireEvent.wheel(container.querySelector('#nw-testing_')!, { deltaY: 1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).not.toEqual(0);
 
+  // Re-render with updated options so the component sees the new zoomScale
+  rerender(<WeathermapPanel {...testProps} />);
   fireEvent.wheel(container.querySelector('#nw-testing_')!, { deltaY: -1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).toEqual(0);
 
