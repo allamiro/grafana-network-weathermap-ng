@@ -26,13 +26,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
-      - name: Build and sign plugin
-        uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.0
-        with:
-          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-          attestation: 'true'
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Build plugin
+        run: npm run build
 
       - name: Get plugin metadata
         id: metadata
@@ -62,6 +62,11 @@ jobs:
           zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
           md5sum ${{ steps.metadata.outputs.archive }} > ${{ steps.metadata.outputs.archive-checksum }}
           echo "checksum=$(cut -d' ' -f1 < ${{ steps.metadata.outputs.archive-checksum }})" >> "$GITHUB_OUTPUT"
+
+      - name: Generate provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ steps.metadata.outputs.archive }}
 
       - name: Extract release notes
         id: changelog
