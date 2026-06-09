@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -30,8 +32,8 @@ jobs:
         run: npm run build
 
       - name: Sign plugin
+        if: ${{ env.GRAFANA_API_KEY != '' }}
         run: npm run sign
-        if: ${{ secrets.GRAFANA_API_KEY != '' }}
         env:
           GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
 
