@@ -11,8 +11,9 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  compatibility:
-    name: Check Grafana API compatibility
+  # Job 1: check against the latest Grafana SDK (uses levitate via plugin-actions)
+  compatibility-latest:
+    name: Check Grafana API compatibility (latest)
     permissions:
       pull-requests: write
       contents: read
@@ -37,3 +38,37 @@ jobs:
           module: './src/module.ts'
           comment-pr: 'yes'
           fail-if-incompatible: 'no'
+
+  # Job 2: matrix check — verify the plugin TypeScript compiles cleanly
+  # against each supported Grafana SDK version (10.x, 11.x, 12.x).
+  # Uses --no-save so the installed test versions don't modify package.json.
+  compatibility-matrix:
+    name: Grafana ${{ matrix.grafana-version }} API check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        grafana-version: ['10.4.0', '11.0.0', '12.0.0']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Overlay Grafana ${{ matrix.grafana-version }} SDK packages
+        run: |
+          npm install --no-save --legacy-peer-deps \
+            @grafana/data@${{ matrix.grafana-version }} \
+            @grafana/ui@${{ matrix.grafana-version }} \
+            @grafana/runtime@${{ matrix.grafana-version }}
+
+      - name: Check API compatibility (levitate)
+        run: |
+          npx --yes @grafana/levitate@latest is-compatible \
+            --path src/module.ts \
+            --target @grafana/data,@grafana/ui,@grafana/runtime
