@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@v4
@@ -28,17 +28,11 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run tests
-        run: npm run test:ci
-
-      - name: Build plugin
-        run: npm run build
-
-      - name: Sign plugin
-        if: ${{ env.GRAFANA_API_KEY != '' }}
-        run: npm run sign
-        env:
-          GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
+      - name: Build and sign plugin
+        uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.0
+        with:
+          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          attestation: 'true'
 
       - name: Get plugin metadata
         id: metadata
