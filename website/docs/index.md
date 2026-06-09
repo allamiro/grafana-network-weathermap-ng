@@ -1,24 +1,61 @@
-<center><img src="/assets/logo.svg" alt="Network Weathermap Logo" width="200" style="background: lightgrey; padding: 2rem; border-radius: 1rem; box-shadow: #aaa 0.5rem 0.5rem 1rem;"/></center>
+<center><img src="/assets/logo.svg" alt="Network Weathermap NG Logo" width="200" style="background: lightgrey; padding: 2rem; border-radius: 1rem; box-shadow: #aaa 0.5rem 0.5rem 1rem;"/></center>
 
 <center>
-# Grafana Network Weathermap Plugin
+# Grafana Network Weathermap NG
 </center>
+
+<center>
+A modernized, actively maintained network weathermap panel plugin for Grafana 12+.<br>
+Maintained by <a href="https://github.com/allamiro">Tamir Suliman</a> — Plugin ID: <code>tamirsuliman-weathermap-panel</code>
+</center>
+
+---
+
+## About This Fork
+
+This plugin is a continuation of the original [knightss27/grafana-network-weathermap](https://github.com/knightss27/grafana-network-weathermap) which was archived in 2023. The goal of this fork is to keep the plugin working with current Grafana releases and to fix outstanding bugs.
+
+**What changed from the original:**
+
+| Area | Change |
+|---|---|
+| Plugin ID | `tamirsuliman-weathermap-panel` (was `knightss27-weathermap-panel`) |
+| Grafana SDK | Updated to `@grafana/*` v11 — requires **Grafana 12.0.0+** |
+| React | Upgraded from React 17 → React 18 |
+| Styling | Migrated from deprecated `stylesFactory` → `useStyles2` + `@emotion/css` |
+| Deprecated APIs | Replaced `Vector.get()` with direct array indexing |
+| Datasource compat | Value extraction now finds the first numeric field instead of hardcoding `fields[1]` |
+| Security | All `window.open()` calls use `noopener,noreferrer`; `locationService` replaces `window.location` |
+| CI / CD | Node.js 24, GitHub Actions Pages deployment, Grafana API version matrix |
+
+Contributions and bug reports are welcome at [github.com/allamiro/grafana-network-weathermap-ng](https://github.com/allamiro/grafana-network-weathermap-ng).
+
+---
 
 ## Installation
 
-### Installing on a local Grafana:
+### Installing on a local Grafana
 
-For local instances, plugins are installed and updated via a simple CLI command. Plugins are not updated automatically, however you will be notified when updates are available right within your Grafana.
+Requires **Grafana 12.0.0 or later**.
 
-#### 1: Install the Panel
+#### Option A — Grafana Marketplace (once approved)
 
-Use the grafana-cli tool to install Network Weathermap from the commandline:
+```bash
+grafana-cli plugins install tamirsuliman-weathermap-panel
+```
 
-```grafana-cli plugins install tamirsuliman-weathermap-panel```
+The plugin will be installed into your Grafana plugins directory (default `/var/lib/grafana/plugins`). [More on the CLI tool.](https://grafana.com/docs/grafana/latest/administration/cli/#plugins-commands)
 
-The plugin will be installed into your grafana plugins directory; the default is /var/lib/grafana/plugins. [More information on the cli tool.](https://grafana.com/docs/grafana/latest/administration/cli/#plugins-commands)
+#### Option B — Manual install from GitHub release
 
-Alternatively, you can manually download the .zip file from the [latest release](https://github.com/allamiro/grafana-network-weathermap-ng/releases/latest/) and unpack it into your grafana plugins directory.
+1. Download the latest ZIP from the [Releases page](https://github.com/allamiro/grafana-network-weathermap-ng/releases/latest/)
+2. Extract it into your Grafana plugins directory:
+
+```bash
+unzip tamirsuliman-weathermap-panel-*.zip -d /var/lib/grafana/plugins/
+```
+
+3. Restart Grafana and enable the plugin under **Administration → Plugins**.
 
 
 #### 2: Add the Panel to a Dashboard
