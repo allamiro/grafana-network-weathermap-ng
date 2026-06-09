@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { DataFrame, Field, getTimeZone, getValueFormat, PanelProps } from '@grafana/data';
+import { DataFrame, Field, FieldType, getTimeZone, getValueFormat, PanelProps } from '@grafana/data';
 import {
   Anchor,
   DrawnLink,
@@ -629,18 +629,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   timeRange={timeRange}
                   timeZone={getTimeZone()}
                   frames={filteredGraphQueries.map((frame: DataFrame) => {
-                    let copy = frame;
-                    let isInboundQuery = getDataFrameName(frame, data.series) === hoveredLink.link.sides.Z.query;
-                    copy.fields = copy.fields.map((v) => {
-                      v.config.custom = {
-                        fillOpacity: 10,
-                        lineColor: isInboundQuery
-                          ? wm.settings.tooltip.inboundColor
-                          : wm.settings.tooltip.outboundColor,
-                      };
-                      return v;
-                    });
-                    return copy;
+                    const isInboundQuery = getDataFrameName(frame, data.series) === hoveredLink.link.sides.Z.query;
+                    const lineColor = isInboundQuery
+                      ? wm.settings.tooltip.inboundColor
+                      : wm.settings.tooltip.outboundColor;
+                    // Spread each field to avoid mutating the original frame stored in data.series.
+                    // Mutating originals causes stale colors on subsequent renders.
+                    return {
+                      ...frame,
+                      fields: frame.fields.map((f) => ({
+                        ...f,
+                        config: {
+                          ...f.config,
+                          custom: {
+                            ...f.config.custom,
+                            fillOpacity: 10,
+                            lineColor,
+                          },
+                        },
+                      })),
+                    };
                   })}
                   legend={{
                     calcs: [],
@@ -650,6 +658,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     showLegend: false,
                   }}
                   tweakScale={(opts, forField: Field) => {
+                    // Only adjust the value (y) axis — not the time axis.
+                    if (forField.type !== FieldType.number) {
+                      return opts;
+                    }
                     opts.softMin = 0;
                     if (
                       wm.settings.tooltip.scaleToBandwidth &&
@@ -660,6 +672,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     return opts;
                   }}
                   tweakAxis={(opts, forField: Field) => {
+                    // Only format the value (y) axis — leave the time axis alone.
+                    if (forField.type !== FieldType.number) {
+                      return opts;
+                    }
                     opts.formatValue = getlinkGraphFormatter(
                       hoveredLink.link.units
                         ? hoveredLink.link.units
