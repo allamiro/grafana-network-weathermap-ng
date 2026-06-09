@@ -22,6 +22,7 @@ import {
   useStyles2,
   useTheme2,
 } from '@grafana/ui';
+import { locationService } from '@grafana/runtime';
 import {
   measureText,
   getSolidFromAlphaColor,
@@ -77,7 +78,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }
 
   // Check for editing-related feature set
-  const isEditMode = window.location.search.includes('editPanel');
+  const isEditMode = locationService.getSearch().has('editPanel');
 
   const [draggedNode, setDraggedNode] = useState(null as unknown as DrawnNode);
   const [selectedNodes, setSelectedNodes] = useState([] as DrawnNode[]);
@@ -896,7 +897,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       onMouseOut={handleLinkHoverLoss}
                       onClick={() => {
                         if (d.sides.A.dashboardLink.length > 0) {
-                          window.open(d.sides.A.dashboardLink, '_blank');
+                          window.open(d.sides.A.dashboardLink, '_blank', 'noopener,noreferrer');
                         }
                       }}
                       style={d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
@@ -932,7 +933,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
                             if (d.sides.A.dashboardLink.length > 0) {
-                              window.open(d.sides.A.dashboardLink, '_blank');
+                              window.open(d.sides.A.dashboardLink, '_blank', 'noopener,noreferrer');
                             }
                           }}
                           style={d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
@@ -950,7 +951,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
                             if (d.sides.Z.dashboardLink.length > 0) {
-                              window.open(d.sides.Z.dashboardLink, '_blank');
+                              window.open(d.sides.Z.dashboardLink, '_blank', 'noopener,noreferrer');
                             }
                           }}
                           style={d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
@@ -971,7 +972,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
                             if (d.sides.Z.dashboardLink.length > 0) {
-                              window.open(d.sides.Z.dashboardLink, '_blank');
+                              window.open(d.sides.Z.dashboardLink, '_blank', 'noopener,noreferrer');
                             }
                           }}
                           style={d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
@@ -1169,7 +1170,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           return v;
                         });
                       } else if (!isEditMode && tempNodes[i].dashboardLink) {
-                        window.open(tempNodes[i].dashboardLink, '_blank');
+                        window.open(tempNodes[i].dashboardLink, '_blank', 'noopener,noreferrer');
                       }
                       // Force an update
                       onOptionsChange(options);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps } from '@grafana/data';
+import { locationService } from '@grafana/runtime';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
 import { SimpleOptions } from 'types';
@@ -158,10 +159,8 @@ test('Check edit mode display', () => {
     testProps.options = options;
   };
 
-  Object.defineProperty(window, 'location', {
-    writable: true,
-    value: new URL('https://www.example.com/?editPanel=1'),
-  });
+  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+
   // Render the panel
   const { container, rerender } = render(<WeathermapPanel {...testProps} />);
 
@@ -179,11 +178,9 @@ test('Check edit mode display', () => {
   fireEvent.wheel(container.querySelector('#nw-testing_')!, { deltaY: -1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).toEqual(0);
 
-  Object.defineProperty(window, 'location', {
-    writable: true,
-    value: new URL('https://www.example.com/'),
-  });
+  getSearchSpy.mockReturnValue(new URLSearchParams(''));
   rerender(<WeathermapPanel {...testProps} />);
   fireEvent.wheel(container.querySelector('#nw-testing')!, { deltaY: -1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).toEqual(0);
+  getSearchSpy.mockRestore();
 });
