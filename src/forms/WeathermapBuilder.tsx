@@ -95,7 +95,6 @@ export const WeathermapBuilder = (props: Props) => {
   };
 
   if (!props.value) {
-    console.log('Initializing weathermap plugin.');
     props.onChange(defaultValue);
   } else if (!props.value.version || props.value.version !== CURRENT_VERSION) {
     // State versioning and merging to deal with missing properties.
