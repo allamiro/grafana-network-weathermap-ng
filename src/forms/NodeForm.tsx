@@ -117,7 +117,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
       };
     } else {
       weathermap.nodes[i].nodeIcon!.src =
-        icon === 'custom_icon' ? '' : 'public/plugins/knightss27-weathermap-panel/icons/' + icon + '.svg';
+        icon === 'custom_icon' ? '' : 'public/plugins/tamirsuliman-weathermap-panel/icons/' + icon + '.svg';
       weathermap.nodes[i].nodeIcon!.name = icon;
 
       if (weathermap.nodes[i].nodeIcon!.size.width === 0) {
