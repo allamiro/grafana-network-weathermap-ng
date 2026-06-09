@@ -186,10 +186,18 @@ export const LinkForm = (props: Props) => {
   let usedConnectionNodes = usedConnectionSourceNodes.filter((n) => usedConnectionTargetNodes.includes(n));
   let availableNodes = value.nodes.filter((n) => !usedConnectionNodes.includes(n.id));
 
+  const seenNames = new Set<string>();
   let dataWithIds: string[] = [];
-  context.data.forEach((d, i) => {
+  context.data.forEach((d) => {
+    if (d.fields.length < 2) {
+      return;
+    }
     try {
-      dataWithIds.push(getDataFrameName(d, context.data));
+      const name = getDataFrameName(d, context.data);
+      if (!seenNames.has(name)) {
+        seenNames.add(name);
+        dataWithIds.push(name);
+      }
     } catch (e) {
       console.warn('Network Weathermap: Error while attempting to access query data.', e);
     }
@@ -252,8 +260,6 @@ export const LinkForm = (props: Props) => {
                           onChange={(v) => {
                             handleDataChange(sName, i, v ? v.value : undefined);
                           }}
-                          // TODO: Unable to just pass a data frame or string here?
-                          // This is fairly unoptimized if you have loads of data frames
                           value={dataWithIds.filter((p) => p === side.query)[0]}
                           options={dataWithIds.map((d) => {
                             return { value: d, label: d };
@@ -261,6 +267,7 @@ export const LinkForm = (props: Props) => {
                           className={styles.querySelect}
                           placeholder={`Select ${sName} Side Query`}
                           isClearable
+                          menuShouldPortal
                         ></Select>
                       </InlineField>
                     )}
@@ -297,6 +304,7 @@ export const LinkForm = (props: Props) => {
                             className={styles.bandwidthSelect}
                             placeholder={'Select Bandwidth'}
                             isClearable
+                            menuShouldPortal
                           ></Select>
                         </InlineField>
                         <InlineField grow label={`${sName} Label Offset %`} style={{ width: '100%' }}>
