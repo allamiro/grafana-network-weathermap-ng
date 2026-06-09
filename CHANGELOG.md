@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.3.0) (2026-06-10)
+
+### Chores
+
+* **ci**: switch release workflow to `grafana/plugin-actions/build-plugin` with provenance attestation (`attestation: true`) and `GRAFANA_ACCESS_POLICY_TOKEN`; drop deprecated `GRAFANA_API_KEY`; fixes `no-provenance-attestation` Grafana validator warning
+* **plugin.json**: add sponsor link; fixes `sponsorshiplink` Grafana validator warning
+* **testing/exporter**: upgrade `golang.org/x/sys` to `v0.44.0`; fixes `GO-2026-5024` (`govulncheck` module-level finding, Windows integer overflow)
+
 ## [1.2.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.2.0) (2026-06-09)
 
 ### Bug Fixes
