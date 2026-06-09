@@ -7,7 +7,7 @@
 
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
   [![Grafana Version](https://img.shields.io/badge/Grafana-12%2B-orange)](https://grafana.com/)
-  [![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://nodejs.org/)
+  [![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/CONTRIBUTING.md)
 
   This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
 </div>
