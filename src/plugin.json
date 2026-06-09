@@ -16,11 +16,11 @@
     "links": [
       {
         "name": "Github",
-        "url": "https://github.com/allamiro/grafana-network-weathermap"
+        "url": "https://github.com/allamiro/grafana-network-weathermap-ng"
       },
       {
         "name": "License",
-        "url": "https://github.com/allamiro/grafana-network-weathermap/blob/main/LICENSE"
+        "url": "https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/LICENSE"
       }
     ],
     "screenshots": [
@@ -33,7 +33,7 @@
     "updated": "%TODAY%"
   },
   "dependencies": {
-    "grafanaDependency": ">=10.0.0",
+    "grafanaDependency": ">=12.0.0",
     "plugins": []
   }
 }
