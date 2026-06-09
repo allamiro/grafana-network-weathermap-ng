@@ -26,3 +26,4 @@ nav:
   - Customization: customization.md
   - Reference: reference.md
   - FAQ: faq.md
+  - Contributing: https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/CONTRIBUTING.md
