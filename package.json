@@ -88,7 +88,15 @@
     "react-draggable": "^4.4.3",
     "tslib": "2.5.3",
     "typescript": "^5.4.0",
-    "uuid": "^8.3.2"
+    "uuid": "^11.1.1"
   },
-  "packageManager": "npm@9.6.6"
+  "packageManager": "npm@9.6.6",
+  "overrides": {
+    "serialize-javascript": "7.0.5",
+    "dompurify": "3.4.8",
+    "js-cookie": "3.0.8",
+    "@grafana/ui": {
+      "uuid": "11.1.1"
+    }
+  }
 }
