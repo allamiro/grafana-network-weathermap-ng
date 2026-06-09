@@ -377,5 +377,5 @@ export function getValueField(frame: DataFrame): Field {
 }
 
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {
-  return getFieldDisplayName(getValueField(frame), frame);
+  return getFieldDisplayName(getValueField(frame), frame, allFrames);
 };
