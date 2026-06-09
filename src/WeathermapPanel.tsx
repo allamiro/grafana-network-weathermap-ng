@@ -259,12 +259,28 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         let resolvedValue: number;
         if (useAvg && fieldValues.length > 0) {
           let sum = 0;
+          let count = 0;
           for (let vi = 0; vi < fieldValues.length; vi++) {
-            sum += fieldValues[vi];
+            const v = fieldValues[vi];
+            if (v !== null && !isNaN(v)) {
+              sum += Math.max(0, v);
+              count++;
+            }
           }
-          resolvedValue = sum / fieldValues.length;
+          resolvedValue = count > 0 ? sum / count : 0;
         } else {
-          resolvedValue = fieldValues[fieldValues.length - 1];
+          // Walk back to find the last non-NaN value; rate() produces NaN on
+          // the first sample and increase() can produce negative values on
+          // counter resets — treat both as 0.
+          let lastValid = 0;
+          for (let vi = fieldValues.length - 1; vi >= 0; vi--) {
+            const v = fieldValues[vi];
+            if (v !== null && !isNaN(v)) {
+              lastValid = Math.max(0, v);
+              break;
+            }
+          }
+          resolvedValue = lastValid;
         }
         dataFrameWithIds.push({
           value: resolvedValue,
