@@ -1,4 +1,4 @@
-<center><img src="/assets/logo.svg" alt="Network Weathermap NG Logo" width="200" style="background: lightgrey; padding: 2rem; border-radius: 1rem; box-shadow: #aaa 0.5rem 0.5rem 1rem;"/></center>
+<center><img src="assets/logo.svg" alt="Network Weathermap NG Logo" width="200" style="background: lightgrey; padding: 2rem; border-radius: 1rem; box-shadow: #aaa 0.5rem 0.5rem 1rem;"/></center>
 
 <center>
 # Grafana Network Weathermap NG
