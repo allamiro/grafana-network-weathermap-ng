@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.1) (2026-06-09)
+
+### Security
+
+* resolve all npm audit CVEs — 0 vulnerabilities remaining ([#96](https://github.com/allamiro/grafana-network-weathermap-ng/pull/96))
+  * `form-data` critical — resolved via `npm audit fix`
+  * `protobufjs` critical — resolved via `npm audit fix`
+  * `serialize-javascript` high (build-time) — pinned to 7.0.5 via npm overrides
+  * `dompurify` high (Grafana peer dep) — pinned to 3.4.8 via npm overrides
+  * `js-cookie` high (Grafana peer dep) — pinned to 3.0.8 via npm overrides
+  * `uuid` moderate — bumped direct dep to ^11.1.1; scoped override for @grafana/ui
+
 ## [1.1.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.0) (2026-06-09)
 
 ### Bug Fixes
