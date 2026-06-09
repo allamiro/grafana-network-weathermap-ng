@@ -586,9 +586,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           <div
             className={css`
               position: absolute;
-              top: ${hoveredLink.mouseY}px;
-              left: ${hoveredLink.mouseX}px;
-              transform: translate(0%, -100%);
+              top: ${hoveredLink.mouseY - 10}px;
+              left: ${hoveredLink.mouseX + 14}px;
+              transform: translate(
+                ${hoveredLink.mouseX > width2 * 0.65 ? '-100%' : '0%'},
+                ${hoveredLink.mouseY < 120 ? '0%' : '-100%'}
+              );
               pointer-events: none;
               background-color: ${wm.settings.tooltip.backgroundColor};
               color: ${wm.settings.tooltip.textColor} !important;
