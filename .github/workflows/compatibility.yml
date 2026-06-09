@@ -1,0 +1,36 @@
+name: Grafana API Compatibility
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'package.json'
+  pull_request:
+
+jobs:
+  compatibility:
+    name: Check Grafana API compatibility
+    permissions:
+      pull-requests: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Check compatibility with latest Grafana APIs
+        uses: grafana/plugin-actions/is-compatible@main
+        with:
+          module: './src/module.ts'
+          comment-pr: 'yes'
+          fail-if-incompatible: 'no'
