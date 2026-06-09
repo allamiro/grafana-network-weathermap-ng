@@ -16,7 +16,7 @@ import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, Link, Anchor, LinkSide } from 'types';
 import { FormDivider } from './FormDivider';
-import { getDataFrameName } from 'utils';
+import { getDataFrameName, getValueField } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -198,7 +198,7 @@ export const LinkForm = (props: Props) => {
         seenNames.add(name);
         // Build a concise label: "refId: fieldName" so the dropdown stays
         // readable even when Grafana appends full label sets to the display name.
-        const fieldName = d.fields[1].name || name;
+        const fieldName = getValueField(d).name || name;
         const label = d.refId ? `${d.refId}: ${fieldName}` : fieldName;
         dataWithIds.push({ value: name, label });
       }
