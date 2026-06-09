@@ -187,7 +187,7 @@ export const LinkForm = (props: Props) => {
   let availableNodes = value.nodes.filter((n) => !usedConnectionNodes.includes(n.id));
 
   const seenNames = new Set<string>();
-  let dataWithIds: string[] = [];
+  let dataWithIds: Array<{ value: string; label: string }> = [];
   context.data.forEach((d) => {
     if (d.fields.length < 2) {
       return;
@@ -196,7 +196,11 @@ export const LinkForm = (props: Props) => {
       const name = getDataFrameName(d, context.data);
       if (!seenNames.has(name)) {
         seenNames.add(name);
-        dataWithIds.push(name);
+        // Build a concise label: "refId: fieldName" so the dropdown stays
+        // readable even when Grafana appends full label sets to the display name.
+        const fieldName = d.fields[1].name || name;
+        const label = d.refId ? `${d.refId}: ${fieldName}` : fieldName;
+        dataWithIds.push({ value: name, label });
       }
     } catch (e) {
       console.warn('Network Weathermap: Error while attempting to access query data.', e);
@@ -260,10 +264,8 @@ export const LinkForm = (props: Props) => {
                           onChange={(v) => {
                             handleDataChange(sName, i, v ? v.value : undefined);
                           }}
-                          value={dataWithIds.filter((p) => p === side.query)[0]}
-                          options={dataWithIds.map((d) => {
-                            return { value: d, label: d };
-                          })}
+                          value={dataWithIds.find((p) => p.value === side.query)}
+                          options={dataWithIds}
                           className={styles.querySelect}
                           placeholder={`Select ${sName} Side Query`}
                           isClearable
@@ -297,10 +299,8 @@ export const LinkForm = (props: Props) => {
                             onChange={(v) => {
                               handleBandwidthQueryChange(v ? v.value : undefined, i, sName);
                             }}
-                            value={dataWithIds.filter((p) => p === side.bandwidthQuery)[0]}
-                            options={dataWithIds.map((d) => {
-                              return { value: d, label: d };
-                            })}
+                            value={dataWithIds.find((p) => p.value === side.bandwidthQuery)}
+                            options={dataWithIds}
                             className={styles.bandwidthSelect}
                             placeholder={'Select Bandwidth'}
                             isClearable
