@@ -31,6 +31,7 @@ import {
   CURRENT_VERSION,
   handleVersionedStateUpdates,
   getDataFrameName,
+  getValueField,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -256,7 +257,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         return;
       }
       try {
-        const fieldValues = frame.fields[1].values;
+        const fieldValues = getValueField(frame).values;
         let resolvedValue: number;
         if (useAvg && fieldValues.length > 0) {
           let sum = 0;
