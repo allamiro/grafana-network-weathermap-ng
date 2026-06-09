@@ -5,7 +5,7 @@
 </center>
 
 <center>
-A modernized, actively maintained network weathermap panel plugin for Grafana 12+.<br>
+A modernized, actively maintained network weathermap panel plugin for Grafana 11+.<br>
 Maintained by <a href="https://github.com/allamiro">Tamir Suliman</a> — Plugin ID: <code>tamirsuliman-weathermap-panel</code>
 </center>
 
@@ -20,7 +20,7 @@ This plugin is a continuation of the original [knightss27/grafana-network-weathe
 | Area | Change |
 |---|---|
 | Plugin ID | `tamirsuliman-weathermap-panel` (was `knightss27-weathermap-panel`) |
-| Grafana SDK | Updated to `@grafana/*` v11 — requires **Grafana 12.0.0+** |
+| Grafana SDK | Updated to `@grafana/*` v11 — requires **Grafana 11.0.0+** |
 | React | Upgraded from React 17 → React 18 |
 | Styling | Migrated from deprecated `stylesFactory` → `useStyles2` + `@emotion/css` |
 | Deprecated APIs | Replaced `Vector.get()` with direct array indexing |
@@ -36,7 +36,7 @@ Contributions and bug reports are welcome at [github.com/allamiro/grafana-networ
 
 ### Installing on a local Grafana
 
-Requires **Grafana 12.0.0 or later**.
+Requires **Grafana 11.0.0 or later**.
 
 #### Option A — Grafana Marketplace (once approved)
 
