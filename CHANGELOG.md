@@ -2,7 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [1.0.0](https://github.com/allamiro/grafana-network-weathermap/releases/tag/v1.0.0) (2025-02-25)
+## [1.1.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.0) (2026-06-09)
+
+### Bug Fixes
+
+* **color-scale**: threshold labels overlapped when thresholds were close together due to hardcoded `line-height: 0px` — now uses `line-height: normal` with `white-space: nowrap` ([#44](https://github.com/allamiro/grafana-network-weathermap-ng/issues/44))
+* **export**: JSON export button was commented out and unavailable — restored with full-config export using `JSON.stringify` ([#52](https://github.com/allamiro/grafana-network-weathermap-ng/issues/52))
+* **link-editor**: query dropdown showed only 2 entries due to missing `fields.length < 2` guard causing frames to be silently skipped; added deduplication and `menuShouldPortal` ([#42](https://github.com/allamiro/grafana-network-weathermap-ng/issues/42), [#46](https://github.com/allamiro/grafana-network-weathermap-ng/issues/46))
+* **link-editor**: query dropdown labels showed full Grafana metadata strings (refId + frame name + all labels) — now displays concise `refId: fieldName` format while preserving the full name as the stored value ([#49](https://github.com/allamiro/grafana-network-weathermap-ng/issues/49))
+* **value-extraction**: Prometheus `rate()` and `increase()` queries produced NaN or negative values — added backwards scan for last valid value and clamped negatives to 0 in both last-value and average modes ([#51](https://github.com/allamiro/grafana-network-weathermap-ng/issues/51))
+* **tooltip**: tooltip appeared directly on top of hovered link with no cursor offset and could overflow panel edges — now offsets 14px right/10px up from cursor and flips direction near panel edges ([#43](https://github.com/allamiro/grafana-network-weathermap-ng/issues/43))
+* **strokes**: link stroke lines randomly disappeared after zoom, pan, or time range change — two root causes fixed: `Math.max(...[])` returning `-Infinity` for empty anchor arrays (producing non-finite SVG coordinates), and zoom handler mutating `options.weathermap` in-place bypassing React change detection ([#45](https://github.com/allamiro/grafana-network-weathermap-ng/issues/45), [#50](https://github.com/allamiro/grafana-network-weathermap-ng/issues/50))
+* **datasource-compat**: metrics from Check MK and other non-standard datasources showed n/a because the plugin hardcoded `fields[1]` for value extraction; now finds the first `FieldType.number` field with fallback to index 1 ([#53](https://github.com/allamiro/grafana-network-weathermap-ng/issues/53))
+
+### CI / Infrastructure
+
+* upgraded all GitHub Actions workflows from Node.js 20 to Node.js 24 ahead of the GitHub Actions forced cutover on 2026-06-16
+* switched GitHub Pages deployment from `peaceiris/actions-gh-pages` to official `actions/deploy-pages` — surfaces live site URL in the repo sidebar Deployments section
+* added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` to all four workflows
+
+## [1.0.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.0.0) (2025-02-25)
 
 Modernized fork of the original knightss27-weathermap-panel, now maintained by Tamir Suliman.
 
