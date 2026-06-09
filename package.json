@@ -15,11 +15,11 @@
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit"
   },
-  "repository": "github:allamiro/grafana-network-weathermap",
+  "repository": "github:allamiro/grafana-network-weathermap-ng",
   "author": "Tamir Suliman <allamiro@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/allamiro/grafana-network-weathermap/issues",
+    "url": "https://github.com/allamiro/grafana-network-weathermap-ng/issues",
     "email": "allamiro@gmail.com"
   },
   "devDependencies": {

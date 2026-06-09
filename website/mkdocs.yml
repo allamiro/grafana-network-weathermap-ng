@@ -1,9 +1,28 @@
-site_name: Grafana Network Weathermap Plugin
-repo_url: https://github.com/knightss27/grafana-network-weathermap
+site_name: Grafana Network Weathermap NG
+site_description: A modernized, actively maintained network weathermap panel plugin for Grafana
+site_author: Tamir Suliman
+repo_url: https://github.com/allamiro/grafana-network-weathermap-ng
+repo_name: allamiro/grafana-network-weathermap-ng
 theme:
   name: material
   features:
     - navigation.sections
+    - navigation.top
+    - search.highlight
   logo: assets/logo.svg
   palette:
-    primary: black 
+    - scheme: default
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+nav:
+  - Home: index.md
+  - Customization: customization.md
+  - Reference: reference.md
+  - FAQ: faq.md
