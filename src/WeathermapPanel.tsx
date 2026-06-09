@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { DataFrame, Field, getTimeZone, getValueFormat, PanelProps } from '@grafana/data';
 import {
   Anchor,
@@ -146,7 +146,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   const [links, setLinks] = useState(
     wm
       ? wm.links.map((d, i) => {
-          return generateDrawnLink(d, i);
+          return generateDrawnLink(d, i, new Map());
         })
       : []
   );
@@ -238,7 +238,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }
 
   // Calculate link positions / text / colors / etc.
-  function generateDrawnLink(d: Link, i: number): DrawnLink {
+  function generateDrawnLink(d: Link, i: number, frameMap: Map<string, number>): DrawnLink {
     let toReturn: DrawnLink = { ...d, sides: { A: { ...d.sides.A }, Z: { ...d.sides.Z } } } as DrawnLink;
     toReturn.index = i;
 
@@ -250,69 +250,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     toReturn.source = nodes.filter((n) => n.id === toReturn.nodes[0].id)[0];
     toReturn.target = nodes.filter((n) => n.id === toReturn.nodes[1].id)[0];
 
-    const useAvg = wm.settings.link.valueMappingMode === 'avg';
-
-    let dataFrameWithIds: Array<{ value: number; id: string }> = [];
-    data.series.forEach((frame) => {
-      if (frame.fields.length < 2) {
-        return;
-      }
-      try {
-        const fieldValues = getValueField(frame).values;
-        let resolvedValue: number;
-        if (useAvg && fieldValues.length > 0) {
-          let sum = 0;
-          let count = 0;
-          for (let vi = 0; vi < fieldValues.length; vi++) {
-            const v = fieldValues[vi];
-            if (v !== null && !isNaN(v)) {
-              sum += Math.max(0, v);
-              count++;
-            }
-          }
-          resolvedValue = count > 0 ? sum / count : 0;
-        } else {
-          // Walk back to find the last non-NaN value; rate() produces NaN on
-          // the first sample and increase() can produce negative values on
-          // counter resets — treat both as 0.
-          let lastValid = 0;
-          for (let vi = fieldValues.length - 1; vi >= 0; vi--) {
-            const v = fieldValues[vi];
-            if (v !== null && !isNaN(v)) {
-              lastValid = Math.max(0, v);
-              break;
-            }
-          }
-          resolvedValue = lastValid;
-        }
-        dataFrameWithIds.push({
-          value: resolvedValue,
-          id: getDataFrameName(frame, data.series),
-        });
-      } catch (e) {
-        console.warn('Network Weathermap: Error while attempting to access query data.', e);
-      }
-    });
-
-    let filteredDataFramesWithIds = dataFrameWithIds.filter(
-      (value) => value.id === toReturn.sides.A.query || value.id === toReturn.sides.Z.query
-    );
-
     // For each of our A/Z sides
     for (let s = 0; s < 2; s++) {
       const side: 'A' | 'Z' = s === 0 ? 'A' : 'Z';
 
       // Check if we have a query to run for this side's bandwidth
       if (toReturn.sides[side].bandwidthQuery) {
-        let dataFrame = dataFrameWithIds.filter((value) => value.id === toReturn.sides[side].bandwidthQuery);
-
-        // Ensure we have the values we should
-        if (dataFrame[0] !== undefined && dataFrame[0].value !== undefined) {
-          // If we have a value, go use it
-          toReturn.sides[side].bandwidth = dataFrame[0].value;
-        } else {
-          toReturn.sides[side].bandwidth = 0;
-        }
+        const bwValue = frameMap.get(toReturn.sides[side].bandwidthQuery!);
+        toReturn.sides[side].bandwidth = bwValue !== undefined ? bwValue : 0;
       }
 
       // Set the display value to zero, just in case nothing exists
@@ -324,20 +269,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
       // Check if we have a query to run for this side's throughput
       if (toReturn.sides[side].query) {
-        let dataSource = toReturn.sides[side].query;
-        let dataFrame = filteredDataFramesWithIds.filter((s) => s.id === dataSource);
+        const frameValue = frameMap.get(toReturn.sides[side].query!);
 
-        // Ensure we have the values we should
-        if (dataFrame[0] !== undefined && dataFrame[0].value !== undefined) {
-          // If we have a value, go use it
-          toReturn.sides[side].currentValue = dataFrame[0].value;
+        if (frameValue !== undefined) {
+          toReturn.sides[side].currentValue = frameValue;
 
           // Get the text formatted to KiB/MiB/etc.
           let scaledSideValue = linkValueFormatter(toReturn.sides[side].currentValue);
           toReturn.sides[side].currentValueText = `${scaledSideValue.text} ${scaledSideValue.suffix}`;
 
           // Get the percentage througput text
-          // Note that this does allow the text to be 0% even when a query doesn't return a value.
           toReturn.sides[side].currentPercentageText =
             toReturn.sides[side].bandwidth > 0
               ? `${((toReturn.sides[side].currentValue / toReturn.sides[side].bandwidth) * 100).toFixed(2)}%`
@@ -408,6 +349,49 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     return toReturn;
   }
 
+  // Build the data-frame value map once per data/mode change instead of once per link.
+  // Key: display name (from getDataFrameName). Value: resolved numeric value.
+  const dataFrameMap = useMemo(() => {
+    const useAvg = wm.settings.link.valueMappingMode === 'avg';
+    const map = new Map<string, number>();
+    data.series.forEach((frame) => {
+      if (frame.fields.length < 2) {
+        return;
+      }
+      try {
+        const fieldValues = getValueField(frame).values;
+        let resolvedValue: number;
+        if (useAvg && fieldValues.length > 0) {
+          let sum = 0;
+          let count = 0;
+          for (let vi = 0; vi < fieldValues.length; vi++) {
+            const v = fieldValues[vi];
+            if (v !== null && !isNaN(v)) {
+              sum += Math.max(0, v);
+              count++;
+            }
+          }
+          resolvedValue = count > 0 ? sum / count : 0;
+        } else {
+          let lastValid = 0;
+          for (let vi = fieldValues.length - 1; vi >= 0; vi--) {
+            const v = fieldValues[vi];
+            if (v !== null && !isNaN(v)) {
+              lastValid = Math.max(0, v);
+              break;
+            }
+          }
+          resolvedValue = lastValid;
+        }
+        map.set(getDataFrameName(frame, data.series), resolvedValue);
+      } catch (e) {
+        console.warn('Network Weathermap: Error while attempting to access query data.', e);
+      }
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, wm.settings.link.valueMappingMode]);
+
   // Minimize uneeded state changes
   const mounted = useRef(false);
 
@@ -428,15 +412,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   tempNodes = nodes.slice();
 
   // Update links on props/data change
-  // TODO: Optimize this to only update the necessary links?
   useEffect(() => {
     setLinks(
       options.weathermap.links.map((d, i) => {
-        return generateDrawnLink(d, i);
+        return generateDrawnLink(d, i, dataFrameMap);
       })
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options, data, nodes]); // need to keep nodes here for good looking updating
+  }, [options, data, nodes, dataFrameMap]);
 
   const zoom = (e: WheelEvent) => {
     // Just don't allow zooming when not in edit mode
@@ -1125,7 +1108,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       tempNodes = nodes.slice();
                       setLinks(
                         wm.links.map((d, i) => {
-                          return generateDrawnLink(d, i);
+                          return generateDrawnLink(d, i, dataFrameMap);
                         })
                       );
                     },
