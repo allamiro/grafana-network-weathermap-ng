@@ -80,39 +80,7 @@ systemctl restart grafana-server
 
 ## Development
 
-### Setup
-
-```bash
-# Install dependencies
-npm install --legacy-peer-deps
-
-# Start development server (watches for changes)
-npm run dev
-
-# In a separate terminal, start Grafana with the plugin loaded
-npm run server
-```
-
-### Commands
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start webpack in watch mode |
-| `npm run build` | Production build |
-| `npm run test:ci` | Run unit tests |
-| `npm run e2e` | Run Playwright E2E tests |
-| `npm run lint` | ESLint check |
-| `npm run typecheck` | TypeScript type check |
-
-### Docker
-
-A `docker-compose.yaml` is provided for a fully provisioned local environment:
-
-```bash
-docker-compose up --build
-```
-
-This starts Grafana at `http://localhost:3000` with the plugin pre-loaded and sample dashboards provisioned from the `provisioning/` directory.
+For local setup, build commands, Docker environment, and contribution guidelines, see [CONTRIBUTING.md](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/CONTRIBUTING.md).
 
 ---
 
@@ -151,4 +119,4 @@ Contributions are welcome. Please open an issue first to discuss significant cha
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE) for details.
+Apache-2.0 — see [LICENSE](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/LICENSE) for details.
