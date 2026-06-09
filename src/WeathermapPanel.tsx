@@ -178,13 +178,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         ? nearestMultiple(d.y, wm.settings.panel.grid.size)
         : y;
 
-    // The maximum link width on this anchor point
-    const maxLinkWidth = Math.max(
-      ...wm.links
-        .filter((l) => l.nodes[0].id === d.id || l.nodes[1].id === d.id)
-        .filter((l) => side.anchor === l.sides.A.anchor || l.sides.Z.anchor === side.anchor)
-        .map((l) => l.stroke)
-    );
+    // The maximum link width on this anchor point.
+    // Math.max(...[]) returns -Infinity for empty arrays, which corrupts
+    // coordinates — default to 0 so positions stay finite.
+    const anchorStrokes = wm.links
+      .filter((l) => l.nodes[0].id === d.id || l.nodes[1].id === d.id)
+      .filter((l) => side.anchor === l.sides.A.anchor || l.sides.Z.anchor === side.anchor)
+      .map((l) => l.stroke);
+    const maxLinkWidth = anchorStrokes.length > 0 ? Math.max(...anchorStrokes) : 0;
 
     // Change x values for left/right anchors
     if (side.anchor === Anchor.Left || side.anchor === Anchor.Right) {
@@ -441,15 +442,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       return;
     }
 
-    let zoomed: Weathermap = wm;
-
-    if (e.deltaY > 0) {
-      zoomed.settings.panel.zoomScale += 1;
-    } else {
-      zoomed.settings.panel.zoomScale -= 1;
-    }
+    const delta = e.deltaY > 0 ? 1 : -1;
     onOptionsChange({
-      weathermap: zoomed,
+      weathermap: {
+        ...wm,
+        settings: {
+          ...wm.settings,
+          panel: { ...wm.settings.panel, zoomScale: wm.settings.panel.zoomScale + delta },
+        },
+      },
     });
   };
 
