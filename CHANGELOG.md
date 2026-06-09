@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.3) (2026-06-09)
+
+### Chores
+
+* replace `nodejs.org` badge link in `README.md` with `CONTRIBUTING.md` link
+* upgrade `testing/exporter` Go dependencies to resolve `govulncheck` CVEs (GO-2022-0322, GO-2026-5037, GO-2026-5039)
+
 ## [1.1.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.2) (2026-06-09)
 
 ### Bug Fixes
