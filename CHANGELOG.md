@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.2.0) (2026-06-09)
+
+### Bug Fixes
+
+* **query-matching**: links intermittently showed `n/a` despite valid query data — `getDataFrameName` was not passing `allFrames` to `getFieldDisplayName`, so Grafana could not disambiguate multiple series sharing the same field name; frame ordering (non-deterministic between refreshes) determined which series matched ([#54](https://github.com/allamiro/grafana-network-weathermap-ng/issues/54), PR [#102](https://github.com/allamiro/grafana-network-weathermap-ng/pull/102))
+* **performance**: panel editor lag and slow re-render on large weathermaps — `generateDrawnLink` rebuilt the full data-frame value array from scratch for every link, O(links × frames) per refresh; replaced with a `useMemo`-cached `Map<name, value>` computed once per data change, reducing to O(frames) total ([#47](https://github.com/allamiro/grafana-network-weathermap-ng/issues/47), [#48](https://github.com/allamiro/grafana-network-weathermap-ng/issues/48), PR [#103](https://github.com/allamiro/grafana-network-weathermap-ng/pull/103))
+* **tooltip-graph**: mini graph in link tooltip showed flat line or incorrect time axis — two root causes: (1) `let copy = frame` was a reference copy that permanently mutated field configs in `data.series`; (2) `tweakScale`/`tweakAxis` ran on the time field as well as value fields, distorting the x-axis range and applying the bps formatter to time labels ([#55](https://github.com/allamiro/grafana-network-weathermap-ng/issues/55), PR [#104](https://github.com/allamiro/grafana-network-weathermap-ng/pull/104))
+
 ## [1.1.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.3) (2026-06-09)
 
 ### Chores
