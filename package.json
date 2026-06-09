@@ -72,7 +72,8 @@
     "webpack-livereload-plugin": "^3.0.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "npm": ">=9"
   },
   "dependencies": {
     "@emotion/css": "^11.1.3",
