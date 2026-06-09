@@ -121,7 +121,8 @@ const getStyles = () => {
       margin-right: 5px;
     `,
     colorLabel: css`
-      line-height: 0px;
+      line-height: normal;
+      white-space: nowrap;
     `,
   };
 };
