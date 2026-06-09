@@ -14,11 +14,11 @@ For local instances, plugins are installed and updated via a simple CLI command.
 
 Use the grafana-cli tool to install Network Weathermap from the commandline:
 
-```grafana-cli plugins install knightss27-weathermap-panel```
+```grafana-cli plugins install tamirsuliman-weathermap-panel```
 
 The plugin will be installed into your grafana plugins directory; the default is /var/lib/grafana/plugins. [More information on the cli tool.](https://grafana.com/docs/grafana/latest/administration/cli/#plugins-commands)
 
-Alternatively, you can manually download the .zip file from the [latest release](https://github.com/knightss27/grafana-network-weathermap/releases/latest/) and unpack it into your grafana plugins directory.
+Alternatively, you can manually download the .zip file from the [latest release](https://github.com/allamiro/grafana-network-weathermap-ng/releases/latest/) and unpack it into your grafana plugins directory.
 
 
 #### 2: Add the Panel to a Dashboard
@@ -29,7 +29,7 @@ To see a list of installed panels, click the Plugins item in the main menu. Both
 
 ### Testing
 
-For testing with Docker, follow the instructions on the [testing README](https://github.com/knightss27/grafana-network-weathermap/tree/main/testing#readme). This will provide you with an instance to play around with.
+For testing with Docker, follow the instructions on the [testing README](https://github.com/allamiro/grafana-network-weathermap-ng/tree/main/testing#readme). This will provide you with an instance to play around with.
 
 ---
 ## Creating a New Weathermap
@@ -84,7 +84,7 @@ By default, the panel will start completely blank, looking something like this:
 - You probably want this number in `bits/sec`, unless your links are expecting something else (each link has customizable units, and default units are customizable in the global settings for the panel).
 - The weathermap will always choose the most recent data point available. If you want your links graphs to have data, make sure your queries are ranges and not "Instant" queries, as this will mean there is no data to show on each graph.
 - Once you have added a query in the panel editor, you can can see all queries and select one from the dropdown in the Query fields of the links.
-- See the [FAQ](/faq) or [Github issues](https://github.com/knightss27/grafana-network-weathermap/issues) if you are having issues adding data (especially Zabbix datasource users).
+- See the [FAQ](/faq) or [Github issues](https://github.com/allamiro/grafana-network-weathermap-ng/issues) if you are having issues adding data (especially Zabbix datasource users).
 
 **PLEASE NOTE:** _Queries with the exact same labels will be considered as such. If you have multiple queries and are unable to select the one that you want, double check to make sure it is labeled uniquely._
 
