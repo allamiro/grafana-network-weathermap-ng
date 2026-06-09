@@ -45,15 +45,10 @@ export const ExportForm = ({ value, onChange }: Props) => {
     generateDownloadLink(svgUrl, `network-weathermap-${new Date().toISOString()}.svg`);
   };
 
-  // const handleJSONExport = () => {
-  //   let weathermap: any = Object.assign({}, value);
-  //   weathermap.links = weathermap.links.map((link: Link) => {
-  //     return [link.nodes[0].id, link.nodes[1].id];
-  //   });
-
-  //   const data = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(weathermap));
-  //   generateDownloadLink(data, 'network-weathermap.json');
-  // };
+  const handleJSONExport = () => {
+    const data = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(value, null, 2));
+    generateDownloadLink(data, `network-weathermap-${new Date().toISOString()}.json`);
+  };
 
   if (value) {
     return (
@@ -62,9 +57,9 @@ export const ExportForm = ({ value, onChange }: Props) => {
           <Button onClick={handleSVGExport} className={styles.exportButton}>
             Export SVG
           </Button>
-          {/* <Button onClick={handleJSONExport} className={styles.exportJSONButton}>
+          <Button onClick={handleJSONExport} className={styles.exportJSONButton}>
             Export JSON
-          </Button> */}
+          </Button>
         </InlineFieldRow>
       </React.Fragment>
     );
