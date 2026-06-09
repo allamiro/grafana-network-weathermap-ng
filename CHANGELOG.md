@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.2) (2026-06-09)
+
+### Bug Fixes
+
+* **security**: add `noopener,noreferrer` to all `window.open()` calls — prevents tab-nabbing vulnerability on dashboard link clicks ([#98](https://github.com/allamiro/grafana-network-weathermap-ng/pull/98))
+* **api**: replace direct `window.location` access with `locationService.getSearch()` from `@grafana/runtime` ([#98](https://github.com/allamiro/grafana-network-weathermap-ng/pull/98))
+
+### Chores
+
+* remove debug `console.log` calls from `utils.ts` and `WeathermapBuilder.tsx`
+* move developer setup docs to `CONTRIBUTING.md`; fix relative LICENSE link in `README.md`
+
 ## [1.1.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.1.1) (2026-06-09)
 
 ### Security
