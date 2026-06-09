@@ -1,119 +1,154 @@
-# Grafana Network Weathermap Plugin
+<div align="center">
+  <img src="src/img/logo.svg" alt="Grafana Network Weathermap NG" width="200" height="200">
 
-<p align="center">
-  <img src="src/img/logo.svg" alt="Plugin Logo" width="120" height="120">
-</p>
+  # Grafana Network Weathermap NG
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Grafana Version](https://img.shields.io/badge/Grafana-10%2B-orange)](https://grafana.com/)
-[![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://nodejs.org/)
+  **A modernized, actively maintained network weathermap panel plugin for Grafana**
 
-<p align="center">
-  <strong>A modernized, actively maintained network weathermap panel plugin for Grafana</strong>
-</p>
+  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+  [![Grafana Version](https://img.shields.io/badge/Grafana-12%2B-orange)](https://grafana.com/)
+  [![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://nodejs.org/)
 
-This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
+  This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
+</div>
 
 ---
 
-## ✨ Features
+## Features
 
-- 🗺️ **Customizable network weathermaps** with modern design
-- 🔄 **Grafana integration** - seamless interoperability with Grafana data sources
-- 🎨 **PHP Network Weathermap compatibility** - familiar design patterns
-- 📊 **Real-time data visualization** - dynamic updates based on your metrics
-- 🛠️ **Easy configuration** - intuitive panel editor interface
+- **Customizable network weathermaps** — draw nodes, links, and color scales that match your infrastructure layout
+- **Real-time data visualization** — dynamic link and node coloring based on live Grafana metrics
+- **PHP Network Weathermap compatibility** — familiar design patterns for teams migrating from classic tools
+- **Multi-source support** — works with Prometheus, InfluxDB, Zabbix, and any Grafana-compatible data source
+- **Intuitive panel editor** — build and modify maps entirely within the Grafana UI, no external tools required
 
-## 📸 Screenshots
+---
 
-### 🚀 Quick Start
+## Screenshots
 
-#### Installation
+<p align="center">
+  <img src="src/img/general-example.png" alt="Network Weathermap Overview" width="700">
+</p>
 
-1. **Download the plugin** from the [Grafana Marketplace](https://grafana.com/grafana/plugins/) or build from source
-2. **Extract to plugins directory**: `unzip plugin.zip -d /var/lib/grafana/plugins/`
-3. **Restart Grafana**
-4. **Enable the plugin** in Grafana > Configuration > Plugins
+<p align="center">
+  <img src="src/img/example_00.png" alt="Example 1" width="340">
+  <img src="src/img/example_01.png" alt="Example 2" width="340">
+</p>
 
-#### Basic Usage
+---
 
-1. **Create a new dashboard** or open an existing one
-2. **Add panel** → Search for "Network Weathermap"
-3. **Configure data sources** (Prometheus, InfluxDB, etc.)
-4. **Design your weathermap** using the visual editor
-5. **Save and enjoy** your real-time network visualization!
+## Getting Started
 
+### Requirements
 
+| Requirement | Minimum Version |
+|---|---|
+| Grafana | 12.0.0 |
+| Node.js | 20.x |
 
-### 📊 More Examples
+### Installation
 
-![Example Image 2](https://raw.githubusercontent.com/allamiro/grafana-network-weathermap/main/src/img/example_00.png)
+**Option 1 — Grafana Marketplace (recommended)**
 
+1. In Grafana, go to **Administration → Plugins → Find more plugins**
+2. Search for **Network Weathermap**
+3. Click **Install**
 
+**Option 2 — Manual**
 
-## 🔄 Modernization Updates
+```bash
+# Download the latest release
+curl -LO https://github.com/allamiro/grafana-network-weathermap-ng/releases/latest/download/tamirsuliman-weathermap-panel.zip
 
-This fork modernizes the original plugin for current Grafana versions with the following changes:
+# Extract to your Grafana plugins directory
+unzip tamirsuliman-weathermap-panel.zip -d /var/lib/grafana/plugins/
 
-- **Grafana 10/11 compatibility** — Updated `@grafana/data`, `@grafana/runtime`, and `@grafana/ui` to 11.x.
-- **React 18** — Upgraded from React 17 to React 18.
-- **Node 20+** — Minimum Node.js version is now 20.
-- **TypeScript 5** — Upgraded to TypeScript 5.4+.
-- **Modern styling** — Migrated from `stylesFactory` to `useStyles2` and from `emotion` to `@emotion/css`.
-- **Type safety** — Removed all `@ts-ignore` overrides; added proper types for event handlers and data access.
-- **Deprecated API fixes** — Replaced `Vector.get()` with direct array indexing.
-- **Playwright E2E** — Migrated from deprecated Cypress-based `@grafana/e2e` to Playwright-based `@grafana/plugin-e2e`.
+# Restart Grafana
+systemctl restart grafana-server
+```
 
-## 🚀 Getting Started
+### Quick Start
 
-### 📋 Requirements
+1. Create or open a dashboard
+2. **Add panel** → search for **Network Weathermap**
+3. Connect a data source (Prometheus, InfluxDB, etc.)
+4. Use the **Map Editor** tab to add nodes and links
+5. Assign metrics to links and configure color thresholds
+6. Save the dashboard
 
-- Grafana >= 10.0.0
-- Node.js >= 20
+---
 
-### 💻 Development
+## Development
+
+### Setup
 
 ```bash
 # Install dependencies
-npm install
+npm install --legacy-peer-deps
 
 # Start development server (watches for changes)
 npm run dev
 
-# Run Grafana with the plugin loaded
+# In a separate terminal, start Grafana with the plugin loaded
 npm run server
-
-# Run unit tests
-npm run test:ci
-
-# Run E2E tests
-npm run e2e
-
-# Lint
-npm run lint
-
-# Type check
-npm run typecheck
 ```
 
-### 🐳 Docker
+### Commands
 
-A `docker-compose.yaml` is provided for local development and testing:
+| Command | Description |
+|---|---|
+| `npm run dev` | Start webpack in watch mode |
+| `npm run build` | Production build |
+| `npm run test:ci` | Run unit tests |
+| `npm run e2e` | Run Playwright E2E tests |
+| `npm run lint` | ESLint check |
+| `npm run typecheck` | TypeScript type check |
+
+### Docker
+
+A `docker-compose.yaml` is provided for a fully provisioned local environment:
 
 ```bash
 docker-compose up --build
 ```
 
-This starts Grafana 11 at `http://localhost:3000` with the plugin pre-loaded and provisioned dashboards available.
+This starts Grafana at `http://localhost:3000` with the plugin pre-loaded and sample dashboards provisioned from the `provisioning/` directory.
 
-## ⚙️ Provisioning
+---
 
-Sample dashboards and data source configurations are included under the `provisioning/` directory. Running `docker-compose up` from a fresh environment provides a working example out of the box.
+## Modernization
 
-## 👤 Author
+This plugin modernizes the archived original for current Grafana versions:
+
+| Area | Change |
+|---|---|
+| Grafana SDK | Updated `@grafana/data`, `@grafana/runtime`, `@grafana/ui` to 11.x |
+| Grafana dependency | Minimum version raised to **12.0.0** |
+| React | Upgraded from React 17 to **React 18** |
+| Node.js | Minimum version raised to **20** |
+| TypeScript | Upgraded to **TypeScript 5.4+** |
+| Styling | Migrated from `stylesFactory` to `useStyles2` and `@emotion/css` |
+| Type safety | Removed all `@ts-ignore` overrides; added proper types throughout |
+| Deprecated APIs | Replaced `Vector.get()` with direct array indexing |
+| E2E testing | Migrated from deprecated `@grafana/e2e` to `@grafana/plugin-e2e` (Playwright) |
+| CI/CD | Added release workflow, GitHub Pages docs, and Grafana API compatibility checks |
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue first to discuss significant changes.
+
+- [Report a bug](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=feature_request.md)
+- [Browse open issues](https://github.com/allamiro/grafana-network-weathermap-ng/issues)
+
+---
+
+## Author
 
 **Tamir Suliman** — [allamiro@gmail.com](mailto:allamiro@gmail.com) — [GitHub](https://github.com/allamiro)
 
-## 📄 License
+## License
 
 Apache-2.0 — see [LICENSE](LICENSE) for details.
