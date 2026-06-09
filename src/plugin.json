@@ -21,6 +21,10 @@
       {
         "name": "License",
         "url": "https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/LICENSE"
+      },
+      {
+        "name": "sponsor",
+        "url": "https://github.com/sponsors/allamiro"
       }
     ],
     "screenshots": [
