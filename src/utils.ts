@@ -1,4 +1,4 @@
-import { DataFrame, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
+import { DataFrame, Field, FieldType, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
 import merge from 'lodash.merge';
 import { Anchor, DrawnNode, Link, Node, Weathermap } from 'types';
 import { v4 as uuidv4 } from 'uuid';
@@ -361,6 +361,23 @@ export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2
   return wm;
 }
 
+/**
+ * Returns the first numeric field in a data frame, falling back to fields[1].
+ * Non-standard datasources (Check MK, etc.) may not put the value at index 1 —
+ * they may omit the time field, reorder fields, or return table-style frames.
+ */
+export function getValueField(frame: DataFrame): Field {
+  const numeric = frame.fields.find((f) => f.type === FieldType.number);
+  if (numeric) {
+    return numeric;
+  }
+  // Fallback: use fields[1] for time-series frames (time at 0, value at 1)
+  if (frame.fields.length >= 2) {
+    return frame.fields[1];
+  }
+  throw new Error(`No value field found in frame "${frame.name}"`);
+}
+
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {
-  return getFieldDisplayName(frame.fields[1], frame);
+  return getFieldDisplayName(getValueField(frame), frame);
 };
