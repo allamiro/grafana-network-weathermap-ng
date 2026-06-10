@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { css } from '@emotion/css';
 import {
   Button,
+  ColorPicker,
   ControlledCollapse,
   InlineField,
   InlineFieldRow,
+  InlineLabel,
   InlineSwitch,
   Input,
   Select,
@@ -445,6 +447,42 @@ export const LinkForm = (props: Props) => {
                   Apply to All?
                 </Button>
               </ControlledCollapse>
+              <FormDivider title="Link Status" />
+              <InlineField grow label="Status Query" style={{ width: '100%' }}>
+                <Select
+                  onChange={(v) => {
+                    let weathermap: Weathermap = value;
+                    weathermap.links[i].statusQuery = v ? v.value : undefined;
+                    onChange(weathermap);
+                  }}
+                  value={dataWithIds.find((p) => p.value === link.statusQuery) ?? null}
+                  options={dataWithIds}
+                  placeholder="Select query (value < 1 = down)"
+                  isClearable
+                  menuShouldPortal
+                />
+              </InlineField>
+              <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
+                Down Color:
+                <ColorPicker
+                  color={link.statusDownColor || '#d32f2f'}
+                  onChange={(color) => {
+                    let weathermap: Weathermap = value;
+                    weathermap.links[i].statusDownColor = color;
+                    onChange(weathermap);
+                  }}
+                />
+              </InlineLabel>
+              <InlineField grow label="Blink when down">
+                <InlineSwitch
+                  value={link.statusBlink ?? false}
+                  onChange={(e) => {
+                    let weathermap: Weathermap = value;
+                    weathermap.links[i].statusBlink = e.currentTarget.checked;
+                    onChange(weathermap);
+                  }}
+                />
+              </InlineField>
               <InlineFieldRow className={styles.row}>
                 <Button variant="destructive" icon="trash-alt" size="md" onClick={() => removeLink(i)} className={''}>
                   Remove Link

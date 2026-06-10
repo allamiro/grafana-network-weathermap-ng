@@ -114,6 +114,9 @@ export interface Link {
   arrows: ArrowOptions;
   stroke: number;
   showThroughputPercentage: boolean;
+  statusQuery?: string;
+  statusDownColor?: string;
+  statusBlink?: boolean;
 }
 
 export interface DrawnNode extends Node {
@@ -154,6 +157,7 @@ export interface DrawnLink extends Link {
   lineEndZ: Position;
   arrowCenterZ: Position;
   arrowPolygonZ: any;
+  isDown: boolean;
 }
 
 export interface HoveredLink {
