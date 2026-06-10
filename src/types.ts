@@ -101,6 +101,7 @@ export interface LinkSide {
   labelOffset: number;
   anchor: Anchor;
   dashboardLink: string;
+  portLabel?: string;
 }
 
 export interface Link {

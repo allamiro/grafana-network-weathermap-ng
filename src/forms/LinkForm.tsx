@@ -342,6 +342,21 @@ export const LinkForm = (props: Props) => {
                             name={`${sName}dashboardLink`}
                           />
                         </InlineField>
+                        <InlineField grow label={`${sName} Port Label`} style={{ width: '100%' }}>
+                          <Input
+                            value={side.portLabel ?? ''}
+                            onChange={(e) => {
+                              let weathermap: Weathermap = value;
+                              weathermap.links[i].sides[sName].portLabel =
+                                e.currentTarget.value || undefined;
+                              onChange(weathermap);
+                            }}
+                            placeholder={'e.g. ge-0/0/1'}
+                            type={'text'}
+                            className={styles.nodeLabel}
+                            name={`${sName}portLabel`}
+                          />
+                        </InlineField>
                       </React.Fragment>
                     )}
                   </React.Fragment>
