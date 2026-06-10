@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.4](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.4) (2026-06-10)
+
+### Features
+
+* **link-decimals**: new global "Link Value Decimal Places" setting in Panel Options → Link Options — sets the number of decimal places for all link throughput labels (value text, bandwidth text, and percentage text); leave blank for automatic precision (existing behavior unchanged) ([#66](https://github.com/allamiro/grafana-network-weathermap-ng/issues/66), PR [#127](https://github.com/allamiro/grafana-network-weathermap-ng/pull/127))
+
 ## [1.4.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.3) (2026-06-10)
 
 ### Features
