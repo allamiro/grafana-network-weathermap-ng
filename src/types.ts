@@ -201,6 +201,7 @@ export interface WeathermapSettings {
     node: number;
     link: number;
   };
+  colorScaleMode?: 'percent' | 'value';
   panel: PanelOptions;
   tooltip: TooltipOptions;
   scale: TrafficPanelSettings;

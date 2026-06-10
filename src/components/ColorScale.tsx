@@ -20,14 +20,21 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
   if (settings.scale) {
     // Double check scale existence, since sometimes it doesn't before we get here.
     const minBandHeight = (settings.scale.fontSizing?.threshold ?? 12) + 4;
+    const isValueMode = settings.colorScaleMode === 'value';
 
-    thresholds.forEach((threshold, i) => {
-      const current: number = threshold.percent;
-      const next: number = thresholds[i + 1] !== undefined ? thresholds[i + 1].percent : 101;
-      let height: number = ((next - current) / 100) * settings.scale.size.height;
-      height = Math.max(height, minBandHeight);
-      scaleHeights[i] = height.toString() + 'px';
-    });
+    if (isValueMode || thresholds.length === 0) {
+      thresholds.forEach((_, i) => {
+        scaleHeights[i] = Math.max(settings.scale.size.height / Math.max(thresholds.length, 1), minBandHeight).toString() + 'px';
+      });
+    } else {
+      thresholds.forEach((threshold, i) => {
+        const current: number = threshold.percent;
+        const next: number = thresholds[i + 1] !== undefined ? thresholds[i + 1].percent : 101;
+        let height: number = ((next - current) / 100) * settings.scale.size.height;
+        height = Math.max(height, minBandHeight);
+        scaleHeights[i] = height.toString() + 'px';
+      });
+    }
   }
 
   if (settings.scale && settings.scale.fontSizing) {
@@ -56,41 +63,54 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
         >
           {settings.scale.title}
         </div>
-        {thresholds.map((threshold, i) => (
-          <div className={styles.colorScaleItem} key={i} data-testid="scale-item">
-            <span
-              className={cx(
-                styles.colorBox,
-                css`
-                  background: ${threshold.color};
-                  height: ${scaleHeights[i]};
-                  width: ${settings.scale.size.width}px;
-                `
-              )}
-            ></span>
-            <span
-              className={cx(
-                styles.colorLabel,
-                css`
-                  font-size: ${settings.scale.fontSizing.threshold}px;
-                  color: ${theme.colors.getContrastText(
-                    settings.panel.backgroundColor.startsWith('image')
-                      ? settings.panel.backgroundColor.split('|', 3)[1]
-                      : settings.panel.backgroundColor
-                  )};
-                `
-              )}
-            >
-              {threshold.percent +
-                '%' +
-                (thresholds[i + 1] === undefined
-                  ? threshold.percent >= 100
-                    ? ''
-                    : ' - 100%'
-                  : ' - ' + thresholds[i + 1].percent + '%')}
-            </span>
-          </div>
-        ))}
+        {thresholds.map((threshold, i) => {
+          const isValueMode = settings.colorScaleMode === 'value';
+          let label: string;
+          if (isValueMode) {
+            label =
+              thresholds[i + 1] === undefined
+                ? String(threshold.percent) + '+'
+                : threshold.percent + ' – ' + thresholds[i + 1].percent;
+          } else {
+            label =
+              threshold.percent +
+              '%' +
+              (thresholds[i + 1] === undefined
+                ? threshold.percent >= 100
+                  ? ''
+                  : ' - 100%'
+                : ' - ' + thresholds[i + 1].percent + '%');
+          }
+          return (
+            <div className={styles.colorScaleItem} key={i} data-testid="scale-item">
+              <span
+                className={cx(
+                  styles.colorBox,
+                  css`
+                    background: ${threshold.color};
+                    height: ${scaleHeights[i]};
+                    width: ${settings.scale.size.width}px;
+                  `
+                )}
+              ></span>
+              <span
+                className={cx(
+                  styles.colorLabel,
+                  css`
+                    font-size: ${settings.scale.fontSizing.threshold}px;
+                    color: ${theme.colors.getContrastText(
+                      settings.panel.backgroundColor.startsWith('image')
+                        ? settings.panel.backgroundColor.split('|', 3)[1]
+                        : settings.panel.backgroundColor
+                    )};
+                  `
+                )}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     );
   } else {
