@@ -83,6 +83,7 @@ export interface Node {
     statusDown: string;
   };
   nodeIcon: Icon | null;
+  useIconBoundaryForLinks?: boolean;
   isConnection: boolean;
   statusQuery?: string;
 }
