@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.1) (2026-06-10)
+
+### Features
+
+* **link-port-labels**: configurable A-side and Z-side port/interface labels on links — enter interface names (e.g. `ge-0/0/0`) per side in the link editor; labels render adjacent to the link line at 25% from each endpoint, rotated to follow the link direction ([#71](https://github.com/allamiro/grafana-network-weathermap-ng/issues/71), PR [#119](https://github.com/allamiro/grafana-network-weathermap-ng/pull/119))
+* **link-status**: per-link up/down status indicator — assign a status query to any link; when the value is 0 or absent the link renders in a configurable down color with a dashed stroke; optional blink animation draws attention to down links; overrides gradient/flow-animation rendering while down ([#56](https://github.com/allamiro/grafana-network-weathermap-ng/issues/56), PR [#120](https://github.com/allamiro/grafana-network-weathermap-ng/pull/120))
+* **absolute-scale**: color scale mode toggle (Percentage / Absolute Value) — in absolute mode, threshold values are compared directly against raw metric values instead of percentage of max bandwidth, enabling dBm, SNR, latency, and other non-percentage scales; the color scale legend adapts to show value ranges; backward-compatible (existing configs default to percentage mode) ([#60](https://github.com/allamiro/grafana-network-weathermap-ng/issues/60), PR [#121](https://github.com/allamiro/grafana-network-weathermap-ng/pull/121))
+
 ## [1.4.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.0) (2026-06-10)
 
 ### Features
