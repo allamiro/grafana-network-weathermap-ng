@@ -313,6 +313,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     const linkValueFormatter = getlinkValueFormatter(
       d.units ? d.units : wm.settings.link.defaultUnits ? wm.settings.link.defaultUnits : 'bps'
     );
+    const linkDecimals = wm.settings.link.linkDecimals;
 
     // Set the link's source and target node
     toReturn.source = nodes.filter((n) => n.id === toReturn.nodes[0].id)[0];
@@ -343,13 +344,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           toReturn.sides[side].currentValue = frameValue;
 
           // Get the text formatted to KiB/MiB/etc.
-          let scaledSideValue = linkValueFormatter(toReturn.sides[side].currentValue);
+          let scaledSideValue = linkValueFormatter(toReturn.sides[side].currentValue, linkDecimals);
           toReturn.sides[side].currentValueText = `${scaledSideValue.text} ${scaledSideValue.suffix}`;
 
           // Get the percentage througput text
           toReturn.sides[side].currentPercentageText =
             toReturn.sides[side].bandwidth > 0
-              ? `${((toReturn.sides[side].currentValue / toReturn.sides[side].bandwidth) * 100).toFixed(2)}%`
+              ? `${((toReturn.sides[side].currentValue / toReturn.sides[side].bandwidth) * 100).toFixed(linkDecimals ?? 2)}%`
               : 'n/a%';
         }
       }
@@ -361,7 +362,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         toReturn.sides[side].currentText = toReturn.sides[side].currentValueText;
       }
 
-      let scaledBandwidth = linkValueFormatter(toReturn.sides[side].bandwidth);
+      let scaledBandwidth = linkValueFormatter(toReturn.sides[side].bandwidth, linkDecimals);
       toReturn.sides[side].currentBandwidthText = `${scaledBandwidth.text} ${scaledBandwidth.suffix}`;
     }
 

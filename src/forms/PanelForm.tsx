@@ -228,6 +228,21 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.link.defaultUnits ? value.settings.link.defaultUnits : 'bps'}
           />
         </InlineField>
+        <InlineField grow label={'Link Value Decimal Places'} tooltip={'Number of decimal places for throughput labels and percentage values. Leave blank for automatic precision.'}>
+          <Input
+            type="number"
+            min={0}
+            max={10}
+            placeholder="auto"
+            value={value.settings.link.linkDecimals ?? ''}
+            onChange={(e) => {
+              let wm = value;
+              const v = e.currentTarget.valueAsNumber;
+              wm.settings.link.linkDecimals = isNaN(v) ? undefined : Math.max(0, Math.floor(v));
+              onChange(wm);
+            }}
+          />
+        </InlineField>
         <InlineField grow label={'Reset All Links to Default Units'}>
           <Button
             variant="destructive"
