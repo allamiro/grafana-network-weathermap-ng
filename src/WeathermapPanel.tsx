@@ -6,6 +6,7 @@ import {
   DrawnNode,
   Link,
   LinkSide,
+  LinkTooltipMetric,
   Node,
   SimpleOptions,
   Position,
@@ -706,6 +707,35 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               Throughput (%) - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentPercentageText}, Outbound:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentPercentageText}
             </div>
+            {hoveredLink.link.tooltipMetrics && hoveredLink.link.tooltipMetrics.length > 0 && (
+              <div style={{ borderTop: `1px solid ${theme.colors.border.medium}`, marginTop: '4px', paddingTop: '4px' }}>
+                {hoveredLink.link.tooltipMetrics.map((metric: LinkTooltipMetric, idx: number) => {
+                  const fmt = getlinkValueFormatter(
+                    metric.units || (hoveredLink.link.units ? hoveredLink.link.units : wm.settings.link.defaultUnits ? wm.settings.link.defaultUnits : 'bps')
+                  );
+                  const linkDecimals = wm.settings.link.linkDecimals;
+                  const inboundVal = metric.queryA ? dataFrameMap.get(metric.queryA) : undefined;
+                  const outboundVal = metric.queryZ ? dataFrameMap.get(metric.queryZ) : undefined;
+                  const fmtVal = (v: number | undefined) => {
+                    if (v === undefined) { return 'n/a'; }
+                    const r = fmt(v, linkDecimals);
+                    return `${r.text} ${r.suffix}`.trim();
+                  };
+                  const parts: string[] = [];
+                  if (metric.queryA !== undefined && metric.queryA !== '') {
+                    parts.push(`Inbound: ${fmtVal(inboundVal)}`);
+                  }
+                  if (metric.queryZ !== undefined && metric.queryZ !== '') {
+                    parts.push(`Outbound: ${fmtVal(outboundVal)}`);
+                  }
+                  return (
+                    <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
+                      {metric.label}{parts.length > 0 ? ` - ${parts.join(', ')}` : ''}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <div style={{ fontSize: wm.settings.tooltip.fontSize, paddingBottom: '4px' }}>
               {hoveredLink.link.sides[hoveredLink.side].dashboardLink.length > 0 ? 'Click to see more.' : ''}
             </div>
