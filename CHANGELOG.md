@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.2) (2026-06-10)
+
+### Features
+
+* **template-variables**: Grafana dashboard variables (`$var`, `${var}`) are now resolved at draw time across all user-entered string fields — node labels, node/link status queries, node/link dashboard links, link A/Z throughput queries, and link A/Z bandwidth queries; enables dynamic multi-site maps, variable-driven queries, and variable-based dashboard links without duplicating panels ([#77](https://github.com/allamiro/grafana-network-weathermap-ng/issues/77), PR [#123](https://github.com/allamiro/grafana-network-weathermap-ng/pull/123))
+
 ## [1.4.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.1) (2026-06-10)
 
 ### Features
