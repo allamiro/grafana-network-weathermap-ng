@@ -6,7 +6,7 @@
     - This is a continuation fork. The original plugin was archived in 2023. This fork (`tamirsuliman-weathermap-panel`) is modernized for Grafana 12+ and actively maintained. Config exported from the original plugin is compatible.
 
 - **Q: What is the minimum Grafana version?**
-    - Grafana **12.0.0**. The plugin depends on `@grafana/*` SDK v11 APIs that are not available in earlier versions.
+    - Grafana **11.0.0**. The plugin uses `@grafana/*` SDK v11 APIs. API compatibility is verified against Grafana 11.x and 12.x in CI.
 
 ## Data / Queries
 
