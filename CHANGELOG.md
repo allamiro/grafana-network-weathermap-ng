@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.7) (2026-06-10)
+
+### Features
+
+* **node-color-metric**: nodes can now be colored dynamically based on a metric query value — threshold mappings in the node Status section assign colors when the query value meets or exceeds a threshold (highest matching threshold wins), replacing the previous exact-value match; a new **Color Target** toggle (Border / Background / Both) controls which part of the node is colored, enabling full background fill coloring for CPU utilization, temperature, availability score, and similar metrics; all changes are backward compatible (existing status queries and StatusDown color behavior unchanged) ([#68](https://github.com/allamiro/grafana-network-weathermap-ng/issues/68))
+
 ## [1.4.6](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.6) (2026-06-10)
 
 ### Features
