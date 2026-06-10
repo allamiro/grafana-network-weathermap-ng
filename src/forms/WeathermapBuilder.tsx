@@ -45,6 +45,9 @@ export const WeathermapBuilder = (props: Props) => {
           font: theme.colors.secondary.contrastText,
         },
         showAllWithPercentage: false,
+        dynamicStroke: { enabled: false, minWidth: 1, maxWidth: 10 },
+        flowAnimation: { enabled: false, speed: 2 },
+        gradientColor: false,
       },
       fontSizing: {
         node: 10,
