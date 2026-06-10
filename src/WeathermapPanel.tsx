@@ -47,13 +47,13 @@ function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
   // Resolve Grafana template variables ($var) at draw time
   const tmplSrv = getTemplateSrv();
   if (toReturn.label !== undefined) {
-    toReturn.label = tmplSrv.replace(toReturn.label);
+    toReturn.label = tmplSrv?.replace(toReturn.label) ?? toReturn.label;
   }
   if (toReturn.statusQuery) {
-    toReturn.statusQuery = tmplSrv.replace(toReturn.statusQuery);
+    toReturn.statusQuery = tmplSrv?.replace(toReturn.statusQuery) ?? toReturn.statusQuery;
   }
   if (toReturn.dashboardLink) {
-    toReturn.dashboardLink = tmplSrv.replace(toReturn.dashboardLink);
+    toReturn.dashboardLink = tmplSrv?.replace(toReturn.dashboardLink) ?? toReturn.dashboardLink;
   }
 
   toReturn.labelWidth = measureText(toReturn.label ? toReturn.label : '', wm.settings.fontSizing.node).width;
@@ -297,17 +297,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     const tmplSrv = getTemplateSrv();
     (['A', 'Z'] as const).forEach((side) => {
       if (toReturn.sides[side].bandwidthQuery) {
-        toReturn.sides[side].bandwidthQuery = tmplSrv.replace(toReturn.sides[side].bandwidthQuery!);
+        toReturn.sides[side].bandwidthQuery = tmplSrv?.replace(toReturn.sides[side].bandwidthQuery!) ?? toReturn.sides[side].bandwidthQuery;
       }
       if (toReturn.sides[side].query) {
-        toReturn.sides[side].query = tmplSrv.replace(toReturn.sides[side].query!);
+        toReturn.sides[side].query = tmplSrv?.replace(toReturn.sides[side].query!) ?? toReturn.sides[side].query;
       }
       if (toReturn.sides[side].dashboardLink) {
-        toReturn.sides[side].dashboardLink = tmplSrv.replace(toReturn.sides[side].dashboardLink);
+        toReturn.sides[side].dashboardLink = tmplSrv?.replace(toReturn.sides[side].dashboardLink) ?? toReturn.sides[side].dashboardLink;
       }
     });
     if (toReturn.statusQuery) {
-      toReturn.statusQuery = tmplSrv.replace(toReturn.statusQuery);
+      toReturn.statusQuery = tmplSrv?.replace(toReturn.statusQuery) ?? toReturn.statusQuery;
     }
 
     const linkValueFormatter = getlinkValueFormatter(
