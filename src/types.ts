@@ -190,6 +190,7 @@ export interface WeathermapSettings {
     };
     showAllWithPercentage: boolean;
     defaultUnits?: string;
+    linkDecimals?: number;
     valueMappingMode?: 'last' | 'avg';
     dynamicStroke?: {
       enabled: boolean;
