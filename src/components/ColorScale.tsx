@@ -27,10 +27,12 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
         scaleHeights[i] = Math.max(settings.scale.size.height / Math.max(thresholds.length, 1), minBandHeight).toString() + 'px';
       });
     } else {
+      const maxThreshold = thresholds[thresholds.length - 1]?.percent ?? 100;
+      const ceiling = Math.max(101, maxThreshold + 1);
       thresholds.forEach((threshold, i) => {
         const current: number = threshold.percent;
-        const next: number = thresholds[i + 1] !== undefined ? thresholds[i + 1].percent : 101;
-        let height: number = ((next - current) / 100) * settings.scale.size.height;
+        const next: number = thresholds[i + 1] !== undefined ? thresholds[i + 1].percent : ceiling;
+        let height: number = ((next - current) / ceiling) * settings.scale.size.height;
         height = Math.max(height, minBandHeight);
         scaleHeights[i] = height.toString() + 'px';
       });
@@ -77,7 +79,7 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
               '%' +
               (thresholds[i + 1] === undefined
                 ? threshold.percent >= 100
-                  ? ''
+                  ? '+'
                   : ' - 100%'
                 : ' - ' + thresholds[i + 1].percent + '%');
           }
