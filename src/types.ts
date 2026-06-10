@@ -115,6 +115,7 @@ export interface Link {
   arrows: ArrowOptions;
   stroke: number;
   showThroughputPercentage: boolean;
+  linkOffset?: number;
   statusQuery?: string;
   statusDownColor?: string;
   statusBlink?: boolean;

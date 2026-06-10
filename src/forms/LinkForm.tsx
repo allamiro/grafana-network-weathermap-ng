@@ -387,6 +387,26 @@ export const LinkForm = (props: Props) => {
                   }}
                 />
               </InlineField>
+              <InlineField
+                grow
+                label={'Link Offset (parallel links)'}
+                style={{ width: '100%' }}
+                tooltip={'Shifts the link line perpendicular to its direction. Use different values on parallel links between the same nodes to separate them visually.'}
+              >
+                <Input
+                  value={link.linkOffset ?? ''}
+                  onChange={(e) => {
+                    let wm = value;
+                    const raw = e.currentTarget.value;
+                    wm.links[i].linkOffset = raw === '' ? undefined : Number(raw);
+                    onChange(wm);
+                  }}
+                  placeholder={'0'}
+                  type={'number'}
+                  className={styles.nodeLabel}
+                  name={'linkOffset'}
+                />
+              </InlineField>
               <ControlledCollapse label="Stroke and Arrow">
                 <InlineField grow label="Link Stroke Width" className={styles.inlineField}>
                   <Slider
