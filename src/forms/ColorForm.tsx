@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { css } from '@emotion/css';
-import { Button, Input, ColorPicker, Icon, useStyles2 } from '@grafana/ui';
-import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
+import { Button, Input, ColorPicker, Icon, useStyles2, RadioButtonGroup } from '@grafana/ui';
+import { GrafanaTheme2, SelectableValue, StandardEditorProps } from '@grafana/data';
 import { Weathermap } from 'types';
 
 interface Settings {
@@ -63,6 +63,21 @@ export const ColorForm = (props: Props) => {
 
   const [editedPercents, setEditedPercents] = useState(value.scale);
 
+  const scaleModeOptions: Array<SelectableValue<'percent' | 'value'>> = [
+    { label: 'Percentage', value: 'percent' },
+    { label: 'Absolute Value', value: 'value' },
+  ];
+
+  const currentMode = value.settings.colorScaleMode ?? 'percent';
+
+  const handleModeChange = (mode: 'percent' | 'value') => {
+    let weathermap: Weathermap = value;
+    weathermap.settings.colorScaleMode = mode;
+    onChange(weathermap);
+  };
+
+  const thresholdLabel = currentMode === 'value' ? 'Value' : '%';
+
   return (
     <React.Fragment>
       <h6
@@ -74,6 +89,10 @@ export const ColorForm = (props: Props) => {
       >
         Color Scale
       </h6>
+      <div className={styles.modeRow}>
+        <span className={styles.modeLabel}>Scale Mode</span>
+        <RadioButtonGroup options={scaleModeOptions} value={currentMode} onChange={handleModeChange} size="sm" />
+      </div>
       {editedPercents.map((threshold, i) => (
         <Input
           className={styles.item}
@@ -98,7 +117,12 @@ export const ColorForm = (props: Props) => {
               </div>
             </div>
           }
-          suffix={<Icon className={styles.trashIcon} name="trash-alt" onClick={() => handleDeletePercent(i)} />}
+          suffix={
+            <>
+              <span className={styles.unitSuffix}>{thresholdLabel}</span>
+              <Icon className={styles.trashIcon} name="trash-alt" onClick={() => handleDeletePercent(i)} />
+            </>
+          }
         />
       ))}
 
@@ -154,6 +178,22 @@ const getStyles = (theme: GrafanaTheme2) => {
       &:last-child {
         margin-bottom: 0;
       }
+    `,
+    modeRow: css`
+      display: flex;
+      align-items: center;
+      gap: ${theme.spacing(1)};
+      margin-bottom: ${theme.spacing(1)};
+    `,
+    modeLabel: css`
+      font-size: ${theme.typography.bodySmall.fontSize};
+      color: ${theme.colors.text.secondary};
+      white-space: nowrap;
+    `,
+    unitSuffix: css`
+      font-size: ${theme.typography.bodySmall.fontSize};
+      color: ${theme.colors.text.secondary};
+      padding: 0 ${theme.spacing(0.5)};
     `,
   };
 };

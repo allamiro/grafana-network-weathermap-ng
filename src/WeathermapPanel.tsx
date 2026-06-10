@@ -84,19 +84,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   const [selectedNodes, setSelectedNodes] = useState([] as DrawnNode[]);
 
   function getScaleColor(current: number, max: number) {
-    if (max === 0) {
-      return getSolidFromAlphaColor(wm.settings.link.stroke.color, wm.settings.panel.backgroundColor);
-    }
-
-    const percent = (current / max) * 100;
     const defaultColor = getSolidFromAlphaColor(wm.settings.link.stroke.color, wm.settings.panel.backgroundColor);
     let assignedColor = defaultColor;
 
-    wm.scale.forEach((threshold: Threshold) => {
-      if (threshold.percent <= percent) {
-        assignedColor = threshold.color;
+    if (wm.settings.colorScaleMode === 'value') {
+      wm.scale.forEach((threshold: Threshold) => {
+        if (threshold.percent <= current) {
+          assignedColor = threshold.color;
+        }
+      });
+    } else {
+      if (max === 0) {
+        return defaultColor;
       }
-    });
+      const percent = (current / max) * 100;
+      wm.scale.forEach((threshold: Threshold) => {
+        if (threshold.percent <= percent) {
+          assignedColor = threshold.color;
+        }
+      });
+    }
 
     return assignedColor;
   }
