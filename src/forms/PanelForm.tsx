@@ -319,6 +319,92 @@ export const PanelForm = ({ value, onChange }: Props) => {
         </InlineLabel>
         <FormDivider title="Arrow Options" />
 
+        <FormDivider title="Link Visualization" />
+        <InlineField grow label="Gradient Color" tooltip="Blend A-side and Z-side utilization colors along each link" className={styles.inlineField}>
+          <InlineSwitch
+            value={value.settings.link.gradientColor ?? false}
+            onChange={(e) => {
+              let options = value;
+              options.settings.link.gradientColor = e.currentTarget.checked;
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <InlineField grow label="Flow Animation" tooltip="Animate dashes along each link to indicate traffic direction" className={styles.inlineField}>
+          <InlineSwitch
+            value={value.settings.link.flowAnimation?.enabled ?? false}
+            onChange={(e) => {
+              let options = value;
+              if (!options.settings.link.flowAnimation) {
+                options.settings.link.flowAnimation = { enabled: false, speed: 2 };
+              }
+              options.settings.link.flowAnimation.enabled = e.currentTarget.checked;
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        {value.settings.link.flowAnimation?.enabled && (
+          <InlineField grow label="Animation Speed (s)" tooltip="Duration in seconds for one full animation cycle" className={styles.inlineField}>
+            <Slider
+              min={0.5}
+              max={10}
+              value={value.settings.link.flowAnimation?.speed ?? 2}
+              step={0.5}
+              onChange={(num) => {
+                let options = value;
+                if (!options.settings.link.flowAnimation) {
+                  options.settings.link.flowAnimation = { enabled: true, speed: 2 };
+                }
+                options.settings.link.flowAnimation.speed = num;
+                onChange(options);
+              }}
+            />
+          </InlineField>
+        )}
+        <InlineField grow label="Dynamic Stroke Width" tooltip="Scale link thickness with traffic utilization instead of using a fixed stroke" className={styles.inlineField}>
+          <InlineSwitch
+            value={value.settings.link.dynamicStroke?.enabled ?? false}
+            onChange={(e) => {
+              let options = value;
+              if (!options.settings.link.dynamicStroke) {
+                options.settings.link.dynamicStroke = { enabled: false, minWidth: 1, maxWidth: 10 };
+              }
+              options.settings.link.dynamicStroke.enabled = e.currentTarget.checked;
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        {value.settings.link.dynamicStroke?.enabled && (
+          <>
+            <InlineField grow label="Min Stroke Width" className={styles.inlineField}>
+              <Slider
+                min={1}
+                max={20}
+                value={value.settings.link.dynamicStroke?.minWidth ?? 1}
+                step={1}
+                onChange={(num) => {
+                  let options = value;
+                  options.settings.link.dynamicStroke!.minWidth = num;
+                  onChange(options);
+                }}
+              />
+            </InlineField>
+            <InlineField grow label="Max Stroke Width" className={styles.inlineField}>
+              <Slider
+                min={1}
+                max={30}
+                value={value.settings.link.dynamicStroke?.maxWidth ?? 10}
+                step={1}
+                onChange={(num) => {
+                  let options = value;
+                  options.settings.link.dynamicStroke!.maxWidth = num;
+                  onChange(options);
+                }}
+              />
+            </InlineField>
+          </>
+        )}
+
         <FormDivider title="Grid Options" />
         <InlineFieldRow className={styles.inlineRow}>
           <InlineField grow label="Enable Node Grid Snapping" className={styles.inlineField}>
