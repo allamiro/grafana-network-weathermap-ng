@@ -377,6 +377,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.arrows.width
     );
 
+    if (d.statusQuery) {
+      const sv = frameMap.get(d.statusQuery);
+      toReturn.isDown = sv === undefined || sv < 1;
+    } else {
+      toReturn.isDown = false;
+    }
+
     return toReturn;
   }
 
@@ -837,6 +844,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 }
               `}</style>
             )}
+            {links.some((d) => d.isDown && d.statusBlink) && (
+              <style>{`
+                @keyframes link-blink {
+                  0%, 100% { opacity: 1; }
+                  50% { opacity: 0.15; }
+                }
+              `}</style>
+            )}
             {wm.settings.link.gradientColor &&
               links.map((d) => (
                 <React.Fragment key={d.id}>
@@ -950,10 +965,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     <line
                       strokeWidth={getLinkStroke(d.sides.A.currentValue, d.sides.A.bandwidth, d.stroke)}
                       stroke={
-                        wm.settings.link.gradientColor
+                        d.isDown
+                          ? (d.statusDownColor || '#d32f2f')
+                          : wm.settings.link.gradientColor
                           ? `url(#grad-a-${d.id})`
                           : getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)
                       }
+                      strokeDasharray={d.isDown ? '8 4' : undefined}
                       x1={d.lineStartA.x}
                       y1={d.lineStartA.y}
                       x2={d.lineEndA.x}
@@ -969,7 +987,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       }}
                       style={{
                         ...(d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}),
-                        ...(wm.settings.link.flowAnimation?.enabled
+                        ...(d.isDown && d.statusBlink
+                          ? { animation: 'link-blink 1s ease-in-out infinite' }
+                          : wm.settings.link.flowAnimation?.enabled
                           ? {
                               strokeDasharray: '10 5',
                               animation: `link-flow-forward ${wm.settings.link.flowAnimation.speed}s linear infinite`,
@@ -1001,7 +1021,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                                         ${d.arrowPolygonA.p2.x}
                                         ${d.arrowPolygonA.p2.y}
                                     `}
-                          fill={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)}
+                          fill={d.isDown ? (d.statusDownColor || '#d32f2f') : getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)}
                           onMouseMove={(e) => {
                             handleLinkHover(d, 'A', e);
                           }}
@@ -1016,10 +1036,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         <line
                           strokeWidth={getLinkStroke(d.sides.Z.currentValue, d.sides.Z.bandwidth, d.stroke)}
                           stroke={
-                            wm.settings.link.gradientColor
+                            d.isDown
+                              ? (d.statusDownColor || '#d32f2f')
+                              : wm.settings.link.gradientColor
                               ? `url(#grad-z-${d.id})`
                               : getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)
                           }
+                          strokeDasharray={d.isDown ? '8 4' : undefined}
                           x1={d.lineStartZ.x}
                           y1={d.lineStartZ.y}
                           x2={d.lineEndZ.x}
@@ -1035,7 +1058,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           style={{
                             ...(d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}),
-                            ...(wm.settings.link.flowAnimation?.enabled
+                            ...(d.isDown && d.statusBlink
+                              ? { animation: 'link-blink 1s ease-in-out infinite' }
+                              : wm.settings.link.flowAnimation?.enabled
                               ? {
                                   strokeDasharray: '10 5',
                                   animation: `link-flow-forward ${wm.settings.link.flowAnimation.speed}s linear infinite`,
@@ -1052,7 +1077,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                                         ${d.arrowPolygonZ.p2.x}
                                         ${d.arrowPolygonZ.p2.y}
                                     `}
-                          fill={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)}
+                          fill={d.isDown ? (d.statusDownColor || '#d32f2f') : getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)}
                           onMouseMove={(e) => {
                             handleLinkHover(d, 'Z', e);
                           }}
