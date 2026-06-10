@@ -101,15 +101,6 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     return assignedColor;
   }
 
-  function getLinkStroke(currentValue: number, bandwidth: number, fixedStroke: number): number {
-    const ds = wm.settings.link.dynamicStroke;
-    if (!ds?.enabled || bandwidth === 0) {
-      return fixedStroke;
-    }
-    const pct = Math.min(1, Math.max(0, currentValue / bandwidth));
-    return ds.minWidth + (ds.maxWidth - ds.minWidth) * pct;
-  }
-
   // Get the middle point between two nodes
   function getMiddlePoint(source: Position, target: Position, offset: number): Position {
     const x = (source.x + target.x) / 2;
@@ -790,8 +781,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             setSelectedNodes([]);
           }}
         >
-          <defs>
-            {wm.settings.panel.grid.enabled && (
+          {wm.settings.panel.grid.enabled ? (
+            <defs>
               <pattern
                 id="smallGrid"
                 width={wm.settings.panel.grid.size}
@@ -806,43 +797,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   opacity={1}
                 />
               </pattern>
-            )}
-            {wm.settings.link.flowAnimation?.enabled && (
-              <style>{`
-                @keyframes link-flow-forward {
-                  from { stroke-dashoffset: 15; }
-                  to { stroke-dashoffset: 0; }
-                }
-              `}</style>
-            )}
-            {wm.settings.link.gradientColor &&
-              links.map((d) => (
-                <React.Fragment key={d.id}>
-                  <linearGradient
-                    id={`grad-a-${d.id}`}
-                    x1={d.lineStartA.x}
-                    y1={d.lineStartA.y}
-                    x2={d.lineEndA.x}
-                    y2={d.lineEndA.y}
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                  </linearGradient>
-                  <linearGradient
-                    id={`grad-z-${d.id}`}
-                    x1={d.lineStartZ.x}
-                    y1={d.lineStartZ.y}
-                    x2={d.lineEndZ.x}
-                    y2={d.lineEndZ.y}
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
-                  </linearGradient>
-                </React.Fragment>
-              ))}
-          </defs>
+            </defs>
+          ) : (
+            ''
+          )}
           <g
             transform={`translate(${
               (wm.settings.panel.panelSize.width * Math.pow(1.2, wm.settings.panel.zoomScale) -
@@ -926,12 +884,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     height={Math.abs(d.target.y - d.source.y)}
                   >
                     <line
-                      strokeWidth={getLinkStroke(d.sides.A.currentValue, d.sides.A.bandwidth, d.stroke)}
-                      stroke={
-                        wm.settings.link.gradientColor
-                          ? `url(#grad-a-${d.id})`
-                          : getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)
-                      }
+                      strokeWidth={d.stroke}
+                      stroke={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)}
                       x1={d.lineStartA.x}
                       y1={d.lineStartA.y}
                       x2={d.lineEndA.x}
@@ -945,15 +899,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           window.open(d.sides.A.dashboardLink, '_blank', 'noopener,noreferrer');
                         }
                       }}
-                      style={{
-                        ...(d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}),
-                        ...(wm.settings.link.flowAnimation?.enabled
-                          ? {
-                              strokeDasharray: '10 5',
-                              animation: `link-flow-forward ${wm.settings.link.flowAnimation.speed}s linear infinite`,
-                            }
-                          : {}),
-                      }}
+                      style={d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
                     ></line>
                     {tempNodes[d.source.index].isConnection ? (
                       <circle
@@ -992,12 +938,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           style={d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
                         ></polygon>
                         <line
-                          strokeWidth={getLinkStroke(d.sides.Z.currentValue, d.sides.Z.bandwidth, d.stroke)}
-                          stroke={
-                            wm.settings.link.gradientColor
-                              ? `url(#grad-z-${d.id})`
-                              : getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)
-                          }
+                          strokeWidth={d.stroke}
+                          stroke={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)}
                           x1={d.lineStartZ.x}
                           y1={d.lineStartZ.y}
                           x2={d.lineEndZ.x}
@@ -1011,15 +953,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                               window.open(d.sides.Z.dashboardLink, '_blank', 'noopener,noreferrer');
                             }
                           }}
-                          style={{
-                            ...(d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}),
-                            ...(wm.settings.link.flowAnimation?.enabled
-                              ? {
-                                  strokeDasharray: '10 5',
-                                  animation: `link-flow-forward ${wm.settings.link.flowAnimation.speed}s linear infinite`,
-                                }
-                              : {}),
-                          }}
+                          style={d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
                         ></line>
                         <polygon
                           points={`
