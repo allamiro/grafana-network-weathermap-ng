@@ -6,7 +6,7 @@
   **A modernized, actively maintained network weathermap panel plugin for Grafana**
 
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-  [![Grafana Version](https://img.shields.io/badge/Grafana-12%2B-orange)](https://grafana.com/)
+  [![Grafana Version](https://img.shields.io/badge/Grafana-11%2B-orange)](https://grafana.com/)
   [![Node Version](https://img.shields.io/badge/Node-20%2B-green)](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/CONTRIBUTING.md)
 
   This is a continuation of the original [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap), updated for modern Grafana environments.
@@ -43,7 +43,7 @@
 
 | Requirement | Minimum Version |
 |---|---|
-| Grafana | 12.0.0 |
+| Grafana | 11.0.0 |
 | Node.js | 20.x |
 
 ### Installation
@@ -91,7 +91,7 @@ This plugin modernizes the archived original for current Grafana versions:
 | Area | Change |
 |---|---|
 | Grafana SDK | Updated `@grafana/data`, `@grafana/runtime`, `@grafana/ui` to 11.x |
-| Grafana dependency | Minimum version raised to **12.0.0** |
+| Grafana dependency | Minimum version set to **11.0.0** |
 | React | Upgraded from React 17 to **React 18** |
 | Node.js | Minimum version raised to **20** |
 | TypeScript | Upgraded to **TypeScript 5.4+** |
