@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.5](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.5) (2026-06-10)
+
+### Features
+
+* **parallel-links**: support multiple links between the same two nodes with independent visual paths — a per-link "Link Offset" field (in the link editor, Link Options section) shifts the line perpendicularly to the A→Z direction; set positive/negative values on each parallel link to spread them apart; arrows, labels, and gradient coloring all follow the offset line correctly; zero or blank offset (default) preserves current straight-line behavior ([#63](https://github.com/allamiro/grafana-network-weathermap-ng/issues/63))
+
 ## [1.4.4](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.4) (2026-06-10)
 
 ### Features
