@@ -54,14 +54,22 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
   const rectHeight = useMemo(() => calculateRectangleAutoHeight(node, wm), [node, wm]);
   const textY = useMemo(() => calculateTextY(node), [node]);
 
-  let nodeIsDown = false;
+  let nodeStatusColor: string | null = null;
   if (node.statusQuery) {
-    let recentFrame = data.series
+    const recentFrame = data.series
       .filter((series) => getDataFrameName(series, data.series) === node.statusQuery)
       .map((frame) => frame.fields[1].values[frame.fields[1].values.length - 1]);
 
-    // Check if the node is down (data returns 0 or below, or doesn't exist)
-    nodeIsDown = recentFrame.length === 0 || (recentFrame.length > 0 && recentFrame[0] < 1);
+    const rawValue = recentFrame.length > 0 ? recentFrame[0] : undefined;
+
+    if (rawValue === undefined) {
+      nodeStatusColor = node.colors.statusDown;
+    } else if (node.statusValueMappings && node.statusValueMappings.length > 0) {
+      const match = node.statusValueMappings.find((m) => m.value === rawValue);
+      nodeStatusColor = match ? match.color : null;
+    } else {
+      nodeStatusColor = rawValue < 1 ? node.colors.statusDown : null;
+    }
   }
 
   // Check if this node is selected for dragging
@@ -108,7 +116,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
                     ? 'transparent'
                     : getSolidFromAlphaColor(node.colors.background, wm.settings.panel.backgroundColor)
                   : getSolidFromAlphaColor(
-                      nodeIsDown ? node.colors.statusDown : node.colors.border,
+                      nodeStatusColor !== null ? nodeStatusColor : node.colors.border,
                       wm.settings.panel.backgroundColor
                     )
               }

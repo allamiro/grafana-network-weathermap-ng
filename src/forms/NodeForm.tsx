@@ -16,7 +16,7 @@ import {
 } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
-import { Weathermap, Node } from 'types';
+import { Weathermap, Node, NodeStatusValueMapping } from 'types';
 import { CiscoIcons, NetworkingIcons, DatabaseIcons, ComputerIcons } from './iconOptions';
 import { getDataFrameName } from 'utils';
 
@@ -454,6 +454,64 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       }}
                     />
                   </InlineLabel>
+                  <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Value Mappings</p>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', opacity: 0.7 }}>
+                    Map query values to border colors. Overrides the default &lt;1 = down rule.
+                  </p>
+                  {(node.statusValueMappings || []).map((mapping, mi) => (
+                    <InlineFieldRow key={mi} className={styles.inlineRow}>
+                      <InlineField label="Value">
+                        <Input
+                          type="number"
+                          value={mapping.value}
+                          onChange={(e) => {
+                            let weathermap: Weathermap = value;
+                            weathermap.nodes[i].statusValueMappings![mi].value = e.currentTarget.valueAsNumber;
+                            onChange(weathermap);
+                          }}
+                          width={8}
+                        />
+                      </InlineField>
+                      <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
+                        Color:
+                        <ColorPicker
+                          color={mapping.color}
+                          onChange={(color) => {
+                            let weathermap: Weathermap = value;
+                            weathermap.nodes[i].statusValueMappings![mi].color = color;
+                            onChange(weathermap);
+                          }}
+                        />
+                      </InlineLabel>
+                      <Button
+                        variant="destructive"
+                        icon="trash-alt"
+                        size="sm"
+                        onClick={() => {
+                          let weathermap: Weathermap = value;
+                          weathermap.nodes[i].statusValueMappings!.splice(mi, 1);
+                          onChange(weathermap);
+                        }}
+                      />
+                    </InlineFieldRow>
+                  ))}
+                  <Button
+                    variant="secondary"
+                    icon="plus"
+                    size="sm"
+                    onClick={() => {
+                      let weathermap: Weathermap = value;
+                      const newMapping: NodeStatusValueMapping = { value: 0, color: '#ff0000' };
+                      weathermap.nodes[i].statusValueMappings = [
+                        ...(weathermap.nodes[i].statusValueMappings || []),
+                        newMapping,
+                      ];
+                      onChange(weathermap);
+                    }}
+                    style={{ marginTop: '4px' }}
+                  >
+                    Add Mapping
+                  </Button>
                 </ControlledCollapse>
               </InlineFieldRow>
               <InlineFieldRow className={styles.inlineRow}>
