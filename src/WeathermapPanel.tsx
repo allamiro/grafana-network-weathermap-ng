@@ -1175,6 +1175,70 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               })}
             </g>
             <g>
+              {links.map((d, i) => {
+                if (d.nodes[0].id === d.nodes[1].id) {
+                  return;
+                }
+                const dx = d.lineEndA.x - d.lineStartA.x;
+                const dy = d.lineEndA.y - d.lineStartA.y;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                if (len === 0) {
+                  return;
+                }
+                let angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+                const flipped = angleDeg > 90 || angleDeg < -90;
+                if (flipped) {
+                  angleDeg += 180;
+                }
+                const perpOffset = -(d.stroke / 2 + wm.settings.fontSizing.link / 2 + 2);
+                const labelDist = Math.min(len * 0.25, 30);
+
+                const aPosX = d.lineStartA.x + (dx / len) * labelDist;
+                const aPosY = d.lineStartA.y + (dy / len) * labelDist;
+
+                const zdx = d.lineEndZ.x - d.lineStartZ.x;
+                const zdy = d.lineEndZ.y - d.lineStartZ.y;
+                const zlen = Math.sqrt(zdx * zdx + zdy * zdy);
+                const zPosX = zlen > 0 ? d.lineStartZ.x + (zdx / zlen) * labelDist : d.lineStartZ.x;
+                const zPosY = zlen > 0 ? d.lineStartZ.y + (zdy / zlen) * labelDist : d.lineStartZ.y;
+
+                return (
+                  <React.Fragment key={i}>
+                    {d.sides.A.portLabel && (
+                      <g transform={`translate(${aPosX},${aPosY}) rotate(${angleDeg})`}>
+                        <text
+                          x={0}
+                          y={perpOffset}
+                          textAnchor="middle"
+                          dominantBaseline="auto"
+                          fontSize={`${wm.settings.fontSizing.link}px`}
+                          fill={wm.settings.link.label.font}
+                          className={styles.noSelect}
+                        >
+                          {d.sides.A.portLabel}
+                        </text>
+                      </g>
+                    )}
+                    {d.sides.Z.portLabel && (
+                      <g transform={`translate(${zPosX},${zPosY}) rotate(${angleDeg})`}>
+                        <text
+                          x={0}
+                          y={flipped ? -perpOffset : perpOffset}
+                          textAnchor="middle"
+                          dominantBaseline="auto"
+                          fontSize={`${wm.settings.fontSizing.link}px`}
+                          fill={wm.settings.link.label.font}
+                          className={styles.noSelect}
+                        >
+                          {d.sides.Z.portLabel}
+                        </text>
+                      </g>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </g>
+            <g>
               {nodes.map((d, i) => (
                 <MapNode
                   key={d.id}
@@ -1320,6 +1384,12 @@ const getStyles = () => {
       color: black;
       padding: 5px 10px;
       font-size: 12px;
+    `,
+    noSelect: css`
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     `,
   };
 };
