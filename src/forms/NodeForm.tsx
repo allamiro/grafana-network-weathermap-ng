@@ -29,6 +29,7 @@ interface Props extends StandardEditorProps<Weathermap, Settings> {}
 export const NodeForm = ({ value, onChange, context }: Props) => {
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
+  const [lockAspectRatio, setLockAspectRatio] = useState(false);
 
   let connectionCounter = 0;
   for (let node of value.nodes) {
@@ -130,7 +131,19 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
 
   const handleIconSizeChange = (amt: number, i: number, type: 'width' | 'height') => {
     let weathermap: Weathermap = value;
-    weathermap.nodes[i].nodeIcon!.size[type] = amt;
+    const icon = weathermap.nodes[i].nodeIcon!;
+    if (lockAspectRatio && icon.size.width > 0 && icon.size.height > 0) {
+      const ratio = icon.size.width / icon.size.height;
+      if (type === 'width') {
+        icon.size.width = amt;
+        icon.size.height = Math.round(amt / ratio);
+      } else {
+        icon.size.height = amt;
+        icon.size.width = Math.round(amt * ratio);
+      }
+    } else {
+      icon.size[type] = amt;
+    }
     onChange(weathermap);
   };
 
@@ -195,6 +208,26 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
     weathermap.nodes.push(node);
     onChange(weathermap);
     setCurrentNode(node);
+  };
+
+  const duplicateNode = (i: number) => {
+    let weathermap: Weathermap = value;
+    const source = weathermap.nodes[i];
+    const copy: Node = {
+      ...JSON.parse(JSON.stringify(source)),
+      id: uuidv4(),
+      position: [source.position[0] + 20, source.position[1] + 20] as [number, number],
+      anchors: {
+        0: { numLinks: 0, numFilledLinks: 0 },
+        1: { numLinks: 0, numFilledLinks: 0 },
+        2: { numLinks: 0, numFilledLinks: 0 },
+        3: { numLinks: 0, numFilledLinks: 0 },
+        4: { numLinks: 0, numFilledLinks: 0 },
+      },
+    };
+    weathermap.nodes.push(copy);
+    onChange(weathermap);
+    setCurrentNode(copy);
   };
 
   const removeNode = (i: number) => {
@@ -311,6 +344,16 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     name={'Dashboard link'}
                   />
                 </InlineField>
+                <InlineField grow label={'Show Label'} className={styles.inlineField}>
+                  <InlineSwitch
+                    value={node.showLabel !== false}
+                    onChange={(e) => {
+                      let options = value;
+                      options.nodes[i].showLabel = e.currentTarget.checked;
+                      onChange(options);
+                    }}
+                  />
+                </InlineField>
               </InlineFieldRow>
               <InlineFieldRow className={styles.inlineRow}>
                 <ControlledCollapse label="Icon">
@@ -356,12 +399,19 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                   ) : (
                     ''
                   )}
+                  <InlineField grow label={'Lock Aspect Ratio'}>
+                    <InlineSwitch
+                      value={lockAspectRatio}
+                      onChange={(e) => setLockAspectRatio(e.currentTarget.checked)}
+                    />
+                  </InlineField>
                   <InlineField grow label={'Width'}>
                     <Input
                       value={node.nodeIcon!.size.width}
                       onChange={(e) => handleIconSizeChange(e.currentTarget.valueAsNumber, i, 'width')}
                       placeholder={'Width'}
                       type={'number'}
+                      min={1}
                       className={styles.nodeLabel}
                       name={'iconWidth'}
                     />
@@ -372,6 +422,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       onChange={(e) => handleIconSizeChange(e.currentTarget.valueAsNumber, i, 'height')}
                       placeholder={'Height'}
                       type={'number'}
+                      min={1}
                       className={styles.nodeLabel}
                       name={'iconHeight'}
                     />
@@ -494,13 +545,22 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                   </Button>
                 </ControlledCollapse>
               </InlineFieldRow>
-              <InlineFieldRow className={styles.inlineRow}>
+              <InlineFieldRow className={styles.inlineRow} style={{ flexDirection: 'row', gap: '8px' }}>
+                <Button
+                  variant="secondary"
+                  icon="copy"
+                  size="md"
+                  onClick={() => duplicateNode(i)}
+                  style={{ justifyContent: 'center', flex: 1 }}
+                >
+                  Duplicate
+                </Button>
                 <Button
                   variant="destructive"
                   icon="trash-alt"
                   size="md"
                   onClick={() => removeNode(i)}
-                  style={{ justifyContent: 'center' }}
+                  style={{ justifyContent: 'center', flex: 1 }}
                 >
                   Remove Node
                 </Button>
