@@ -22,7 +22,7 @@ import {
   useStyles2,
   useTheme2,
 } from '@grafana/ui';
-import { locationService } from '@grafana/runtime';
+import { getTemplateSrv, locationService } from '@grafana/runtime';
 import {
   measureText,
   getSolidFromAlphaColor,
@@ -43,7 +43,20 @@ function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
   toReturn.index = i;
   toReturn.x = toReturn.position[0];
   toReturn.y = toReturn.position[1];
-  toReturn.labelWidth = measureText(d.label ? d.label : '', wm.settings.fontSizing.node).width;
+
+  // Resolve Grafana template variables ($var) at draw time
+  const tmplSrv = getTemplateSrv();
+  if (toReturn.label !== undefined) {
+    toReturn.label = tmplSrv.replace(toReturn.label);
+  }
+  if (toReturn.statusQuery) {
+    toReturn.statusQuery = tmplSrv.replace(toReturn.statusQuery);
+  }
+  if (toReturn.dashboardLink) {
+    toReturn.dashboardLink = tmplSrv.replace(toReturn.dashboardLink);
+  }
+
+  toReturn.labelWidth = measureText(toReturn.label ? toReturn.label : '', wm.settings.fontSizing.node).width;
   toReturn.anchors = {
     0: { numLinks: toReturn.anchors[0].numLinks, numFilledLinks: 0 },
     1: { numLinks: toReturn.anchors[1].numLinks, numFilledLinks: 0 },
@@ -279,6 +292,23 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   function generateDrawnLink(d: Link, i: number, frameMap: Map<string, number>): DrawnLink {
     let toReturn: DrawnLink = { ...d, sides: { A: { ...d.sides.A }, Z: { ...d.sides.Z } } } as DrawnLink;
     toReturn.index = i;
+
+    // Resolve Grafana template variables ($var) in all query and link strings
+    const tmplSrv = getTemplateSrv();
+    (['A', 'Z'] as const).forEach((side) => {
+      if (toReturn.sides[side].bandwidthQuery) {
+        toReturn.sides[side].bandwidthQuery = tmplSrv.replace(toReturn.sides[side].bandwidthQuery!);
+      }
+      if (toReturn.sides[side].query) {
+        toReturn.sides[side].query = tmplSrv.replace(toReturn.sides[side].query!);
+      }
+      if (toReturn.sides[side].dashboardLink) {
+        toReturn.sides[side].dashboardLink = tmplSrv.replace(toReturn.sides[side].dashboardLink);
+      }
+    });
+    if (toReturn.statusQuery) {
+      toReturn.statusQuery = tmplSrv.replace(toReturn.statusQuery);
+    }
 
     const linkValueFormatter = getlinkValueFormatter(
       d.units ? d.units : wm.settings.link.defaultUnits ? wm.settings.link.defaultUnits : 'bps'
@@ -648,8 +678,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 justifyContent: 'center',
               }}
             >
-              {hoveredLink.link.nodes[0].label} {hoveredLink.side === 'A' ? '--->' : '<---'}{' '}
-              {hoveredLink.link.nodes[1].label}
+              {hoveredLink.link.source.label} {hoveredLink.side === 'A' ? '--->' : '<---'}{' '}
+              {hoveredLink.link.target.label}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
               Usage - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentValueText}, Outbound:{' '}
