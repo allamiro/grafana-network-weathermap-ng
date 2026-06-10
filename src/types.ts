@@ -178,6 +178,16 @@ export interface WeathermapSettings {
     showAllWithPercentage: boolean;
     defaultUnits?: string;
     valueMappingMode?: 'last' | 'avg';
+    dynamicStroke?: {
+      enabled: boolean;
+      minWidth: number;
+      maxWidth: number;
+    };
+    flowAnimation?: {
+      enabled: boolean;
+      speed: number;
+    };
+    gradientColor?: boolean;
   };
   fontSizing: {
     node: number;
