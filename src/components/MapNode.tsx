@@ -117,18 +117,20 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
               ry={7}
               style={{ paintOrder: 'stroke' }}
             ></rect>
-            <text
-              x={0}
-              y={textY}
-              textAnchor={'middle'}
-              alignmentBaseline={'central'}
-              dominantBaseline={'central'}
-              fill={node.colors.font}
-              className={styles.nodeText}
-              fontSize={node.isConnection ? '6px' : `${wm.settings.fontSizing.node}px`}
-            >
-              {node.label !== undefined && !(node.isConnection && disabled) ? node.label : ''}
-            </text>
+            {node.showLabel !== false && (
+              <text
+                x={0}
+                y={textY}
+                textAnchor={'middle'}
+                alignmentBaseline={'central'}
+                dominantBaseline={'central'}
+                fill={node.colors.font}
+                className={styles.nodeText}
+                fontSize={node.isConnection ? '6px' : `${wm.settings.fontSizing.node}px`}
+              >
+                {node.label !== undefined && !(node.isConnection && disabled) ? node.label : ''}
+              </text>
+            )}
           </React.Fragment>
         ) : (
           ''
