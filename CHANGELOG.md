@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.6](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.6) (2026-06-10)
+
+### Features
+
+* **tooltip-metrics**: link tooltip now supports additional metric rows (errors, discards, drops, latency, or any metric) — a new "Tooltip Extra Metrics" section in the link editor lets operators add any number of named metrics, each with an optional inbound query, outbound query, and independent unit formatter; added metrics appear as extra rows in the hover tooltip below the throughput section, resolved live from the panel's data frames ([#73](https://github.com/allamiro/grafana-network-weathermap-ng/issues/73))
+
 ## [1.4.5](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.5) (2026-06-10)
 
 ### Features

@@ -16,7 +16,7 @@ import {
 } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
-import { Weathermap, Node, Link, Anchor, LinkSide } from 'types';
+import { Weathermap, Node, Link, Anchor, LinkSide, LinkTooltipMetric } from 'types';
 import { FormDivider } from './FormDivider';
 import { getDataFrameName, getValueField } from 'utils';
 
@@ -518,6 +518,95 @@ export const LinkForm = (props: Props) => {
                   }}
                 />
               </InlineField>
+              <FormDivider title="Tooltip Extra Metrics" />
+              {(link.tooltipMetrics ?? []).map((metric: LinkTooltipMetric, mi: number) => (
+                <React.Fragment key={mi}>
+                  <InlineFieldRow>
+                    <InlineField grow label={`Metric ${mi + 1} Label`} style={{ width: '100%' }}>
+                      <Input
+                        value={metric.label}
+                        onChange={(e) => {
+                          let wm = value;
+                          wm.links[i].tooltipMetrics![mi].label = e.currentTarget.value;
+                          onChange(wm);
+                        }}
+                        placeholder={'e.g. Errors, Drops, Latency'}
+                        type={'text'}
+                        className={styles.nodeLabel}
+                      />
+                    </InlineField>
+                  </InlineFieldRow>
+                  <InlineField grow label={`Metric ${mi + 1} Inbound Query`} style={{ width: '100%' }}>
+                    <Select
+                      onChange={(v) => {
+                        let wm = value;
+                        wm.links[i].tooltipMetrics![mi].queryA = v ? v.value : undefined;
+                        onChange(wm);
+                      }}
+                      value={dataWithIds.find((p) => p.value === metric.queryA) ?? null}
+                      options={dataWithIds}
+                      placeholder={'Select inbound query'}
+                      isClearable
+                      menuShouldPortal
+                    />
+                  </InlineField>
+                  <InlineField grow label={`Metric ${mi + 1} Outbound Query`} style={{ width: '100%' }}>
+                    <Select
+                      onChange={(v) => {
+                        let wm = value;
+                        wm.links[i].tooltipMetrics![mi].queryZ = v ? v.value : undefined;
+                        onChange(wm);
+                      }}
+                      value={dataWithIds.find((p) => p.value === metric.queryZ) ?? null}
+                      options={dataWithIds}
+                      placeholder={'Select outbound query'}
+                      isClearable
+                      menuShouldPortal
+                    />
+                  </InlineField>
+                  <InlineField grow label={`Metric ${mi + 1} Units`} style={{ width: '100%' }}>
+                    <UnitPicker
+                      onChange={(val) => {
+                        let wm = value;
+                        wm.links[i].tooltipMetrics![mi].units = val;
+                        onChange(wm);
+                      }}
+                      value={metric.units}
+                    />
+                  </InlineField>
+                  <InlineFieldRow>
+                    <Button
+                      variant="secondary"
+                      icon="trash-alt"
+                      size="sm"
+                      onClick={() => {
+                        let wm = value;
+                        wm.links[i].tooltipMetrics!.splice(mi, 1);
+                        onChange(wm);
+                      }}
+                      style={{ marginBottom: '8px' }}
+                    >
+                      Remove Metric {mi + 1}
+                    </Button>
+                  </InlineFieldRow>
+                </React.Fragment>
+              ))}
+              <Button
+                variant="secondary"
+                icon="plus"
+                size="sm"
+                onClick={() => {
+                  let wm = value;
+                  if (!wm.links[i].tooltipMetrics) {
+                    wm.links[i].tooltipMetrics = [];
+                  }
+                  wm.links[i].tooltipMetrics!.push({ label: '', queryA: undefined, queryZ: undefined });
+                  onChange(wm);
+                }}
+                style={{ marginBottom: '8px' }}
+              >
+                Add Metric
+              </Button>
               <InlineFieldRow className={styles.row}>
                 <Button variant="destructive" icon="trash-alt" size="md" onClick={() => removeLink(i)} className={''}>
                   Remove Link
