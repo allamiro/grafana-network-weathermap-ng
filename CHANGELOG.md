@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.0) (2026-06-10)
+
+### Features
+
+* **node-status**: configurable status value mappings per node — map any query value to a border color (e.g. Mikrotik: 1=UP/green, 2=DOWN/red, 3=Testing/yellow); replaces the binary `<1 = down` rule when mappings are configured; existing nodes with no mappings are unaffected ([#75](https://github.com/allamiro/grafana-network-weathermap-ng/issues/75), PR [#116](https://github.com/allamiro/grafana-network-weathermap-ng/pull/116))
+* **link-icon-boundary**: new per-node "Attach Links to Icon Boundary" toggle (`useIconBoundaryForLinks`) — when enabled, link attachment points shift to the icon edge instead of the label-rectangle edge for nodes with external icons (`drawInside: false`), eliminating visual pass-through on large icons ([#78](https://github.com/allamiro/grafana-network-weathermap-ng/issues/78), PR [#115](https://github.com/allamiro/grafana-network-weathermap-ng/pull/115))
+* **link-visualization**: three new link display options — dynamic stroke width (scales with bandwidth utilization), flow animation (animated dashes showing traffic direction), and gradient coloring (per-link SVG gradient blending A-side and Z-side scale colors) ([#79](https://github.com/allamiro/grafana-network-weathermap-ng/issues/79), PR [#114](https://github.com/allamiro/grafana-network-weathermap-ng/pull/114))
+* **node-enhancements**: label visibility toggle (show/hide node label independently of node), duplicate node button (copies node with offset position and cleared anchors), icon aspect-ratio lock toggle in node editor ([#80](https://github.com/allamiro/grafana-network-weathermap-ng/issues/80), PR [#113](https://github.com/allamiro/grafana-network-weathermap-ng/pull/113))
+
 ## [1.3.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.3.1) (2026-06-10)
 
 ### Bug Fixes
