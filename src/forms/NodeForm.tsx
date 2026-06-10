@@ -7,6 +7,7 @@ import {
   InlineFieldRow,
   InlineSwitch,
   Select,
+  RadioButtonGroup,
   useStyles2,
   ControlledCollapse,
   InlineLabel,
@@ -515,13 +516,29 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       }}
                     />
                   </InlineLabel>
-                  <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Value Mappings</p>
+                  <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Color Target</p>
+                  <div style={{ marginBottom: '8px' }}>
+                    <RadioButtonGroup
+                      options={[
+                        { label: 'Border', value: 'border' },
+                        { label: 'Background', value: 'background' },
+                        { label: 'Both', value: 'both' },
+                      ] as Array<{ label: string; value: 'border' | 'background' | 'both' }>}
+                      value={node.nodeStatusColorTarget ?? 'border'}
+                      onChange={(v) => {
+                        let weathermap: Weathermap = value;
+                        weathermap.nodes[i].nodeStatusColorTarget = v;
+                        onChange(weathermap);
+                      }}
+                    />
+                  </div>
+                  <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Threshold Mappings</p>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', opacity: 0.7 }}>
-                    Map query values to border colors. Overrides the default &lt;1 = down rule.
+                    When metric value ≥ threshold, apply that color. The highest matching threshold wins. Overrides the default &lt;1 = down rule.
                   </p>
                   {(node.statusValueMappings || []).map((mapping, mi) => (
                     <InlineFieldRow key={mi} className={styles.inlineRow}>
-                      <InlineField label="Value">
+                      <InlineField label="Threshold (≥)">
                         <Input
                           type="number"
                           value={mapping.value}

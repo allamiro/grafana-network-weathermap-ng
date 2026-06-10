@@ -65,12 +65,24 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
     if (rawValue === undefined) {
       nodeStatusColor = node.colors.statusDown;
     } else if (node.statusValueMappings && node.statusValueMappings.length > 0) {
-      const match = node.statusValueMappings.find((m) => m.value === rawValue);
+      // Threshold matching: apply the highest threshold whose value <= rawValue
+      const sorted = [...node.statusValueMappings].sort((a, b) => a.value - b.value);
+      const match = sorted.filter((m) => m.value <= rawValue).pop();
       nodeStatusColor = match ? match.color : null;
     } else {
       nodeStatusColor = rawValue < 1 ? node.colors.statusDown : null;
     }
   }
+
+  const colorTarget = node.nodeStatusColorTarget ?? 'border';
+  const statusFill =
+    nodeStatusColor !== null && (colorTarget === 'background' || colorTarget === 'both')
+      ? nodeStatusColor
+      : null;
+  const statusStroke =
+    nodeStatusColor !== null && (colorTarget === 'border' || colorTarget === 'both')
+      ? nodeStatusColor
+      : null;
 
   // Check if this node is selected for dragging
   let nodeIsSelected = selectedNodes.find((n) => n.index === node.index);
@@ -106,7 +118,10 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
               fill={
                 node.isConnection
                   ? 'transparent'
-                  : getSolidFromAlphaColor(node.colors.background, wm.settings.panel.backgroundColor)
+                  : getSolidFromAlphaColor(
+                      statusFill !== null ? statusFill : node.colors.background,
+                      wm.settings.panel.backgroundColor
+                    )
               }
               stroke={
                 nodeIsSelected
@@ -116,7 +131,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
                     ? 'transparent'
                     : getSolidFromAlphaColor(node.colors.background, wm.settings.panel.backgroundColor)
                   : getSolidFromAlphaColor(
-                      nodeStatusColor !== null ? nodeStatusColor : node.colors.border,
+                      statusStroke !== null ? statusStroke : node.colors.border,
                       wm.settings.panel.backgroundColor
                     )
               }

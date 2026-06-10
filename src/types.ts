@@ -92,6 +92,7 @@ export interface Node {
   isConnection: boolean;
   statusQuery?: string;
   statusValueMappings?: NodeStatusValueMapping[];
+  nodeStatusColorTarget?: 'border' | 'background' | 'both';
 }
 
 export interface LinkSide {
