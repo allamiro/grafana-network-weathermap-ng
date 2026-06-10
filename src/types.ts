@@ -57,6 +57,11 @@ export interface Icon {
   drawInside: boolean;
 }
 
+export interface NodeStatusValueMapping {
+  value: number;
+  color: string;
+}
+
 export interface Node {
   id: string;
   position: [number, number];
@@ -86,6 +91,7 @@ export interface Node {
   useIconBoundaryForLinks?: boolean;
   isConnection: boolean;
   statusQuery?: string;
+  statusValueMappings?: NodeStatusValueMapping[];
 }
 
 export interface LinkSide {
