@@ -104,6 +104,13 @@ export interface LinkSide {
   portLabel?: string;
 }
 
+export interface LinkTooltipMetric {
+  label: string;
+  queryA?: string;
+  queryZ?: string;
+  units?: string;
+}
+
 export interface Link {
   id: string;
   nodes: [Node, Node];
@@ -116,6 +123,7 @@ export interface Link {
   stroke: number;
   showThroughputPercentage: boolean;
   linkOffset?: number;
+  tooltipMetrics?: LinkTooltipMetric[];
   statusQuery?: string;
   statusDownColor?: string;
   statusBlink?: boolean;
