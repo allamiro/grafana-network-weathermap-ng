@@ -383,6 +383,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     toReturn.lineStartA = getMultiLinkPosition(tempNodes[toReturn.source.index], toReturn.sides.A);
     toReturn.lineStartZ = getMultiLinkPosition(tempNodes[toReturn.target.index], toReturn.sides.Z);
 
+    if (d.linkOffset) {
+      const dx = toReturn.lineStartZ.x - toReturn.lineStartA.x;
+      const dy = toReturn.lineStartZ.y - toReturn.lineStartA.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        const nx = (-dy / dist) * d.linkOffset;
+        const ny = (dx / dist) * d.linkOffset;
+        toReturn.lineStartA = { x: toReturn.lineStartA.x + nx, y: toReturn.lineStartA.y + ny };
+        toReturn.lineStartZ = { x: toReturn.lineStartZ.x + nx, y: toReturn.lineStartZ.y + ny };
+      }
+    }
+
     toReturn.lineEndA = getMiddlePoint(
       toReturn.lineStartZ,
       toReturn.lineStartA,
