@@ -160,6 +160,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     };
   }
 
+  // How much extra y-offset the icon adds above the node rect top (for Top anchor)
+  function getIconTopExtra(d: DrawnNode): number {
+    if (!d.nodeIcon || d.nodeIcon.drawInside || !d.useIconBoundaryForLinks) {
+      return 0;
+    }
+    const rectH = calculateRectangleAutoHeight(d, wm);
+    if (d.label && d.label.length > 0) {
+      return d.nodeIcon.size.height + d.nodeIcon.padding.vertical + 1;
+    }
+    return Math.max(0, d.nodeIcon.size.height / 2 - rectH / 2);
+  }
+
+  // How much extra x-offset the icon adds beyond the rect edge (for Left/Right anchors)
+  function getIconWidthExtra(d: DrawnNode): number {
+    if (!d.nodeIcon || d.nodeIcon.drawInside || !d.useIconBoundaryForLinks) {
+      return 0;
+    }
+    return Math.max(0, d.nodeIcon.size.width / 2 - calculateRectangleAutoWidth(d, wm) / 2);
+  }
+
   // Calculate the position of a link given the node and side information
   function getMultiLinkPosition(d: DrawnNode, side: LinkSide): Position {
     // Set initial x and y values for links. Defaults to center x of the node, and the middle y.
@@ -191,11 +211,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
     // Change x values for left/right anchors
     if (side.anchor === Anchor.Left || side.anchor === Anchor.Right) {
-      // Align left/right
+      const iconWidthExtra = getIconWidthExtra(d);
+      // Align left/right, extending to icon edge when useIconBoundaryForLinks is set
       if (side.anchor === Anchor.Left) {
-        x -= calculateRectangleAutoWidth(d, wm) / 2 - maxLinkWidth / 2;
+        x -= calculateRectangleAutoWidth(d, wm) / 2 - maxLinkWidth / 2 + iconWidthExtra;
       } else {
-        x += calculateRectangleAutoWidth(d, wm) / 2 - maxLinkWidth / 2;
+        x += calculateRectangleAutoWidth(d, wm) / 2 - maxLinkWidth / 2 + iconWidthExtra;
       }
       // Calculate vertical alignments given # of links
       if (!d.compactVerticalLinks && d.anchors[side.anchor].numLinks > 1) {
@@ -230,6 +251,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       } else if (side.anchor === Anchor.Top) {
         y -= calculateRectangleAutoHeight(d, wm) / 2;
         y += maxLinkWidth / 2;
+        y -= getIconTopExtra(d);
       }
     }
     // Mark that we've drawn another link

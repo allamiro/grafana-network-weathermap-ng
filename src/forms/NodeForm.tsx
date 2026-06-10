@@ -400,6 +400,16 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       onChange={(e) => handleIconDrawChange(e.currentTarget.checked, i)}
                     />
                   </InlineField>
+                  <InlineField grow label={'Attach Links to Icon Boundary'}>
+                    <InlineSwitch
+                      value={node.useIconBoundaryForLinks ?? false}
+                      onChange={(e) => {
+                        let weathermap: Weathermap = value;
+                        weathermap.nodes[i].useIconBoundaryForLinks = e.currentTarget.checked;
+                        onChange(weathermap);
+                      }}
+                    />
+                  </InlineField>
                 </ControlledCollapse>
               </InlineFieldRow>
               <InlineFieldRow className={styles.inlineRow}>
