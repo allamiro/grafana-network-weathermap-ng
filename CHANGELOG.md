@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.3) (2026-06-10)
+
+### Features
+
+* **oversubscribed-scale**: color scale thresholds above 100% now work correctly for oversubscribed links — legend band sizing uses a dynamic ceiling (`max(101, highest_threshold + 1)`) instead of a hardcoded 101, fixing broken proportions when any threshold exceeds 100%; top-band label now shows `X%+` to indicate the color applies at or above that threshold ([#65](https://github.com/allamiro/grafana-network-weathermap-ng/issues/65), PR [#125](https://github.com/allamiro/grafana-network-weathermap-ng/pull/125))
+
 ## [1.4.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.2) (2026-06-10)
 
 ### Features
