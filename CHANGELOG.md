@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.2) (2026-07-01)
+
+### Features
+
+* **node-link-tab**: new per-node **Open Link in Same Tab** toggle (`Node.openInSameTab`) in the node editor — when enabled, clicking a node's dashboard link navigates in the current tab (`_self`) instead of opening a new one (`_blank`); URL sanitization is unchanged and the default (off) preserves the existing new-tab behavior ([#61](https://github.com/allamiro/grafana-network-weathermap-ng/issues/61), PR [#136](https://github.com/allamiro/grafana-network-weathermap-ng/pull/136))
+
 ## [1.5.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.1) (2026-07-01)
 
 ### Bug Fixes
