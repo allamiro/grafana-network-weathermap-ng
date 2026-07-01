@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { DataFrame, Field, FieldType, getTimeZone, getValueFormat, PanelProps } from '@grafana/data';
+import { DataFrame, Field, FieldType, getTimeZone, getValueFormat, LoadingState, PanelProps } from '@grafana/data';
 import {
   Anchor,
   DrawnLink,
@@ -655,6 +655,36 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     return displayName === hoveredLink.link.sides.A.query || displayName === hoveredLink.link.sides.Z.query;
   });
 
+  // Build an in-panel notice for query errors or missing data so operators can
+  // diagnose problems without opening the browser console. The map still renders
+  // underneath; the notice is a non-interactive banner overlaid at the top.
+  const dataNotice: { level: 'error' | 'info'; message: string } | null = (() => {
+    if (data.state === LoadingState.Error) {
+      const message = data.error?.message || data.errors?.[0]?.message || 'A query returned an error.';
+      return { level: 'error', message: `Query error: ${message}` };
+    }
+    // Only warn about missing data when the map actually expects some — i.e. at
+    // least one node or link has a query configured. A topology-only map is fine.
+    const expectsData = Boolean(
+      wm?.links?.some(
+        (l) =>
+          l.sides.A.query ||
+          l.sides.Z.query ||
+          l.sides.A.bandwidthQuery ||
+          l.sides.Z.bandwidthQuery ||
+          l.statusQuery
+      ) || wm?.nodes?.some((n) => n.statusQuery)
+    );
+    if (expectsData && data.series.length === 0 && data.state !== LoadingState.Loading) {
+      return {
+        level: 'info',
+        message:
+          'No data returned by the panel’s queries. Check the queries, the data source, and the dashboard time range.',
+      };
+    }
+    return null;
+  })();
+
   if (wm) {
     return (
       <div
@@ -668,6 +698,36 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           `
         )}
       >
+        {dataNotice ? (
+          <div
+            role="alert"
+            data-testid="weathermap-data-notice"
+            className={css`
+              position: absolute;
+              top: 8px;
+              left: 50%;
+              transform: translateX(-50%);
+              max-width: 90%;
+              z-index: 9999;
+              pointer-events: none;
+              padding: 6px 12px;
+              border-radius: 4px;
+              font-size: 12px;
+              text-align: center;
+              box-shadow: ${theme.shadows.z1};
+              background-color: ${dataNotice.level === 'error'
+                ? theme.colors.error.main
+                : theme.colors.warning.main};
+              color: ${dataNotice.level === 'error'
+                ? theme.colors.error.contrastText
+                : theme.colors.warning.contrastText};
+            `}
+          >
+            {dataNotice.message}
+          </div>
+        ) : (
+          ''
+        )}
         {hoveredLink ? (
           <div
             className={css`
