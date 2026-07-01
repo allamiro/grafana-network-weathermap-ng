@@ -68,6 +68,7 @@ export interface Node {
   label?: string;
   showLabel?: boolean;
   dashboardLink?: string;
+  openInSameTab?: boolean;
   anchors: {
     [Anchor.Center]: NodeAnchor;
     [Anchor.Top]: NodeAnchor;

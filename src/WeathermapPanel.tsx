@@ -633,10 +633,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Navigate to a user-provided dashboard link only if it passes URL validation.
   // Values may have been produced by template-variable substitution at runtime,
   // so they are re-sanitized here before ever reaching window.open.
-  const openDashboardLink = (rawLink: string) => {
+  const openDashboardLink = (rawLink: string, sameTab = false) => {
     const safeLink = sanitizeUrl(rawLink);
     if (safeLink) {
-      window.open(safeLink, '_blank', 'noopener,noreferrer');
+      window.open(safeLink, sameTab ? '_self' : '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -1438,7 +1438,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           return v;
                         });
                       } else if (!isEditMode && tempNodes[i].dashboardLink) {
-                        openDashboardLink(tempNodes[i].dashboardLink);
+                        openDashboardLink(tempNodes[i].dashboardLink, tempNodes[i].openInSameTab);
                       }
                       // Force an update
                       onOptionsChange(options);

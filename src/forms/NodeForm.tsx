@@ -345,6 +345,21 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     name={'Dashboard link'}
                   />
                 </InlineField>
+                <InlineField
+                  grow
+                  label={'Open Link in Same Tab'}
+                  className={styles.inlineField}
+                  tooltip={'When enabled, the dashboard link opens in the current tab instead of a new one.'}
+                >
+                  <InlineSwitch
+                    value={node.openInSameTab === true}
+                    onChange={(e) => {
+                      let options = value;
+                      options.nodes[i].openInSameTab = e.currentTarget.checked;
+                      onChange(options);
+                    }}
+                  />
+                </InlineField>
                 <InlineField grow label={'Show Label'} className={styles.inlineField}>
                   <InlineSwitch
                     value={node.showLabel !== false}
