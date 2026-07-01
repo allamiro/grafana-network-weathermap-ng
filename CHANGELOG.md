@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.0) (2026-07-01)
+
+### Features
+
+* **react-19**: replace the `react-draggable` `findDOMNode` fallback with an explicit `nodeRef`, fixing a `TypeError: ReactDOM.findDOMNode is not a function` crash on Grafana builds running React 19 while keeping node dragging fully functional on older versions.
+
+### Bug Fixes
+
+* **security**: validate and sanitize all user-provided URLs before use — dashboard links, custom node icon URLs, and the panel background image URL. Only safe relative Grafana paths and `http://`/`https://` absolute URLs are accepted; unsafe schemes (`javascript:`, `data:`, `file:`, `vbscript:`, `blob:`, protocol-relative `//`, and any other scheme) are rejected at input time and again at navigation/render time, preventing script execution via `window.open` or image sources.
+* **export**: guard against a missing SVG element in the SVG export path so the panel editor no longer crashes when the expected element is not present.
+
+### Metadata
+
+* rename the plugin display name to **Network Weathermap NG** and clarify the description as the actively maintained next-generation continuation, distinguishing it from the deprecated `knightss27-weathermap-panel` plugin.
+
 ## [1.4.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.4.7) (2026-06-10)
 
 ### Features

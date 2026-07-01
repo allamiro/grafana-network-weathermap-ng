@@ -379,3 +379,75 @@ export function getValueField(frame: DataFrame): Field {
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {
   return getFieldDisplayName(getValueField(frame), frame, allFrames);
 };
+
+/**
+ * Schemes that are explicitly unsafe for navigation or resource loading.
+ * Any absolute URL must use http:// or https:// — everything else is rejected.
+ */
+const ALLOWED_ABSOLUTE_SCHEMES = ['http:', 'https:'];
+
+/**
+ * Determine whether a user-provided URL is safe to navigate to or render.
+ *
+ * Safe values are:
+ *  - Relative Grafana paths (no scheme), e.g. `/d/abc/my-dashboard` or
+ *    `public/plugins/tamirsuliman-weathermap-panel/icons/router.svg`
+ *  - Absolute URLs using the http:// or https:// scheme
+ *
+ * Everything else — including `javascript:`, `data:`, `file:`, `vbscript:`,
+ * `blob:`, protocol-relative `//host` URLs, and any other scheme — is rejected.
+ *
+ * @param raw the user-provided URL
+ * @returns true if the value is safe to use
+ */
+export function isSafeUrl(raw: string | undefined | null): boolean {
+  if (raw == null) {
+    return false;
+  }
+
+  // Strip leading/trailing whitespace and any control characters (including
+  // tabs and newlines) that could be used to obfuscate a scheme such as
+  // `java\nscript:alert(1)`.
+  // eslint-disable-next-line no-control-regex
+  const value = raw.replace(/[\u0000-\u001F\u007F ]/g, '').trim();
+
+  if (value === '') {
+    return false;
+  }
+
+  // Reject protocol-relative URLs (`//evil.com`) which inherit the current
+  // page scheme and can point anywhere.
+  if (value.startsWith('//')) {
+    return false;
+  }
+
+  // Detect an explicit scheme. A leading scheme looks like `name:` where name
+  // starts with a letter followed by letters, digits, `+`, `-`, or `.`.
+  const schemeMatch = value.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
+
+  if (schemeMatch) {
+    const scheme = schemeMatch[1].toLowerCase() + ':';
+    return ALLOWED_ABSOLUTE_SCHEMES.includes(scheme);
+  }
+
+  // No scheme present — treat as a relative Grafana path, which is safe.
+  return true;
+}
+
+/**
+ * Sanitize a user-provided URL. Returns the cleaned value when it is safe to
+ * use, or an empty string when it is not. This is applied both when a value is
+ * entered/saved in the editor and again at the point of use (navigation or
+ * image rendering) for defense in depth.
+ *
+ * @param raw the user-provided URL
+ * @returns the trimmed URL when safe, otherwise an empty string
+ */
+export function sanitizeUrl(raw: string | undefined | null): string {
+  if (raw == null) {
+    return '';
+  }
+
+  const trimmed = raw.trim();
+  return isSafeUrl(trimmed) ? trimmed : '';
+}

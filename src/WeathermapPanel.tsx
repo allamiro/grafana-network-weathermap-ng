@@ -34,6 +34,7 @@ import {
   handleVersionedStateUpdates,
   getDataFrameName,
   getValueField,
+  sanitizeUrl,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -629,6 +630,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     setHoveredLink(null as unknown as HoveredLink);
   };
 
+  // Navigate to a user-provided dashboard link only if it passes URL validation.
+  // Values may have been produced by template-variable substitution at runtime,
+  // so they are re-sanitized here before ever reaching window.open.
+  const openDashboardLink = (rawLink: string) => {
+    const safeLink = sanitizeUrl(rawLink);
+    if (safeLink) {
+      window.open(safeLink, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const filteredGraphQueries = data.series.filter((frame) => {
     if (!hoveredLink) {
       return;
@@ -859,9 +870,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             position: 'absolute',
             top: 0,
             left: 0,
-            backgroundImage: wm.settings.panel.backgroundImage
-              ? `url(${wm.settings.panel.backgroundImage.url})`
-              : 'none',
+            backgroundImage:
+              wm.settings.panel.backgroundImage && sanitizeUrl(wm.settings.panel.backgroundImage.url)
+                ? `url(${sanitizeUrl(wm.settings.panel.backgroundImage.url)})`
+                : 'none',
             backgroundSize: wm.settings.panel.backgroundImage?.fit,
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -1062,7 +1074,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       onMouseOut={handleLinkHoverLoss}
                       onClick={() => {
                         if (d.sides.A.dashboardLink.length > 0) {
-                          window.open(d.sides.A.dashboardLink, '_blank', 'noopener,noreferrer');
+                          openDashboardLink(d.sides.A.dashboardLink);
                         }
                       }}
                       style={{
@@ -1108,7 +1120,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
                             if (d.sides.A.dashboardLink.length > 0) {
-                              window.open(d.sides.A.dashboardLink, '_blank', 'noopener,noreferrer');
+                              openDashboardLink(d.sides.A.dashboardLink);
                             }
                           }}
                           style={d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
@@ -1133,7 +1145,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
                             if (d.sides.Z.dashboardLink.length > 0) {
-                              window.open(d.sides.Z.dashboardLink, '_blank', 'noopener,noreferrer');
+                              openDashboardLink(d.sides.Z.dashboardLink);
                             }
                           }}
                           style={{
@@ -1164,7 +1176,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
                             if (d.sides.Z.dashboardLink.length > 0) {
-                              window.open(d.sides.Z.dashboardLink, '_blank', 'noopener,noreferrer');
+                              openDashboardLink(d.sides.Z.dashboardLink);
                             }
                           }}
                           style={d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
@@ -1426,7 +1438,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           return v;
                         });
                       } else if (!isEditMode && tempNodes[i].dashboardLink) {
-                        window.open(tempNodes[i].dashboardLink, '_blank', 'noopener,noreferrer');
+                        openDashboardLink(tempNodes[i].dashboardLink);
                       }
                       // Force an update
                       onOptionsChange(options);

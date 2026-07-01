@@ -19,7 +19,7 @@ import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, NodeStatusValueMapping } from 'types';
 import { CiscoIcons, NetworkingIcons, DatabaseIcons, ComputerIcons } from './iconOptions';
-import { getDataFrameName } from 'utils';
+import { getDataFrameName, sanitizeUrl } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -51,7 +51,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
 
   const handleDashboardLinkChange = (e: React.FormEvent<HTMLInputElement>, i: number) => {
     let weathermap: Weathermap = value;
-    weathermap.nodes[i].dashboardLink = e.currentTarget.value;
+    weathermap.nodes[i].dashboardLink = sanitizeUrl(e.currentTarget.value);
     onChange(weathermap);
   };
 
@@ -390,7 +390,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                           onChange={(e) => {
                             let options = value;
                             if (options.nodes[i].nodeIcon) {
-                              options.nodes[i].nodeIcon!.src = e.currentTarget.value;
+                              options.nodes[i].nodeIcon!.src = sanitizeUrl(e.currentTarget.value);
                             }
                             onChange(options);
                           }}
