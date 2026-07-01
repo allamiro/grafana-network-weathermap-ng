@@ -16,6 +16,7 @@ import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
 import { Weathermap } from 'types';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
+import { sanitizeUrl } from 'utils';
 
 interface Settings {}
 
@@ -95,7 +96,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 onChange={(e) => {
                   let options = value;
                   if (options.settings.panel.backgroundImage) {
-                    options.settings.panel.backgroundImage.url = e.currentTarget.value;
+                    options.settings.panel.backgroundImage.url = sanitizeUrl(e.currentTarget.value);
                   }
                   onChange(options);
                 }}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { DrawnNode, Weathermap } from '../types';
 import {
   nearestMultiple,
@@ -7,6 +7,7 @@ import {
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
   getDataFrameName,
+  sanitizeUrl,
 } from '../utils';
 import { css } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
@@ -48,6 +49,10 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
   const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, disabled, data } = props;
   const styles = useStyles2(getStyles);
 
+  // React 19 removed ReactDOM.findDOMNode, which react-draggable falls back to
+  // when no nodeRef is provided. Passing an explicit nodeRef avoids that crash.
+  const nodeRef = useRef<SVGGElement>(null);
+
   const rectX = useMemo(() => calculateRectX(node, wm), [node, wm]);
   const rectY = useMemo(() => calculateRectY(node, wm), [node, wm]);
   const rectWidth = useMemo(() => calculateRectangleAutoWidth(node, wm), [node, wm]);
@@ -88,8 +93,14 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
   let nodeIsSelected = selectedNodes.find((n) => n.index === node.index);
 
   return (
-    <DraggableCore disabled={disabled} onDrag={onDrag} onStop={onStop}>
+    <DraggableCore
+      nodeRef={nodeRef as unknown as React.RefObject<HTMLElement>}
+      disabled={disabled}
+      onDrag={onDrag}
+      onStop={onStop}
+    >
       <g
+        ref={nodeRef}
         cursor={disabled ? (node.dashboardLink ? 'pointer' : '') : 'move'}
         display={node.label !== undefined ? 'inline' : 'none'}
         onClick={onClick}
@@ -158,7 +169,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
         ) : (
           ''
         )}
-        {node.nodeIcon && node.nodeIcon.src !== '' ? (
+        {node.nodeIcon && sanitizeUrl(node.nodeIcon.src) !== '' ? (
           <image
             x={-node.nodeIcon.size.width / 2}
             y={
@@ -176,7 +187,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
             }
             width={node.nodeIcon.size.width}
             height={node.nodeIcon.size.height}
-            href={node.nodeIcon.src}
+            href={sanitizeUrl(node.nodeIcon.src)}
           />
         ) : (
           ''
