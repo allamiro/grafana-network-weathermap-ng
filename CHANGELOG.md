@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.1) (2026-07-01)
+
+### Bug Fixes
+
+* **testing**: repair the `testing/` docker-compose stack — bump the exporter build image to `golang:1.25-alpine` to match its `go.mod` (the previous `1.21` image failed the build and prevented the stack from starting), and ensure the Grafana provisioning and dashboard files are readable inside the container regardless of the host checkout umask. `docker compose up --build` now starts Grafana with the plugin pre-loaded and sample data provisioned. No plugin runtime changes from 1.5.0.
+
 ## [1.5.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.0) (2026-07-01)
 
 ### Features
