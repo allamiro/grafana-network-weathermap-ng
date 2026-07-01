@@ -22,6 +22,11 @@ ENV GF_PATHS_PLUGINS="/var/lib/grafana-plugins"
 RUN mkdir -p "$GF_PATHS_PLUGINS" && \
     chown -R grafana:${GF_GID} "$GF_PATHS_PLUGINS"
 
+# Ensure the provisioning and dashboard files are readable by the grafana user
+# regardless of the file mode they were checked out with (a restrictive host
+# umask can otherwise make these unreadable inside the container).
+RUN chmod -R a+rX /etc/grafana/provisioning /var/lib/grafana/dashboards
+
 RUN if [ $GF_INSTALL_IMAGE_RENDERER_PLUGIN = "true" ]; then \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
