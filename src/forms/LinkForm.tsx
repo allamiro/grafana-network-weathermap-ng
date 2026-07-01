@@ -18,7 +18,7 @@ import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, Link, Anchor, LinkSide, LinkTooltipMetric } from 'types';
 import { FormDivider } from './FormDivider';
-import { getDataFrameName, getValueField } from 'utils';
+import { getDataFrameName, getValueField, sanitizeUrl } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -97,7 +97,7 @@ export const LinkForm = (props: Props) => {
 
   const handleDashboardLinkChange = (val: string, i: number, side: 'A' | 'Z') => {
     let weathermap: Weathermap = value;
-    weathermap.links[i].sides[side].dashboardLink = val;
+    weathermap.links[i].sides[side].dashboardLink = sanitizeUrl(val);
     onChange(weathermap);
   };
 

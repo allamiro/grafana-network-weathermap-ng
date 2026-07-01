@@ -25,10 +25,16 @@ export const ExportForm = ({ value, onChange }: Props) => {
   const handleSVGExport = async () => {
     const svg = document.getElementById(`nw-${value.id}_`);
 
-    let data = svg!.outerHTML || '';
+    // The SVG element may be missing (e.g. panel not yet rendered). Guard
+    // against it so the editor does not crash on export.
+    if (!svg) {
+      return;
+    }
+
+    let data = svg.outerHTML || '';
     const preface = '<?xml version="1.0" standalone="no"?>\r\n';
 
-    const icons = svg!.getElementsByTagName('image');
+    const icons = svg.getElementsByTagName('image');
     //TODO: fix exporting
     for (let i = 0; i < icons.length; i++) {
       const iconURL = document.location.origin + '/' + icons[i].href.baseVal;
