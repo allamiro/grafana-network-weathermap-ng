@@ -221,6 +221,10 @@ export const LinkForm = (props: Props) => {
         Links
       </h6>
       <Select
+        // Explicit inputId: without one, Grafana 13's options-pane Field
+        // context assigns every bare control the options-item id, producing
+        // duplicate form field ids (#167).
+        inputId="nwm-link-picker"
         onChange={(v) => {
           setCurrentLink(v as Link);
         }}

@@ -51,3 +51,17 @@ test('scale mode radios have stable, deterministic ids', () => {
     'option-value-nwm-color-scale-mode'
   );
 });
+
+test('threshold inputs have explicit unique ids (#167)', () => {
+  const initial = getData(theme);
+  initial.scale = [
+    { percent: 0, color: '#73BF69' },
+    { percent: 50, color: '#C4162A' },
+  ];
+  render(<Harness initial={initial} onChangeSpy={jest.fn()} />);
+
+  // Without explicit ids, Grafana 13's options-pane Field context assigns
+  // every bare control the options-item id, producing duplicate ids.
+  expect(document.getElementById('nwm-scale-threshold-0')).toBeInTheDocument();
+  expect(document.getElementById('nwm-scale-threshold-1')).toBeInTheDocument();
+});

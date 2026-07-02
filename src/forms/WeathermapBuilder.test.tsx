@@ -36,6 +36,15 @@ test('renders the editor for pre-v14 weathermaps without crashing (#162)', () =>
   expect(migrated.settings.scale).toBeDefined();
 });
 
+test('node and link pickers have explicit unique input ids (#167)', () => {
+  renderBuilder(JSON.parse(JSON.stringify(legacyWeathermap)));
+
+  // Without explicit ids, Grafana 13's options-pane Field context assigns
+  // every bare control the options-item id, producing duplicate ids.
+  expect(document.getElementById('nwm-node-picker')).toBeInTheDocument();
+  expect(document.getElementById('nwm-link-picker')).toBeInTheDocument();
+});
+
 test('initializes and renders the default weathermap when no value is saved', () => {
   const onChange = renderBuilder(undefined);
 
