@@ -376,6 +376,59 @@ export function getValueField(frame: DataFrame): Field {
   throw new Error(`No value field found in frame "${frame.name}"`);
 }
 
+// Find the time field of a data frame (used by the timeline slider). Falls back
+// to the first field for standard time-series frames (time at index 0).
+export function getTimeField(frame: DataFrame): Field | undefined {
+  const timeField = frame.fields.find((f) => f.type === FieldType.time);
+  if (timeField) {
+    return timeField;
+  }
+  return frame.fields.length > 0 ? frame.fields[0] : undefined;
+}
+
+/**
+ * Resolve the value of a series at a specific point in time (timeline slider).
+ * Uses a step-hold: returns the value of the most recent sample at or before
+ * `timeMs`. Times are assumed ascending. Null/NaN samples are skipped (walking
+ * backwards to the previous valid one) and negatives are clamped to 0, matching
+ * the panel's throughput handling. Returns 0 when there is no usable value.
+ */
+export function valueAtTime(
+  times: Array<number | null | undefined> | null | undefined,
+  values: Array<number | null | undefined> | null | undefined,
+  timeMs: number
+): number {
+  if (!times || !values || times.length === 0) {
+    return 0;
+  }
+
+  // Index of the most recent sample at or before timeMs.
+  let idx = -1;
+  for (let i = 0; i < times.length; i++) {
+    const t = times[i];
+    if (t == null) {
+      continue;
+    }
+    if (t <= timeMs) {
+      idx = i;
+    } else {
+      break;
+    }
+  }
+  // Before the first sample: fall back to the first available point.
+  if (idx === -1) {
+    idx = 0;
+  }
+
+  for (let i = idx; i >= 0; i--) {
+    const v = values[i];
+    if (v !== null && v !== undefined && !isNaN(v)) {
+      return Math.max(0, v);
+    }
+  }
+  return 0;
+}
+
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {
   return getFieldDisplayName(getValueField(frame), frame, allFrames);
 };
