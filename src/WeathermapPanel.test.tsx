@@ -255,6 +255,38 @@ test('Zoom responds to horizontal scroll (macOS Shift+scroll remap)', () => {
   expect(testProps.options.weathermap.settings.panel.zoomScale).not.toEqual(0);
 });
 
+test('Shows the timeline slider when enabled', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.link.timeline = { enabled: true };
+  testProps.options = { weathermap };
+  // A valid (ascending) time range so the slider bounds are well-formed.
+  testProps.timeRange = {
+    from: { valueOf: () => 1_000_000 },
+    to: { valueOf: () => 2_000_000, toLocaleString: () => '2M' },
+  } as unknown as PanelProps<SimpleOptions>['timeRange'];
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  const timeline = screen.getByTestId('weathermap-timeline');
+  expect(timeline).not.toBeNull();
+  // Starts in the live state.
+  expect(timeline.textContent).toContain('Live');
+});
+
+test('Hides the timeline slider when disabled', () => {
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  expect(screen.queryByTestId('weathermap-timeline')).toBeNull();
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };

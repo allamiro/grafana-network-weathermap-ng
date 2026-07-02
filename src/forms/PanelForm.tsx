@@ -244,6 +244,20 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           />
         </InlineField>
+        <InlineField
+          grow
+          label={'Timeline Slider'}
+          tooltip={'Show a slider at the bottom of the panel to scrub through the selected time range and view link values as they were at that moment.'}
+        >
+          <InlineSwitch
+            value={value.settings.link.timeline?.enabled ?? false}
+            onChange={(e) => {
+              let wm = value;
+              wm.settings.link.timeline = { enabled: e.currentTarget.checked };
+              onChange(wm);
+            }}
+          />
+        </InlineField>
         <InlineField grow label={'Default Link Units'}>
           <UnitPicker
             onChange={(val) => {

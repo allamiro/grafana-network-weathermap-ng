@@ -11,8 +11,10 @@ import {
   isSafeUrl,
   measureText,
   nearestMultiple,
+  getTimeField,
   removeVia,
   sanitizeUrl,
+  valueAtTime,
 } from 'utils';
 
 test('getSolidFromAlphaColor', () => {
@@ -223,5 +225,53 @@ describe('VIA helpers (addViaToLink / removeVia)', () => {
     expect(wm.links).toHaveLength(1);
     expect(wm.links[0].id).toBe('self');
     expect(wm.nodes.some((n) => n.id === conn.id)).toBe(true);
+  });
+});
+
+describe('timeline helpers (valueAtTime / getTimeField)', () => {
+  const times = [1000, 2000, 3000];
+  const values = [10, 20, 30];
+
+  test('exact and step-hold (most recent sample at or before time)', () => {
+    expect(valueAtTime(times, values, 2000)).toBe(20);
+    expect(valueAtTime(times, values, 2500)).toBe(20); // hold previous
+  });
+
+  test('before the first sample uses the first point', () => {
+    expect(valueAtTime(times, values, 500)).toBe(10);
+  });
+
+  test('after the last sample uses the last point', () => {
+    expect(valueAtTime(times, values, 9999)).toBe(30);
+  });
+
+  test('skips null/NaN backwards and clamps negatives', () => {
+    expect(valueAtTime([1000, 2000, 3000], [10, null, 30], 2500)).toBe(10);
+    expect(valueAtTime([1000, 2000], [-5, 20], 1500)).toBe(0); // -5 clamped
+  });
+
+  test('returns 0 for empty or missing input', () => {
+    expect(valueAtTime([], [], 1000)).toBe(0);
+    expect(valueAtTime(undefined, undefined, 1000)).toBe(0);
+  });
+
+  test('getTimeField returns the time field', () => {
+    const frame: any = {
+      fields: [
+        { name: 'Time', type: 'time', values: [1, 2] },
+        { name: 'Value', type: 'number', values: [3, 4] },
+      ],
+    };
+    expect(getTimeField(frame)?.name).toBe('Time');
+  });
+
+  test('getTimeField does not fall back to a non-numeric first field', () => {
+    const frame: any = {
+      fields: [
+        { name: 'Host', type: 'string', values: ['a', 'b'] },
+        { name: 'Value', type: 'number', values: [3, 4] },
+      ],
+    };
+    expect(getTimeField(frame)).toBeUndefined();
   });
 });

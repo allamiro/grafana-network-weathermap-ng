@@ -232,6 +232,11 @@ export interface WeathermapSettings {
     defaultUnits?: string;
     linkDecimals?: number;
     valueMappingMode?: ValueMappingMode;
+    // When enabled, a timeline slider lets the viewer scrub through the selected
+    // time range and see link values as they were at that moment.
+    timeline?: {
+      enabled: boolean;
+    };
     dynamicStroke?: {
       enabled: boolean;
       minWidth: number;

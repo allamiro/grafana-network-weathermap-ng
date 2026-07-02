@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { DataFrame, Field, FieldType, getTimeZone, getValueFormat, LoadingState, PanelProps } from '@grafana/data';
+import {
+  DataFrame,
+  dateTimeFormat,
+  Field,
+  FieldType,
+  getTimeZone,
+  getValueFormat,
+  LoadingState,
+  PanelProps,
+} from '@grafana/data';
 import {
   Anchor,
   DrawnLink,
@@ -18,7 +27,9 @@ import {
 } from 'types';
 import { css, cx } from '@emotion/css';
 import {
+  Button,
   LegendDisplayMode,
+  Slider,
   TimeSeries,
   TooltipDisplayMode,
   TooltipPlugin,
@@ -38,6 +49,8 @@ import {
   getValueField,
   sanitizeUrl,
   aggregateFieldValues,
+  getTimeField,
+  valueAtTime,
   addViaToLink,
   removeVia,
 } from 'utils';
@@ -102,6 +115,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const [draggedNode, setDraggedNode] = useState(null as unknown as DrawnNode);
   const [selectedNodes, setSelectedNodes] = useState([] as DrawnNode[]);
+
+  // Timeline slider (#158): when scrubbing, holds the selected timestamp (ms).
+  // null means "live" — resolve values with the normal value-mapping mode.
+  const timelineEnabled = Boolean(wm?.settings?.link?.timeline?.enabled);
+  const [scrubTime, setScrubTime] = useState<number | null>(null);
+  // Clamp the scrub position into the current dashboard range so the label and
+  // the resolved data stay in sync even after the time range changes.
+  const timeFromMs = timeRange.from.valueOf();
+  const timeToMs = timeRange.to.valueOf();
+  const effectiveScrub =
+    scrubTime === null ? null : Math.min(timeToMs, Math.max(timeFromMs, scrubTime));
+  const useTimeline = timelineEnabled && effectiveScrub !== null;
 
   function getScaleColor(current: number, max: number) {
     const defaultColor = getSolidFromAlphaColor(wm.settings.link.stroke.color, wm.settings.panel.backgroundColor);
@@ -466,7 +491,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       }
       try {
         const fieldValues = getValueField(frame).values as Array<number | null | undefined>;
-        const resolvedValue = aggregateFieldValues(fieldValues, mode);
+        const resolvedValue =
+          useTimeline && effectiveScrub !== null
+            ? valueAtTime(
+                getTimeField(frame)?.values as Array<number | null | undefined>,
+                fieldValues,
+                effectiveScrub
+              )
+            : aggregateFieldValues(fieldValues, mode);
         map.set(getDataFrameName(frame, data.series), resolvedValue);
       } catch (e) {
         console.warn('Network Weathermap: Error while attempting to access query data.', e);
@@ -474,7 +506,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     });
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, wm.settings.link.valueMappingMode]);
+  }, [data, wm.settings.link.valueMappingMode, useTimeline, effectiveScrub]);
 
   // Minimize uneeded state changes
   const mounted = useRef(false);
@@ -1674,6 +1706,50 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         >
           {wm.settings.panel.showTimestamp ? timeRange.to.toLocaleString() : ''}
         </div>
+        {timelineEnabled &&
+          (() => {
+            const fromMs = timeFromMs;
+            const toMs = timeToMs;
+            // Guard against a degenerate/inverted range (would make an invalid slider).
+            if (!(toMs > fromMs)) {
+              return null;
+            }
+            const current = effectiveScrub ?? toMs;
+            const step = Math.max(1, Math.round((toMs - fromMs) / 500));
+            return (
+              <div
+                data-testid="weathermap-timeline"
+                className={css`
+                  position: absolute;
+                  bottom: 0;
+                  left: 0;
+                  right: 0;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 6px 10px;
+                  background-color: ${theme.colors.background.secondary};
+                  border-top: 1px solid ${theme.colors.border.weak};
+                `}
+              >
+                <span style={{ fontSize: '12px', whiteSpace: 'nowrap', minWidth: '128px' }}>
+                  {useTimeline ? dateTimeFormat(current, { timeZone: getTimeZone() }) : 'Live (latest)'}
+                </span>
+                <div style={{ flex: '1 1 auto' }}>
+                  <Slider
+                    min={fromMs}
+                    max={toMs}
+                    step={step}
+                    value={current}
+                    onChange={(v) => setScrubTime(v)}
+                  />
+                </div>
+                <Button variant="secondary" size="sm" disabled={!useTimeline} onClick={() => setScrubTime(null)}>
+                  Live
+                </Button>
+              </div>
+            );
+          })()}
       </div>
     );
   } else {
