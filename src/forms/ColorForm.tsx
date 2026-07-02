@@ -103,6 +103,10 @@ export const ColorForm = (props: Props) => {
       </div>
       {editedPercents.map((threshold, i) => (
         <Input
+          // Explicit id: without one, Grafana 13's options-pane Field context
+          // assigns every bare control the options-item id, producing
+          // duplicate form field ids (#167).
+          id={`nwm-scale-threshold-${i}`}
           className={styles.item}
           type="number"
           step="0.0001"

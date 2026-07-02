@@ -289,6 +289,10 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
         Nodes
       </h6>
       <Select
+        // Explicit inputId: without one, Grafana 13's options-pane Field
+        // context assigns every bare control the options-item id, producing
+        // duplicate form field ids (#167).
+        inputId="nwm-node-picker"
         onChange={(v) => {
           setCurrentNode(v as unknown as Node);
         }}
@@ -375,6 +379,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
               <InlineFieldRow className={styles.inlineRow}>
                 <ControlledCollapse label="Icon">
                   <Select
+                    // Explicit inputId: avoids Grafana 13 options-pane id
+                    // collisions on bare controls (#167).
+                    inputId={`nwm-node-icon-${node.id}`}
                     onChange={(v) => {
                       handleIconChange(v ? v.value : undefined, i);
                     }}
