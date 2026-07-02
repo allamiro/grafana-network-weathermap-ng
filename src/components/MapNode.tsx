@@ -24,6 +24,7 @@ interface NodeProps {
   onClick: React.MouseEventHandler<SVGGElement>;
   onMouseMove?: React.MouseEventHandler<SVGGElement>;
   onMouseLeave?: React.MouseEventHandler<SVGGElement>;
+  onContextMenu?: React.MouseEventHandler<SVGGElement>;
   disabled: boolean;
   data: PanelData;
 }
@@ -48,7 +49,7 @@ function calculateRectY(d: DrawnNode, wm: Weathermap) {
 }
 
 const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
-  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, onMouseMove, onMouseLeave, disabled, data } =
+  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, onMouseMove, onMouseLeave, onContextMenu, disabled, data } =
     props;
   const styles = useStyles2(getStyles);
 
@@ -109,6 +110,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
         onClick={onClick}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
+        onContextMenu={onContextMenu}
         transform={`translate(${
           wm.settings.panel.grid.enabled &&
           draggedNode &&

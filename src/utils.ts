@@ -453,6 +453,104 @@ export function sanitizeUrl(raw: string | undefined | null): string {
 }
 
 /**
+ * Insert a VIA (intermediate waypoint) into a link by the connection-node
+ * mechanism: the link A<->B is split into A<->C and C<->B, where C is a new
+ * connection node placed at the link's midpoint. The A-side query/data stays on
+ * the first segment and the B-side query/data moves to the second, so metrics
+ * are preserved. Returns the (mutated) weathermap; a no-op if the link is
+ * missing. The caller can then drag C to reposition the VIA.
+ */
+export function addViaToLink(wm: Weathermap, linkId: string, theme: GrafanaTheme2): Weathermap {
+  const link = wm.links.find((l) => l.id === linkId);
+  if (!link) {
+    return wm;
+  }
+
+  const aPos = link.nodes[0].position;
+  const bPos = link.nodes[1].position;
+  const midpoint: [number, number] = [Math.round((aPos[0] + bPos[0]) / 2), Math.round((aPos[1] + bPos[1]) / 2)];
+
+  const connCount = wm.nodes.filter((n) => n.isConnection).length;
+  const conn: Node = {
+    ...generateBasicNode('C' + connCount, midpoint, theme),
+    isConnection: true,
+    anchors: {
+      0: { numLinks: 2, numFilledLinks: 0 },
+      1: { numLinks: 0, numFilledLinks: 0 },
+      2: { numLinks: 0, numFilledLinks: 0 },
+      3: { numLinks: 0, numFilledLinks: 0 },
+      4: { numLinks: 0, numFilledLinks: 0 },
+    },
+  };
+
+  const endNode = link.nodes[1];
+  const zSide = link.sides.Z; // carries the B-side query/bandwidth/labels
+
+  const connectionSide = (labelOffset: number): typeof link.sides.A => ({
+    bandwidth: 0,
+    bandwidthQuery: undefined,
+    query: undefined,
+    labelOffset,
+    anchor: Anchor.Center,
+    dashboardLink: '',
+  });
+
+  // New link C <-> B keeps all link-level properties (units, arrows, stroke,
+  // status, tooltip metrics, etc.) and the original B-side data.
+  const newLink: Link = {
+    ...link,
+    id: uuidv4(),
+    nodes: [conn, endNode],
+    sides: {
+      A: connectionSide(zSide.labelOffset),
+      Z: zSide,
+    },
+  };
+
+  // Original link becomes A <-> C; its A-side data is untouched.
+  link.nodes = [link.nodes[0], conn];
+  link.sides = {
+    A: link.sides.A,
+    Z: connectionSide(zSide.labelOffset),
+  };
+
+  wm.nodes.push(conn);
+  const idx = wm.links.findIndex((l) => l.id === linkId);
+  wm.links.splice(idx + 1, 0, newLink);
+  return wm;
+}
+
+/**
+ * Remove a VIA connection node, merging its incoming (A<->C) and outgoing
+ * (C<->B) links back into a single A<->B link that keeps the endpoint data.
+ * No-op unless the node is a connection with exactly one incoming and one
+ * outgoing link (so malformed graphs are left untouched).
+ */
+export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap {
+  const conn = wm.nodes.find((n) => n.id === connectionNodeId && n.isConnection);
+  if (!conn) {
+    return wm;
+  }
+
+  const inLinks = wm.links.filter((l) => l.nodes[1].id === conn.id);
+  const outLinks = wm.links.filter((l) => l.nodes[0].id === conn.id);
+  if (inLinks.length !== 1 || outLinks.length !== 1) {
+    return wm;
+  }
+
+  const inLink = inLinks[0];
+  const outLink = outLinks[0];
+
+  // inLink (A<->C) now reaches outLink's target (B), keeping B-side data.
+  inLink.nodes = [inLink.nodes[0], outLink.nodes[1]];
+  inLink.sides = { A: inLink.sides.A, Z: outLink.sides.Z };
+
+  wm.links = wm.links.filter((l) => l.id !== outLink.id);
+  wm.nodes = wm.nodes.filter((n) => n.id !== conn.id);
+  return wm;
+}
+
+/**
  * Resolve a single display value from a field's data points according to the
  * chosen value-mapping mode. Null/NaN entries are skipped and negative values
  * are clamped to 0 (matching how the panel treats throughput). Returns 0 when

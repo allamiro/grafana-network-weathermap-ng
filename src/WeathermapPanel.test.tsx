@@ -165,6 +165,46 @@ test('Keeps the background image static (no in-canvas image) when Move With Map 
   expect(images.some((im) => im.getAttribute('href') === 'https://example.com/bg.png')).toBe(false);
 });
 
+test('Double-clicking a link in edit mode inserts a VIA', () => {
+  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  let captured: SimpleOptions | null = null;
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    captured = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  fireEvent.doubleClick(screen.getByTestId('link'));
+
+  expect(captured).not.toBeNull();
+  expect(captured!.weathermap.nodes.length).toBe(3); // A, B, and the new VIA
+  expect(captured!.weathermap.nodes.some((n) => n.isConnection)).toBe(true);
+  expect(captured!.weathermap.links.length).toBe(2);
+  getSearchSpy.mockRestore();
+});
+
+test('Right-clicking a VIA in edit mode removes it', () => {
+  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  let captured: SimpleOptions | null = null;
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getConnectedLinkData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    captured = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  // Connection nodes render their label in edit mode.
+  const viaGroup = screen.getByText('C0').closest('g')!;
+  fireEvent.contextMenu(viaGroup);
+
+  expect(captured).not.toBeNull();
+  expect(captured!.weathermap.nodes.some((n) => n.isConnection)).toBe(false);
+  expect(captured!.weathermap.nodes.length).toBe(2);
+  expect(captured!.weathermap.links.length).toBe(1);
+  getSearchSpy.mockRestore();
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };

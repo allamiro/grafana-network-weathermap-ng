@@ -38,6 +38,8 @@ import {
   getValueField,
   sanitizeUrl,
   aggregateFieldValues,
+  addViaToLink,
+  removeVia,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -620,6 +622,29 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       return;
     }
     setHoveredLink(null as unknown as HoveredLink);
+  };
+
+  // VIA editing on the canvas (#67): double-click a link to insert a waypoint
+  // (a connection node at the link midpoint, which can then be dragged), and
+  // right-click a VIA to remove it and merge the two segments back together.
+  const handleAddVia = (linkId: string, e: React.MouseEvent<SVGElement>) => {
+    if (!isEditMode) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = addViaToLink(wm, linkId, theme);
+    onOptionsChange({ ...options, weathermap: updated });
+  };
+
+  const handleRemoveVia = (node: DrawnNode, e: React.MouseEvent<SVGElement>) => {
+    if (!isEditMode || !node.isConnection) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = removeVia(wm, node.id);
+    onOptionsChange({ ...options, weathermap: updated });
   };
 
   const [hoveredNode, setHoveredNode] = useState(null as unknown as HoveredNode);
@@ -1223,6 +1248,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     strokeOpacity={1}
                     width={Math.abs(d.target.x - d.source.x)}
                     height={Math.abs(d.target.y - d.source.y)}
+                    style={isEditMode ? { cursor: 'copy' } : undefined}
+                    onDoubleClick={(e) => handleAddVia(d.id, e)}
                   >
                     <line
                       strokeWidth={getLinkStroke(d.sides.A.currentValue, d.sides.A.bandwidth, d.stroke)}
@@ -1615,6 +1642,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     },
                     onMouseMove: (e) => handleNodeHover(d, e),
                     onMouseLeave: (e) => handleNodeHoverLoss(e),
+                    onContextMenu: (e) => handleRemoveVia(d, e),
                     disabled: !isEditMode,
                     data: data,
                   }}
