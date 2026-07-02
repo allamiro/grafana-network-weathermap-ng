@@ -134,23 +134,23 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     return ds.minWidth + (ds.maxWidth - ds.minWidth) * pct;
   }
 
-  // Get the middle point between two nodes
-  function getMiddlePoint(source: Position, target: Position, offset: number): Position {
-    const x = (source.x + target.x) / 2;
-    const y = (source.y + target.y) / 2;
-    const a = target.x - source.x;
-    const b = target.y - source.y;
-    const dist = Math.sqrt(a * a + b * b);
-    const newX = x - (offset * (target.x - source.x)) / dist;
-    const newY = y - (offset * (target.y - source.y)) / dist;
-    return { x: newX, y: newY };
-  }
-
   // Get a point a percentage of the way between two nodes
   function getPercentPoint(source: Position, target: Position, percent: number): Position {
     const newX = target.x + (source.x - target.x) * percent;
     const newY = target.y + (source.y - target.y) * percent;
     return { x: newX, y: newY };
+  }
+
+  // Shift a base point along the (from -> to) direction by `offset`. Lets the
+  // arrow "meeting point" sit at an arbitrary base rather than the fixed midpoint.
+  function shiftAlong(base: Position, from: Position, to: Position, offset: number): Position {
+    const a = to.x - from.x;
+    const b = to.y - from.y;
+    const dist = Math.sqrt(a * a + b * b);
+    if (dist === 0) {
+      return { x: base.x, y: base.y };
+    }
+    return { x: base.x - (offset * a) / dist, y: base.y - (offset * b) / dist };
   }
 
   // Find the points that create the two other points of a triangle for the arrow's tip
@@ -399,7 +399,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       }
     }
 
-    toReturn.lineEndA = getMiddlePoint(
+    // The point where the two directional arrows meet. Defaults to the midpoint
+    // (50%) but can be shifted along the A->Z line via arrowMeetPercent (#62).
+    // Clamped to keep the junction from overlapping either node box.
+    const meetPercent = Math.min(95, Math.max(5, d.arrowMeetPercent ?? 50)) / 100;
+    const meetPoint: Position = {
+      x: toReturn.lineStartA.x + (toReturn.lineStartZ.x - toReturn.lineStartA.x) * meetPercent,
+      y: toReturn.lineStartA.y + (toReturn.lineStartZ.y - toReturn.lineStartA.y) * meetPercent,
+    };
+
+    toReturn.lineEndA = shiftAlong(
+      meetPoint,
       toReturn.lineStartZ,
       toReturn.lineStartA,
       -toReturn.arrows.offset - toReturn.arrows.height
@@ -410,7 +420,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.lineEndZ = toReturn.lineStartZ;
     }
 
-    toReturn.arrowCenterA = getMiddlePoint(toReturn.lineStartZ, toReturn.lineStartA, -toReturn.arrows.offset);
+    toReturn.arrowCenterA = shiftAlong(meetPoint, toReturn.lineStartZ, toReturn.lineStartA, -toReturn.arrows.offset);
     toReturn.arrowPolygonA = getArrowPolygon(
       toReturn.lineStartA,
       toReturn.arrowCenterA,
@@ -418,12 +428,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.arrows.width
     );
 
-    toReturn.lineEndZ = getMiddlePoint(
+    toReturn.lineEndZ = shiftAlong(
+      meetPoint,
       toReturn.lineStartZ,
       toReturn.lineStartA,
       toReturn.arrows.offset + toReturn.arrows.height
     );
-    toReturn.arrowCenterZ = getMiddlePoint(toReturn.lineStartZ, toReturn.lineStartA, toReturn.arrows.offset);
+    toReturn.arrowCenterZ = shiftAlong(meetPoint, toReturn.lineStartZ, toReturn.lineStartA, toReturn.arrows.offset);
     toReturn.arrowPolygonZ = getArrowPolygon(
       toReturn.lineStartZ,
       toReturn.arrowCenterZ,
