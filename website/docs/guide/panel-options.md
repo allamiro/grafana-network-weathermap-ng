@@ -50,7 +50,7 @@ Use **Average / 95th Percentile** for capacity-planning views where a single-poi
 
 ## Timeline Slider
 
-Enable **Timeline Slider** to add a scrubber at the bottom of the panel. Drag it to move through the selected time range and see **link values as they were at that moment** — the whole map updates retroactively.
+Enable **Timeline Slider** to add a scrubber at the bottom of the panel. Drag it to move through the selected time range and see **link values as they were at that moment** — the map's link values update retroactively.
 
 - A **timestamp label** shows the selected time.
 - The **Live** button returns to the latest/aggregate value.

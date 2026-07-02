@@ -10,8 +10,8 @@ End-to-end recipes that combine the options into real dashboards. Each assumes y
 
 1. Add nodes `SW-CORE` and `BKB-CARPINA`.
 2. Add a link A=`SW-CORE`, Z=`BKB-CARPINA`.
-   - **A Side Query** = interface *bits sent*; **A Bandwidth #** = link capacity (e.g. `20000000000`).
-   - **Z Side Query** = interface *bits received*; **Z Bandwidth #** = same capacity.
+   - **A Side Query** = the outbound direction A→Z — `SW-CORE`'s interface *bits sent*; **A Bandwidth #** = link capacity (e.g. `20000000000`).
+   - **Z Side Query** = the reverse direction Z→A. Use either `BKB-CARPINA`'s *bits sent* **or** `SW-CORE`'s *bits received* (both represent Z→A) — not `BKB-CARPINA`'s *bits received*, which is the same A→Z direction as the A side; **Z Bandwidth #** = same capacity.
 3. Set **A Direction Label** = `Outbound`, **Z Direction Label** = `Inbound`.
 4. Add **Port Labels** (e.g. `Eth-Trunk12`) so the physical interface is visible.
 5. Color scale: `0→green, 50→yellow, 80→orange, 95→red` with **Color Scale Mode = percent**.
