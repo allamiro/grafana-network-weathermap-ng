@@ -46,6 +46,16 @@ class MouseMoveEvent extends MouseEvent {
   }
 }
 
+// Restore the editPanel location spy after every test — even if an assertion
+// throws mid-test — so `editPanel=1` never leaks into subsequent tests. Scoped
+// to this spy only so global scaffolding mocks (e.g. canvas measureText) stay
+// intact.
+let getSearchSpy: jest.SpyInstance | undefined;
+afterEach(() => {
+  getSearchSpy?.mockRestore();
+  getSearchSpy = undefined;
+});
+
 test('Creating a weathermap', () => {
   let testProps = { ...mPanelProps };
   testProps.options.weathermap = handleVersionedStateUpdates(getData(theme), theme);
@@ -92,6 +102,9 @@ test('Uses explicit per-side direction labels in the link tooltip when set', () 
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);
   weathermap.links[0].sides.A.directionLabel = 'TX-UPLINK';
   weathermap.links[0].sides.Z.directionLabel = 'RX-DOWNLINK';
+  // A custom tooltip metric row must use the same per-side labels, not the
+  // generic Inbound/Outbound wording.
+  weathermap.links[0].tooltipMetrics = [{ label: 'Errors', queryA: 'a-series', queryZ: 'z-series' }];
   testProps.options.weathermap = weathermap;
   testProps.onOptionsChange = (options: SimpleOptions) => {
     testProps.options = options;
@@ -105,6 +118,12 @@ test('Uses explicit per-side direction labels in the link tooltip when set', () 
   // Both explicit labels replace the generic Inbound/Outbound wording.
   expect(screen.getAllByText(/TX-UPLINK/).length).toBeGreaterThan(0);
   expect(screen.getAllByText(/RX-DOWNLINK/).length).toBeGreaterThan(0);
+  // The custom metric row uses the direction labels and not "Inbound"/"Outbound".
+  const metricRow = screen.getByText(/Errors/).textContent || '';
+  expect(metricRow).toContain('TX-UPLINK');
+  expect(metricRow).toContain('RX-DOWNLINK');
+  expect(metricRow).not.toContain('Inbound');
+  expect(metricRow).not.toContain('Outbound');
 
   fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
 });
@@ -163,6 +182,44 @@ test('Keeps the background image static (no in-canvas image) when Move With Map 
 
   const images = Array.from(container.querySelectorAll('image'));
   expect(images.some((im) => im.getAttribute('href') === 'https://example.com/bg.png')).toBe(false);
+});
+
+test('Double-clicking a link in edit mode inserts a VIA', () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  let captured: SimpleOptions | null = null;
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    captured = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  fireEvent.doubleClick(screen.getByTestId('link'));
+
+  expect(captured).not.toBeNull();
+  expect(captured!.weathermap.nodes.length).toBe(3); // A, B, and the new VIA
+  expect(captured!.weathermap.nodes.some((n) => n.isConnection)).toBe(true);
+  expect(captured!.weathermap.links.length).toBe(2);
+});
+
+test('Right-clicking a VIA in edit mode removes it', () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  let captured: SimpleOptions | null = null;
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getConnectedLinkData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    captured = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  // Connection nodes render their label in edit mode.
+  const viaGroup = screen.getByText('C0').closest('g')!;
+  fireEvent.contextMenu(viaGroup);
+
+  expect(captured).not.toBeNull();
+  expect(captured!.weathermap.nodes.some((n) => n.isConnection)).toBe(false);
+  expect(captured!.weathermap.nodes.length).toBe(2);
+  expect(captured!.weathermap.links.length).toBe(1);
 });
 
 // Tests plays badly with new deps
@@ -329,7 +386,7 @@ test('Check edit mode display', () => {
     testProps.options = options;
   };
 
-  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
 
   // Render the panel
   const { container, rerender } = render(<WeathermapPanel {...testProps} />);
@@ -352,5 +409,4 @@ test('Check edit mode display', () => {
   rerender(<WeathermapPanel {...testProps} />);
   fireEvent.wheel(container.querySelector('#nw-testing')!, { deltaY: -1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).toEqual(0);
-  getSearchSpy.mockRestore();
 });

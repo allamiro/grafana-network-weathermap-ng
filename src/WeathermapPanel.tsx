@@ -38,6 +38,8 @@ import {
   getValueField,
   sanitizeUrl,
   aggregateFieldValues,
+  addViaToLink,
+  removeVia,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -622,12 +624,37 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     setHoveredLink(null as unknown as HoveredLink);
   };
 
+  // VIA editing on the canvas (#67): double-click a link to insert a waypoint
+  // (a connection node at the link midpoint, which can then be dragged), and
+  // right-click a VIA to remove it and merge the two segments back together.
+  const handleAddVia = (linkId: string, e: React.MouseEvent<SVGElement>) => {
+    if (!isEditMode) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = addViaToLink(wm, linkId, theme);
+    onOptionsChange({ ...options, weathermap: updated });
+  };
+
+  const handleRemoveVia = (node: DrawnNode, e: React.MouseEvent<SVGElement>) => {
+    if (!isEditMode || !node.isConnection) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = removeVia(wm, node.id);
+    onOptionsChange({ ...options, weathermap: updated });
+  };
+
   const [hoveredNode, setHoveredNode] = useState(null as unknown as HoveredNode);
 
   const handleNodeHover = (d: DrawnNode, e: React.MouseEvent<SVGElement>) => {
     // Only show a tooltip when the node actually has metrics configured, and
-    // never while a node is being dragged in edit mode.
+    // never while a node is being dragged in edit mode. Clear any stale tooltip
+    // on the early-return path so it doesn't linger once a drag begins.
     if (e.shiftKey || draggedNode || !d.tooltipMetrics || d.tooltipMetrics.length === 0) {
+      setHoveredNode(null as unknown as HoveredNode);
       return;
     }
     let mouseX = e.clientX;
@@ -824,10 +851,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   };
                   const parts: string[] = [];
                   if (metric.queryA !== undefined && metric.queryA !== '') {
-                    parts.push(`Inbound: ${fmtVal(inboundVal)}`);
+                    parts.push(`${sideDirectionLabel(hoveredLink.link, 'A', 'Inbound')}: ${fmtVal(inboundVal)}`);
                   }
                   if (metric.queryZ !== undefined && metric.queryZ !== '') {
-                    parts.push(`Outbound: ${fmtVal(outboundVal)}`);
+                    parts.push(`${sideDirectionLabel(hoveredLink.link, 'Z', 'Outbound')}: ${fmtVal(outboundVal)}`);
                   }
                   return (
                     <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
@@ -1223,6 +1250,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     strokeOpacity={1}
                     width={Math.abs(d.target.x - d.source.x)}
                     height={Math.abs(d.target.y - d.source.y)}
+                    style={isEditMode ? { cursor: 'copy' } : undefined}
+                    onDoubleClick={(e) => handleAddVia(d.id, e)}
                   >
                     <line
                       strokeWidth={getLinkStroke(d.sides.A.currentValue, d.sides.A.bandwidth, d.stroke)}
@@ -1243,7 +1272,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       }}
                       onMouseOut={handleLinkHoverLoss}
                       onClick={() => {
-                        if (d.sides.A.dashboardLink.length > 0) {
+                        if (!isEditMode && d.sides.A.dashboardLink.length > 0) {
                           openDashboardLink(d.sides.A.dashboardLink);
                         }
                       }}
@@ -1289,7 +1318,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
-                            if (d.sides.A.dashboardLink.length > 0) {
+                            if (!isEditMode && d.sides.A.dashboardLink.length > 0) {
                               openDashboardLink(d.sides.A.dashboardLink);
                             }
                           }}
@@ -1314,7 +1343,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
-                            if (d.sides.Z.dashboardLink.length > 0) {
+                            if (!isEditMode && d.sides.Z.dashboardLink.length > 0) {
                               openDashboardLink(d.sides.Z.dashboardLink);
                             }
                           }}
@@ -1345,7 +1374,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
-                            if (d.sides.Z.dashboardLink.length > 0) {
+                            if (!isEditMode && d.sides.Z.dashboardLink.length > 0) {
                               openDashboardLink(d.sides.Z.dashboardLink);
                             }
                           }}
@@ -1615,6 +1644,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     },
                     onMouseMove: (e) => handleNodeHover(d, e),
                     onMouseLeave: (e) => handleNodeHoverLoss(e),
+                    onContextMenu: (e) => handleRemoveVia(d, e),
                     disabled: !isEditMode,
                     data: data,
                   }}

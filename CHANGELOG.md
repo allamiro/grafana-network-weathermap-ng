@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.6](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.6) (2026-07-02)
+
+### Features
+
+* **via-canvas-editing**: manage VIA (intermediate waypoint) points directly on the canvas in edit mode — double-click a link to insert a VIA (splitting the link and preserving each side's query data), drag the VIA like any node to reposition it, and right-click a VIA to remove it and merge the segments back together. No change to the underlying connection-node model ([#67](https://github.com/allamiro/grafana-network-weathermap-ng/issues/67), PR [#153](https://github.com/allamiro/grafana-network-weathermap-ng/pull/153))
+
+### Bug Fixes
+
+* **tooltip-consistency**: custom link tooltip metric rows now use the per-side direction labels instead of hardcoded "Inbound"/"Outbound" wording, and a node tooltip no longer lingers with stale data if a drag begins while it is shown; the link dashboard-link click no longer fires while inserting a VIA in edit mode ([#146](https://github.com/allamiro/grafana-network-weathermap-ng/issues/146), [#147](https://github.com/allamiro/grafana-network-weathermap-ng/issues/147), PR [#154](https://github.com/allamiro/grafana-network-weathermap-ng/pull/154))
+
 ## [1.5.5](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.5) (2026-07-02)
 
 ### Features

@@ -1,6 +1,7 @@
 import { defaultNodes, getData, theme } from 'testData';
 import { DrawnNode, Weathermap } from 'types';
 import {
+  addViaToLink,
   aggregateFieldValues,
   calculateRectangleAutoHeight,
   calculateRectangleAutoWidth,
@@ -10,6 +11,7 @@ import {
   isSafeUrl,
   measureText,
   nearestMultiple,
+  removeVia,
   sanitizeUrl,
 } from 'utils';
 
@@ -149,5 +151,77 @@ describe('aggregateFieldValues', () => {
     expect(aggregateFieldValues([], 'avg')).toBe(0);
     expect(aggregateFieldValues([null, NaN], 'max')).toBe(0);
     expect(aggregateFieldValues(undefined, 'last')).toBe(0);
+  });
+});
+
+describe('VIA helpers (addViaToLink / removeVia)', () => {
+  test('addViaToLink splits a link and preserves endpoint data', () => {
+    const wm: Weathermap = getData(theme);
+    // Give each side a distinct query to verify data preservation.
+    wm.links[0].sides.A.query = 'A-query';
+    wm.links[0].sides.Z.query = 'Z-query';
+    const endNode = wm.links[0].nodes[1];
+    const linkId = wm.links[0].id;
+
+    addViaToLink(wm, linkId, theme);
+
+    // One new connection node and one new link segment.
+    expect(wm.nodes.filter((n) => n.isConnection)).toHaveLength(1);
+    expect(wm.links).toHaveLength(2);
+
+    const conn = wm.nodes.find((n) => n.isConnection)!;
+    expect(conn.anchors[0].numLinks).toBe(2);
+
+    const first = wm.links.find((l) => l.nodes[1].id === conn.id)!; // A <-> C
+    const second = wm.links.find((l) => l.nodes[0].id === conn.id)!; // C <-> B
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+
+    // A-side data stays on the first segment; B-side moves to the second.
+    expect(first.sides.A.query).toBe('A-query');
+    expect(first.sides.Z.query).toBeUndefined();
+    expect(second.sides.Z.query).toBe('Z-query');
+    expect(second.nodes[1].id).toBe(endNode.id);
+  });
+
+  test('removeVia merges the two segments back and preserves data', () => {
+    const wm: Weathermap = getData(theme);
+    const linkId = wm.links[0].id;
+    wm.links[0].sides.A.query = 'A-query';
+    wm.links[0].sides.Z.query = 'Z-query';
+    const aId = wm.links[0].nodes[0].id;
+    const bId = wm.links[0].nodes[1].id;
+
+    addViaToLink(wm, linkId, theme);
+    const conn = wm.nodes.find((n) => n.isConnection)!;
+
+    removeVia(wm, conn.id);
+
+    expect(wm.nodes.filter((n) => n.isConnection)).toHaveLength(0);
+    expect(wm.links).toHaveLength(1);
+    expect(wm.links[0].nodes[0].id).toBe(aId);
+    expect(wm.links[0].nodes[1].id).toBe(bId);
+    expect(wm.links[0].sides.A.query).toBe('A-query');
+    expect(wm.links[0].sides.Z.query).toBe('Z-query');
+  });
+
+  test('removeVia is a no-op for a non-connection node', () => {
+    const wm: Weathermap = getData(theme);
+    const before = { nodes: wm.nodes.length, links: wm.links.length };
+    removeVia(wm, wm.nodes[0].id);
+    expect(wm.nodes).toHaveLength(before.nodes);
+    expect(wm.links).toHaveLength(before.links);
+  });
+
+  test('removeVia is a no-op for a C->C self-loop (same in/out link)', () => {
+    const wm: Weathermap = getData(theme);
+    const conn = wm.nodes.find((n) => n.isConnection) ?? wm.nodes[0];
+    conn.isConnection = true;
+    // A single self-loop link would otherwise satisfy the one-in/one-out check.
+    wm.links = [{ ...wm.links[0], id: 'self', nodes: [conn, conn] }];
+    removeVia(wm, conn.id);
+    expect(wm.links).toHaveLength(1);
+    expect(wm.links[0].id).toBe('self');
+    expect(wm.nodes.some((n) => n.id === conn.id)).toBe(true);
   });
 });
