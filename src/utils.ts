@@ -376,14 +376,19 @@ export function getValueField(frame: DataFrame): Field {
   throw new Error(`No value field found in frame "${frame.name}"`);
 }
 
-// Find the time field of a data frame (used by the timeline slider). Falls back
-// to the first field for standard time-series frames (time at index 0).
+// Find the time field of a data frame (used by the timeline slider). Prefers a
+// FieldType.time field; only falls back to the first field when it is numeric
+// (epoch-ms style), never to a string/category/unrelated field.
 export function getTimeField(frame: DataFrame): Field | undefined {
   const timeField = frame.fields.find((f) => f.type === FieldType.time);
   if (timeField) {
     return timeField;
   }
-  return frame.fields.length > 0 ? frame.fields[0] : undefined;
+  const first = frame.fields[0];
+  if (first && first.type === FieldType.number) {
+    return first;
+  }
+  return undefined;
 }
 
 /**

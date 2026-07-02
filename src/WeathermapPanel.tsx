@@ -120,7 +120,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // null means "live" — resolve values with the normal value-mapping mode.
   const timelineEnabled = Boolean(wm?.settings?.link?.timeline?.enabled);
   const [scrubTime, setScrubTime] = useState<number | null>(null);
-  const useTimeline = timelineEnabled && scrubTime !== null;
+  // Clamp the scrub position into the current dashboard range so the label and
+  // the resolved data stay in sync even after the time range changes.
+  const timeFromMs = timeRange.from.valueOf();
+  const timeToMs = timeRange.to.valueOf();
+  const effectiveScrub =
+    scrubTime === null ? null : Math.min(timeToMs, Math.max(timeFromMs, scrubTime));
+  const useTimeline = timelineEnabled && effectiveScrub !== null;
 
   function getScaleColor(current: number, max: number) {
     const defaultColor = getSolidFromAlphaColor(wm.settings.link.stroke.color, wm.settings.panel.backgroundColor);
@@ -486,11 +492,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       try {
         const fieldValues = getValueField(frame).values as Array<number | null | undefined>;
         const resolvedValue =
-          useTimeline && scrubTime !== null
+          useTimeline && effectiveScrub !== null
             ? valueAtTime(
                 getTimeField(frame)?.values as Array<number | null | undefined>,
                 fieldValues,
-                scrubTime
+                effectiveScrub
               )
             : aggregateFieldValues(fieldValues, mode);
         map.set(getDataFrameName(frame, data.series), resolvedValue);
@@ -500,7 +506,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     });
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, wm.settings.link.valueMappingMode, useTimeline, scrubTime]);
+  }, [data, wm.settings.link.valueMappingMode, useTimeline, effectiveScrub]);
 
   // Minimize uneeded state changes
   const mounted = useRef(false);
@@ -1702,13 +1708,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         </div>
         {timelineEnabled &&
           (() => {
-            const fromMs = timeRange.from.valueOf();
-            const toMs = timeRange.to.valueOf();
+            const fromMs = timeFromMs;
+            const toMs = timeToMs;
             // Guard against a degenerate/inverted range (would make an invalid slider).
             if (!(toMs > fromMs)) {
               return null;
             }
-            const current = Math.min(toMs, Math.max(fromMs, scrubTime ?? toMs));
+            const current = effectiveScrub ?? toMs;
             const step = Math.max(1, Math.round((toMs - fromMs) / 500));
             return (
               <div

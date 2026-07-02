@@ -264,4 +264,14 @@ describe('timeline helpers (valueAtTime / getTimeField)', () => {
     };
     expect(getTimeField(frame)?.name).toBe('Time');
   });
+
+  test('getTimeField does not fall back to a non-numeric first field', () => {
+    const frame: any = {
+      fields: [
+        { name: 'Host', type: 'string', values: ['a', 'b'] },
+        { name: 'Value', type: 'number', values: [3, 4] },
+      ],
+    };
+    expect(getTimeField(frame)).toBeUndefined();
+  });
 });
