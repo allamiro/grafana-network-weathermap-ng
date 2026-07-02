@@ -11,6 +11,19 @@ Maintained by <a href="https://github.com/allamiro">Tamir Suliman</a> — Plugin
 
 ---
 
+## 📖 Documentation
+
+New here? Start with the step-by-step guide:
+
+- **[Getting Started](guide/getting-started.md)** — from an empty panel to a live traffic map in ~10 minutes
+- **[Nodes (Devices)](guide/nodes.md)** — labels, icons, status coloring, node tooltips, dashboard links
+- **[Links](guide/links.md)** — queries & bandwidth, units, direction labels, port labels, parallel links, VIAs
+- **[Panel Options](guide/panel-options.md)** — background image, value display modes, timeline slider, color scale, tooltips
+- **[Interactions & Editing](guide/interactions.md)** — pan/zoom/select on Linux, Windows & macOS; VIA editing; export
+- **[Use Cases](guide/use-cases.md)** — capacity planning, incident retros, floor plans, multi-hop paths, and more
+
+---
+
 ## About This Fork
 
 This plugin is a continuation of the original [knightss27/grafana-network-weathermap](https://github.com/knightss27/grafana-network-weathermap) which was archived in 2023. The goal of this fork is to keep the plugin working with current Grafana releases and to fix outstanding bugs.
@@ -121,7 +134,7 @@ By default, the panel will start completely blank, looking something like this:
 - You probably want this number in `bits/sec`, unless your links are expecting something else (each link has customizable units, and default units are customizable in the global settings for the panel).
 - The weathermap will always choose the most recent data point available. If you want your links graphs to have data, make sure your queries are ranges and not "Instant" queries, as this will mean there is no data to show on each graph.
 - Once you have added a query in the panel editor, you can can see all queries and select one from the dropdown in the Query fields of the links.
-- See the [FAQ](/faq) or [Github issues](https://github.com/allamiro/grafana-network-weathermap-ng/issues) if you are having issues adding data (especially Zabbix datasource users).
+- See the [FAQ](faq.md) or [Github issues](https://github.com/allamiro/grafana-network-weathermap-ng/issues) if you are having issues adding data (especially Zabbix datasource users).
 
 **PLEASE NOTE:** _Queries with the exact same labels will be considered as such. If you have multiple queries and are unable to select the one that you want, double check to make sure it is labeled uniquely._
 

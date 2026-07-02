@@ -21,8 +21,22 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - tables
+  - toc:
+      permalink: true
 nav:
   - Home: index.md
+  - Tutorial:
+      - Getting Started: guide/getting-started.md
+      - Nodes (Devices): guide/nodes.md
+      - Links: guide/links.md
+      - Panel Options: guide/panel-options.md
+      - Interactions & Editing: guide/interactions.md
+      - Use Cases: guide/use-cases.md
   - Customization: customization.md
   - Reference: reference.md
   - FAQ: faq.md
