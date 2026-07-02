@@ -102,6 +102,9 @@ test('Uses explicit per-side direction labels in the link tooltip when set', () 
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);
   weathermap.links[0].sides.A.directionLabel = 'TX-UPLINK';
   weathermap.links[0].sides.Z.directionLabel = 'RX-DOWNLINK';
+  // A custom tooltip metric row must use the same per-side labels, not the
+  // generic Inbound/Outbound wording.
+  weathermap.links[0].tooltipMetrics = [{ label: 'Errors', queryA: 'a-series', queryZ: 'z-series' }];
   testProps.options.weathermap = weathermap;
   testProps.onOptionsChange = (options: SimpleOptions) => {
     testProps.options = options;
@@ -115,6 +118,12 @@ test('Uses explicit per-side direction labels in the link tooltip when set', () 
   // Both explicit labels replace the generic Inbound/Outbound wording.
   expect(screen.getAllByText(/TX-UPLINK/).length).toBeGreaterThan(0);
   expect(screen.getAllByText(/RX-DOWNLINK/).length).toBeGreaterThan(0);
+  // The custom metric row uses the direction labels and not "Inbound"/"Outbound".
+  const metricRow = screen.getByText(/Errors/).textContent || '';
+  expect(metricRow).toContain('TX-UPLINK');
+  expect(metricRow).toContain('RX-DOWNLINK');
+  expect(metricRow).not.toContain('Inbound');
+  expect(metricRow).not.toContain('Outbound');
 
   fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
 });
