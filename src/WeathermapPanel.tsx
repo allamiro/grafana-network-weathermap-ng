@@ -12,6 +12,8 @@ import {
   Position,
   Weathermap,
   HoveredLink,
+  HoveredNode,
+  NodeTooltipMetric,
   Threshold,
 } from 'types';
 import { css, cx } from '@emotion/css';
@@ -132,23 +134,23 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     return ds.minWidth + (ds.maxWidth - ds.minWidth) * pct;
   }
 
-  // Get the middle point between two nodes
-  function getMiddlePoint(source: Position, target: Position, offset: number): Position {
-    const x = (source.x + target.x) / 2;
-    const y = (source.y + target.y) / 2;
-    const a = target.x - source.x;
-    const b = target.y - source.y;
-    const dist = Math.sqrt(a * a + b * b);
-    const newX = x - (offset * (target.x - source.x)) / dist;
-    const newY = y - (offset * (target.y - source.y)) / dist;
-    return { x: newX, y: newY };
-  }
-
   // Get a point a percentage of the way between two nodes
   function getPercentPoint(source: Position, target: Position, percent: number): Position {
     const newX = target.x + (source.x - target.x) * percent;
     const newY = target.y + (source.y - target.y) * percent;
     return { x: newX, y: newY };
+  }
+
+  // Shift a base point along the (from -> to) direction by `offset`. Lets the
+  // arrow "meeting point" sit at an arbitrary base rather than the fixed midpoint.
+  function shiftAlong(base: Position, from: Position, to: Position, offset: number): Position {
+    const a = to.x - from.x;
+    const b = to.y - from.y;
+    const dist = Math.sqrt(a * a + b * b);
+    if (dist === 0) {
+      return { x: base.x, y: base.y };
+    }
+    return { x: base.x - (offset * a) / dist, y: base.y - (offset * b) / dist };
   }
 
   // Find the points that create the two other points of a triangle for the arrow's tip
@@ -397,7 +399,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       }
     }
 
-    toReturn.lineEndA = getMiddlePoint(
+    // The point where the two directional arrows meet. Defaults to the midpoint
+    // (50%) but can be shifted along the A->Z line via arrowMeetPercent (#62).
+    // Clamped to keep the junction from overlapping either node box.
+    const meetPercent = Math.min(95, Math.max(5, d.arrowMeetPercent ?? 50)) / 100;
+    const meetPoint: Position = {
+      x: toReturn.lineStartA.x + (toReturn.lineStartZ.x - toReturn.lineStartA.x) * meetPercent,
+      y: toReturn.lineStartA.y + (toReturn.lineStartZ.y - toReturn.lineStartA.y) * meetPercent,
+    };
+
+    toReturn.lineEndA = shiftAlong(
+      meetPoint,
       toReturn.lineStartZ,
       toReturn.lineStartA,
       -toReturn.arrows.offset - toReturn.arrows.height
@@ -408,7 +420,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.lineEndZ = toReturn.lineStartZ;
     }
 
-    toReturn.arrowCenterA = getMiddlePoint(toReturn.lineStartZ, toReturn.lineStartA, -toReturn.arrows.offset);
+    toReturn.arrowCenterA = shiftAlong(meetPoint, toReturn.lineStartZ, toReturn.lineStartA, -toReturn.arrows.offset);
     toReturn.arrowPolygonA = getArrowPolygon(
       toReturn.lineStartA,
       toReturn.arrowCenterA,
@@ -416,12 +428,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.arrows.width
     );
 
-    toReturn.lineEndZ = getMiddlePoint(
+    toReturn.lineEndZ = shiftAlong(
+      meetPoint,
       toReturn.lineStartZ,
       toReturn.lineStartA,
       toReturn.arrows.offset + toReturn.arrows.height
     );
-    toReturn.arrowCenterZ = getMiddlePoint(toReturn.lineStartZ, toReturn.lineStartA, toReturn.arrows.offset);
+    toReturn.arrowCenterZ = shiftAlong(meetPoint, toReturn.lineStartZ, toReturn.lineStartA, toReturn.arrows.offset);
     toReturn.arrowPolygonZ = getArrowPolygon(
       toReturn.lineStartZ,
       toReturn.arrowCenterZ,
@@ -630,6 +643,38 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     setHoveredLink(null as unknown as HoveredLink);
   };
 
+  const [hoveredNode, setHoveredNode] = useState(null as unknown as HoveredNode);
+
+  const handleNodeHover = (d: DrawnNode, e: React.MouseEvent<SVGElement>) => {
+    // Only show a tooltip when the node actually has metrics configured, and
+    // never while a node is being dragged in edit mode.
+    if (e.shiftKey || draggedNode || !d.tooltipMetrics || d.tooltipMetrics.length === 0) {
+      return;
+    }
+    let mouseX = e.clientX;
+    let mouseY = e.clientY;
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    }
+    setHoveredNode({ node: d, mouseX, mouseY });
+  };
+
+  const handleNodeHoverLoss = (e: React.MouseEvent<SVGElement>) => {
+    if (e.shiftKey) {
+      return;
+    }
+    setHoveredNode(null as unknown as HoveredNode);
+  };
+
+  // Resolve the tooltip label for a given link side, preferring an explicit
+  // per-side direction label (#70) and falling back to the generic wording.
+  const sideDirectionLabel = (link: DrawnLink, side: 'A' | 'Z', fallback: string): string => {
+    const label = link.sides[side].directionLabel;
+    return label && label.trim() !== '' ? label : fallback;
+  };
+
   // Navigate to a user-provided dashboard link only if it passes URL validation.
   // Values may have been produced by template-variable substitution at runtime,
   // so they are re-sanitized here before ever reaching window.open.
@@ -767,15 +812,21 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               {hoveredLink.link.target.label}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-              Usage - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentValueText}, Outbound:{' '}
+              Usage - {sideDirectionLabel(hoveredLink.link, hoveredLink.side === 'A' ? 'Z' : 'A', 'Inbound')}:{' '}
+              {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentValueText},{' '}
+              {sideDirectionLabel(hoveredLink.link, hoveredLink.side, 'Outbound')}:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentValueText}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-              Bandwidth - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentBandwidthText}, Outbound:{' '}
+              Bandwidth - {sideDirectionLabel(hoveredLink.link, hoveredLink.side === 'A' ? 'Z' : 'A', 'Inbound')}:{' '}
+              {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentBandwidthText},{' '}
+              {sideDirectionLabel(hoveredLink.link, hoveredLink.side, 'Outbound')}:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentBandwidthText}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-              Throughput (%) - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentPercentageText}, Outbound:{' '}
+              Throughput (%) - {sideDirectionLabel(hoveredLink.link, hoveredLink.side === 'A' ? 'Z' : 'A', 'Inbound')}:{' '}
+              {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentPercentageText},{' '}
+              {sideDirectionLabel(hoveredLink.link, hoveredLink.side, 'Outbound')}:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentPercentageText}
             </div>
             {hoveredLink.link.tooltipMetrics && hoveredLink.link.tooltipMetrics.length > 0 && (
@@ -898,7 +949,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       marginRight: '4px',
                     }}
                   ></div>
-                  <div style={{ fontSize: wm.settings.tooltip.fontSize }}>Inbound</div>
+                  <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
+                    {sideDirectionLabel(hoveredLink.link, 'Z', 'Inbound')}
+                  </div>
                   <div
                     style={{
                       width: '10px',
@@ -913,13 +966,66 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       fontSize: wm.settings.tooltip.fontSize,
                     }}
                   >
-                    Outbound
+                    {sideDirectionLabel(hoveredLink.link, 'A', 'Outbound')}
                   </div>
                 </div>
               </React.Fragment>
             ) : (
               ''
             )}
+          </div>
+        ) : (
+          ''
+        )}
+        {hoveredNode && hoveredNode.node.tooltipMetrics && hoveredNode.node.tooltipMetrics.length > 0 ? (
+          <div
+            data-testid="weathermap-node-tooltip"
+            className={css`
+              position: absolute;
+              top: ${hoveredNode.mouseY - 10}px;
+              left: ${hoveredNode.mouseX + 14}px;
+              transform: translate(
+                ${hoveredNode.mouseX > width2 * 0.65 ? '-100%' : '0%'},
+                ${hoveredNode.mouseY < 120 ? '0%' : '-100%'}
+              );
+              pointer-events: none;
+              background-color: ${wm.settings.tooltip.backgroundColor};
+              color: ${wm.settings.tooltip.textColor} !important;
+              font-size: ${wm.settings.tooltip.fontSize} !important;
+              z-index: 10000;
+              display: flex;
+              flex-direction: column;
+              padding: ${wm.settings.tooltip.fontSize}px;
+              border-radius: 4px;
+              border: 1px solid ${theme.colors.border.medium};
+            `}
+          >
+            <div
+              style={{
+                fontSize: wm.settings.tooltip.fontSize,
+                borderBottom: `1px solid ${theme.colors.border.medium}`,
+                marginBottom: '4px',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              {hoveredNode.node.label}
+            </div>
+            {hoveredNode.node.tooltipMetrics.map((metric: NodeTooltipMetric, idx: number) => {
+              const fmt = getlinkValueFormatter(metric.units || 'none');
+              const raw = metric.query ? dataFrameMap.get(metric.query) : undefined;
+              let valueText = 'n/a';
+              if (raw !== undefined) {
+                const formatted = fmt(raw, wm.settings.link.linkDecimals);
+                valueText = `${formatted.text} ${formatted.suffix}`.trim();
+              }
+              return (
+                <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
+                  {metric.label ? `${metric.label}: ` : ''}
+                  {valueText}
+                </div>
+              );
+            })}
           </div>
         ) : (
           ''
@@ -931,13 +1037,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             top: 0,
             left: 0,
             backgroundImage:
-              wm.settings.panel.backgroundImage && sanitizeUrl(wm.settings.panel.backgroundImage.url)
+              wm.settings.panel.backgroundImage &&
+              !wm.settings.panel.backgroundImage.attachToCanvas &&
+              sanitizeUrl(wm.settings.panel.backgroundImage.url)
                 ? `url(${sanitizeUrl(wm.settings.panel.backgroundImage.url)})`
                 : 'none',
             backgroundSize: wm.settings.panel.backgroundImage?.fit,
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            backgroundColor: wm.settings.panel.backgroundImage ? 'none' : wm.settings.panel.backgroundColor,
+            backgroundColor:
+              wm.settings.panel.backgroundImage && !wm.settings.panel.backgroundImage.attachToCanvas
+                ? 'none'
+                : wm.settings.panel.backgroundColor,
           }}
           id={`nw-${wm.id}${isEditMode ? '_' : ''}`}
           width={width2}
@@ -1046,6 +1157,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             })`}
             overflow="visible"
           >
+            {wm.settings.panel.backgroundImage &&
+            wm.settings.panel.backgroundImage.attachToCanvas &&
+            sanitizeUrl(wm.settings.panel.backgroundImage.url) ? (
+              <image
+                href={sanitizeUrl(wm.settings.panel.backgroundImage.url)}
+                x={0}
+                y={0}
+                width={wm.settings.panel.panelSize.width}
+                height={wm.settings.panel.panelSize.height}
+                preserveAspectRatio={
+                  wm.settings.panel.backgroundImage.fit === 'cover'
+                    ? 'xMidYMid slice'
+                    : wm.settings.panel.backgroundImage.fit === 'auto'
+                    ? 'none'
+                    : 'xMidYMid meet'
+                }
+              />
+            ) : (
+              ''
+            )}
             {wm.settings.panel.grid.guidesEnabled ? (
               <>
                 <rect
@@ -1503,6 +1634,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       // Force an update
                       onOptionsChange(options);
                     },
+                    onMouseMove: (e) => handleNodeHover(d, e),
+                    onMouseLeave: (e) => handleNodeHoverLoss(e),
                     disabled: !isEditMode,
                     data: data,
                   }}

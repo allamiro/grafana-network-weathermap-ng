@@ -14,10 +14,11 @@ import {
   ColorPicker,
   Slider,
   useTheme2,
+  UnitPicker,
 } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
-import { Weathermap, Node, NodeStatusValueMapping } from 'types';
+import { Weathermap, Node, NodeStatusValueMapping, NodeTooltipMetric } from 'types';
 import { CiscoIcons, NetworkingIcons, DatabaseIcons, ComputerIcons } from './iconOptions';
 import { getDataFrameName, sanitizeUrl } from 'utils';
 
@@ -604,6 +605,86 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     style={{ marginTop: '4px' }}
                   >
                     Add Mapping
+                  </Button>
+                </ControlledCollapse>
+              </InlineFieldRow>
+              <InlineFieldRow className={styles.inlineRow}>
+                <ControlledCollapse label="Tooltip">
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', opacity: 0.7 }}>
+                    Show additional metric values (latency, packet loss, CPU, etc.) when hovering over this node.
+                  </p>
+                  {(node.tooltipMetrics ?? []).map((metric: NodeTooltipMetric, mi: number) => (
+                    <React.Fragment key={mi}>
+                      <InlineFieldRow>
+                        <InlineField grow label={`Metric ${mi + 1} Label`} style={{ width: '100%' }}>
+                          <Input
+                            value={metric.label}
+                            onChange={(e) => {
+                              let weathermap: Weathermap = value;
+                              weathermap.nodes[i].tooltipMetrics![mi].label = e.currentTarget.value;
+                              onChange(weathermap);
+                            }}
+                            placeholder={'e.g. Latency, Packet Loss, CPU'}
+                            type={'text'}
+                          />
+                        </InlineField>
+                      </InlineFieldRow>
+                      <InlineField grow label={`Metric ${mi + 1} Query`} style={{ width: '100%' }}>
+                        <Select
+                          onChange={(v) => {
+                            let weathermap: Weathermap = value;
+                            weathermap.nodes[i].tooltipMetrics![mi].query = v ? v.value : undefined;
+                            onChange(weathermap);
+                          }}
+                          value={dataWithIds.find((p) => p === metric.query) ?? null}
+                          options={dataWithIds.map((d) => ({ value: d, label: d }))}
+                          placeholder={'Select query'}
+                          isClearable
+                          menuShouldPortal
+                        />
+                      </InlineField>
+                      <InlineField grow label={`Metric ${mi + 1} Units`} style={{ width: '100%' }}>
+                        <UnitPicker
+                          onChange={(val) => {
+                            let weathermap: Weathermap = value;
+                            weathermap.nodes[i].tooltipMetrics![mi].units = val;
+                            onChange(weathermap);
+                          }}
+                          value={metric.units}
+                        />
+                      </InlineField>
+                      <InlineFieldRow>
+                        <Button
+                          variant="secondary"
+                          icon="trash-alt"
+                          size="sm"
+                          onClick={() => {
+                            let weathermap: Weathermap = value;
+                            weathermap.nodes[i].tooltipMetrics!.splice(mi, 1);
+                            onChange(weathermap);
+                          }}
+                          style={{ marginBottom: '8px' }}
+                        >
+                          Remove Metric {mi + 1}
+                        </Button>
+                      </InlineFieldRow>
+                    </React.Fragment>
+                  ))}
+                  <Button
+                    variant="secondary"
+                    icon="plus"
+                    size="sm"
+                    onClick={() => {
+                      let weathermap: Weathermap = value;
+                      weathermap.nodes[i].tooltipMetrics = [
+                        ...(weathermap.nodes[i].tooltipMetrics || []),
+                        { label: '', query: undefined },
+                      ];
+                      onChange(weathermap);
+                    }}
+                    style={{ marginBottom: '8px' }}
+                  >
+                    Add Metric
                   </Button>
                 </ControlledCollapse>
               </InlineFieldRow>

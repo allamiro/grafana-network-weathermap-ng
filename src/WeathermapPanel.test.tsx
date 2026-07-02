@@ -87,6 +87,84 @@ test('Creating a weathermap', () => {
   // TODO: find a working way to check node dragging
 });
 
+test('Uses explicit per-side direction labels in the link tooltip when set', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.directionLabel = 'TX-UPLINK';
+  weathermap.links[0].sides.Z.directionLabel = 'RX-DOWNLINK';
+  testProps.options.weathermap = weathermap;
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Hover the link to open its tooltip.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+
+  // Both explicit labels replace the generic Inbound/Outbound wording.
+  expect(screen.getAllByText(/TX-UPLINK/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/RX-DOWNLINK/).length).toBeGreaterThan(0);
+
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
+test('Renders a link with a custom arrow meeting point without breaking geometry', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].arrowMeetPercent = 90;
+  // Fresh options object so we don't mutate the shared mock props.
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const link = screen.getByTestId('link');
+  expect(link).not.toBeNull();
+  // A shifted meeting point must still produce finite coordinates
+  // (no divide-by-zero / NaN in the arrow geometry).
+  expect(link.innerHTML).not.toContain('NaN');
+});
+
+test('Draws the background image inside the canvas when Move With Map is enabled', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.panel.backgroundImage = {
+    url: 'https://example.com/bg.png',
+    fit: 'contain',
+    attachToCanvas: true,
+  };
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  const images = Array.from(container.querySelectorAll('image'));
+  expect(images.some((im) => im.getAttribute('href') === 'https://example.com/bg.png')).toBe(true);
+});
+
+test('Keeps the background image static (no in-canvas image) when Move With Map is off', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.panel.backgroundImage = {
+    url: 'https://example.com/bg.png',
+    fit: 'contain',
+  };
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  const images = Array.from(container.querySelectorAll('image'));
+  expect(images.some((im) => im.getAttribute('href') === 'https://example.com/bg.png')).toBe(false);
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };
@@ -198,6 +276,50 @@ test('Shows no notice for a topology-only map with no queries', () => {
   render(<WeathermapPanel {...testProps} />);
 
   expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
+});
+
+test('Shows a node tooltip with configured metrics on hover', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.nodes[0].tooltipMetrics = [{ label: 'Latency', query: 'latency-series', units: 's' }];
+  testProps.options.weathermap = weathermap;
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No tooltip until we hover.
+  expect(screen.queryByTestId('weathermap-node-tooltip')).toBeNull();
+
+  // Hover the node that has metrics configured.
+  const nodeGroup = screen.getByText(weathermap.nodes[0].label!).closest('g')!;
+  fireEvent.mouseMove(nodeGroup);
+
+  const tooltip = screen.getByTestId('weathermap-node-tooltip');
+  expect(tooltip.textContent).toContain('Latency');
+  // With no matching series the value resolves to n/a rather than crashing.
+  expect(tooltip.textContent).toContain('n/a');
+
+  // Leaving the node hides the tooltip again.
+  fireEvent.mouseLeave(nodeGroup);
+  expect(screen.queryByTestId('weathermap-node-tooltip')).toBeNull();
+});
+
+test('Shows no node tooltip when the node has no configured metrics', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  testProps.options.weathermap = weathermap;
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const nodeGroup = screen.getByText(weathermap.nodes[0].label!).closest('g')!;
+  fireEvent.mouseMove(nodeGroup);
+
+  expect(screen.queryByTestId('weathermap-node-tooltip')).toBeNull();
 });
 
 test('Check edit mode display', () => {

@@ -118,6 +118,24 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 placeholder={'Select image fit'}
               ></Select>
             </InlineField>
+            <InlineField
+              grow
+              label="Move With Map"
+              className={styles.inlineField}
+              style={{ marginLeft: '24px' }}
+              tooltip={'Attach the background image to the map canvas so it pans and zooms with the nodes and links instead of staying fixed.'}
+            >
+              <InlineSwitch
+                value={value.settings.panel.backgroundImage.attachToCanvas ?? false}
+                onChange={(e) => {
+                  let options = value;
+                  if (options.settings.panel.backgroundImage) {
+                    options.settings.panel.backgroundImage.attachToCanvas = e.currentTarget.checked;
+                  }
+                  onChange(options);
+                }}
+              />
+            </InlineField>
           </>
         ) : (
           ''

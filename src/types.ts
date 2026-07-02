@@ -17,6 +17,9 @@ export interface PanelOptions {
 export interface BGImageOptions {
   url: string;
   fit: string;
+  // When true, the background image is drawn inside the map canvas so it pans
+  // and zooms together with the nodes/links instead of staying static.
+  attachToCanvas?: boolean;
 }
 
 export interface TooltipOptions {
@@ -62,6 +65,12 @@ export interface NodeStatusValueMapping {
   color: string;
 }
 
+export interface NodeTooltipMetric {
+  label: string;
+  query?: string;
+  units?: string;
+}
+
 export interface Node {
   id: string;
   position: [number, number];
@@ -69,6 +78,7 @@ export interface Node {
   showLabel?: boolean;
   dashboardLink?: string;
   openInSameTab?: boolean;
+  tooltipMetrics?: NodeTooltipMetric[];
   anchors: {
     [Anchor.Center]: NodeAnchor;
     [Anchor.Top]: NodeAnchor;
@@ -104,6 +114,10 @@ export interface LinkSide {
   anchor: Anchor;
   dashboardLink: string;
   portLabel?: string;
+  // Optional explicit direction label for this side (e.g. "Inbound", "Outbound",
+  // "To WAN"). When set, the hover tooltip labels this side's value with it
+  // instead of the generic Inbound/Outbound wording.
+  directionLabel?: string;
 }
 
 export interface LinkTooltipMetric {
@@ -125,6 +139,9 @@ export interface Link {
   stroke: number;
   showThroughputPercentage: boolean;
   linkOffset?: number;
+  // Percentage (0-100) along the A->Z line where the two directional arrows
+  // meet. Defaults to 50 (the midpoint) when unset.
+  arrowMeetPercent?: number;
   tooltipMetrics?: LinkTooltipMetric[];
   statusQuery?: string;
   statusDownColor?: string;
@@ -175,6 +192,12 @@ export interface DrawnLink extends Link {
 export interface HoveredLink {
   link: DrawnLink;
   side: 'A' | 'Z';
+  mouseX: number;
+  mouseY: number;
+}
+
+export interface HoveredNode {
+  node: DrawnNode;
   mouseX: number;
   mouseY: number;
 }

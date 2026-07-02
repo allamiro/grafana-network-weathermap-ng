@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.4](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.4) (2026-07-02)
+
+### Features
+
+* **node-tooltips**: nodes now support hover tooltips showing additional metric values (latency, packet loss, CPU, or any bound query) — configure per-node metrics (label, query, units) in the node editor's Tooltip section ([#72](https://github.com/allamiro/grafana-network-weathermap-ng/issues/72), PR [#146](https://github.com/allamiro/grafana-network-weathermap-ng/pull/146))
+* **link-direction-labels**: optional per-side "Direction Label" lets you explicitly name which side of a link is inbound vs outbound; the label is used in the hover tooltip, removing the implicit A/Z ambiguity ([#70](https://github.com/allamiro/grafana-network-weathermap-ng/issues/70), PR [#147](https://github.com/allamiro/grafana-network-weathermap-ng/pull/147))
+* **arrow-meeting-point**: new per-link "Arrow Meeting Point (%)" slider shifts where the two directional arrows meet along a link, instead of the fixed 50% midpoint — useful for asymmetric links and vias ([#62](https://github.com/allamiro/grafana-network-weathermap-ng/issues/62), PR [#148](https://github.com/allamiro/grafana-network-weathermap-ng/pull/148))
+* **background-follow-map**: new "Move With Map" toggle attaches the panel background image to the map canvas so it pans and zooms with the nodes and links, for backgrounds depicting buildings, zones, or floor plans ([#64](https://github.com/allamiro/grafana-network-weathermap-ng/issues/64), PR [#149](https://github.com/allamiro/grafana-network-weathermap-ng/pull/149))
+
 ## [1.5.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.3) (2026-07-02)
 
 ### Bug Fixes

@@ -359,6 +359,21 @@ export const LinkForm = (props: Props) => {
                             name={`${sName}portLabel`}
                           />
                         </InlineField>
+                        <InlineField grow label={`${sName} Direction Label`} style={{ width: '100%' }}>
+                          <Input
+                            value={side.directionLabel ?? ''}
+                            onChange={(e) => {
+                              let weathermap: Weathermap = value;
+                              weathermap.links[i].sides[sName].directionLabel =
+                                e.currentTarget.value || undefined;
+                              onChange(weathermap);
+                            }}
+                            placeholder={sName === 'A' ? 'e.g. Outbound' : 'e.g. Inbound'}
+                            type={'text'}
+                            className={styles.nodeLabel}
+                            name={`${sName}directionLabel`}
+                          />
+                        </InlineField>
                       </React.Fragment>
                     )}
                   </React.Fragment>
@@ -405,6 +420,24 @@ export const LinkForm = (props: Props) => {
                   type={'number'}
                   className={styles.nodeLabel}
                   name={'linkOffset'}
+                />
+              </InlineField>
+              <InlineField
+                grow
+                label={'Arrow Meeting Point (%)'}
+                className={styles.inlineField}
+                tooltip={'Where along the A→Z line the two directional arrows meet. 50% is the midpoint (default); lower values move the junction toward the A side, higher toward the Z side.'}
+              >
+                <Slider
+                  min={5}
+                  max={95}
+                  step={1}
+                  value={link.arrowMeetPercent ?? 50}
+                  onChange={(num) => {
+                    let options = value;
+                    options.links[i].arrowMeetPercent = num;
+                    onChange(options);
+                  }}
                 />
               </InlineField>
               <ControlledCollapse label="Stroke and Arrow">
