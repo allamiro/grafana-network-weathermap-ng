@@ -535,6 +535,10 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                   <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Color Target</p>
                   <div style={{ marginBottom: '8px' }}>
                     <RadioButtonGroup
+                      // Stable id: without it @grafana/ui regenerates the radio
+                      // input ids on every render, breaking label/input pairing
+                      // and duplicating ids across groups (#162).
+                      id={`nwm-status-color-target-${node.id}`}
                       options={[
                         { label: 'Border', value: 'border' },
                         { label: 'Background', value: 'background' },
@@ -542,9 +546,12 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       ] as Array<{ label: string; value: 'border' | 'background' | 'both' }>}
                       value={node.nodeStatusColorTarget ?? 'border'}
                       onChange={(v) => {
-                        let weathermap: Weathermap = value;
-                        weathermap.nodes[i].nodeStatusColorTarget = v;
-                        onChange(weathermap);
+                        // Clone instead of mutating props.value so the editor
+                        // re-renders and the selected indicator follows (#162).
+                        onChange({
+                          ...value,
+                          nodes: value.nodes.map((n, idx) => (idx === i ? { ...n, nodeStatusColorTarget: v } : n)),
+                        });
                       }}
                     />
                   </div>

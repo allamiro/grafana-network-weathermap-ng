@@ -71,9 +71,9 @@ export const ColorForm = (props: Props) => {
   const currentMode = value.settings.colorScaleMode ?? 'percent';
 
   const handleModeChange = (mode: 'percent' | 'value') => {
-    let weathermap: Weathermap = value;
-    weathermap.settings.colorScaleMode = mode;
-    onChange(weathermap);
+    // Clone instead of mutating props.value so the editor re-renders and the
+    // selected indicator follows (#162).
+    onChange({ ...value, settings: { ...value.settings, colorScaleMode: mode } });
   };
 
   const thresholdLabel = currentMode === 'value' ? 'Value' : '%';
@@ -91,7 +91,15 @@ export const ColorForm = (props: Props) => {
       </h6>
       <div className={styles.modeRow}>
         <span className={styles.modeLabel}>Scale Mode</span>
-        <RadioButtonGroup options={scaleModeOptions} value={currentMode} onChange={handleModeChange} size="sm" />
+        {/* Stable id: without it @grafana/ui regenerates the radio input ids on
+            every render, breaking label/input pairing and duplicating ids (#162). */}
+        <RadioButtonGroup
+          id="nwm-color-scale-mode"
+          options={scaleModeOptions}
+          value={currentMode}
+          onChange={handleModeChange}
+          size="sm"
+        />
       </div>
       {editedPercents.map((threshold, i) => (
         <Input
