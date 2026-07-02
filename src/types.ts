@@ -36,6 +36,10 @@ export interface AreaSize {
   height: number;
 }
 
+// How a metric value is resolved from the data points within the selected
+// dashboard time range.
+export type ValueMappingMode = 'last' | 'avg' | 'min' | 'max' | 'p95';
+
 export enum Anchor {
   Center = 0,
   Top,
@@ -225,7 +229,7 @@ export interface WeathermapSettings {
     showAllWithPercentage: boolean;
     defaultUnits?: string;
     linkDecimals?: number;
-    valueMappingMode?: 'last' | 'avg';
+    valueMappingMode?: ValueMappingMode;
     dynamicStroke?: {
       enabled: boolean;
       minWidth: number;

@@ -13,7 +13,7 @@ import {
   UnitPicker,
 } from '@grafana/ui';
 import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
-import { Weathermap } from 'types';
+import { Weathermap, ValueMappingMode } from 'types';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
 import { sanitizeUrl } from 'utils';
@@ -223,16 +223,23 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           />
         </InlineField>
-        <InlineField grow label={'Value Display Mode'} tooltip={'Last: show the most recent value. Average: show the mean over the selected time range.'}>
+        <InlineField
+          grow
+          label={'Value Display Mode'}
+          tooltip={'How each metric value is resolved across the selected dashboard time range: the most recent point, or an aggregate (average, minimum, maximum, or 95th percentile) over the whole range.'}
+        >
           <Select
             options={[
               { label: 'Last', value: 'last', description: 'Use the most recent data point' },
-              { label: 'Average', value: 'avg', description: 'Average all data points in the time range' },
+              { label: 'Average', value: 'avg', description: 'Mean of all data points in the time range' },
+              { label: 'Min', value: 'min', description: 'Smallest value in the time range' },
+              { label: 'Max', value: 'max', description: 'Largest value in the time range' },
+              { label: '95th Percentile', value: 'p95', description: '95th percentile over the time range' },
             ]}
             value={value.settings.link.valueMappingMode ?? 'last'}
             onChange={(selected) => {
               let wm = value;
-              wm.settings.link.valueMappingMode = selected.value as 'last' | 'avg';
+              wm.settings.link.valueMappingMode = selected.value as ValueMappingMode;
               onChange(wm);
             }}
           />

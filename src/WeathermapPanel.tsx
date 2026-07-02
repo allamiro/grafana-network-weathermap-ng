@@ -37,6 +37,7 @@ import {
   getDataFrameName,
   getValueField,
   sanitizeUrl,
+  aggregateFieldValues,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -455,37 +456,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Build the data-frame value map once per data/mode change instead of once per link.
   // Key: display name (from getDataFrameName). Value: resolved numeric value.
   const dataFrameMap = useMemo(() => {
-    const useAvg = wm.settings.link.valueMappingMode === 'avg';
+    const mode = wm.settings.link.valueMappingMode;
     const map = new Map<string, number>();
     data.series.forEach((frame) => {
       if (frame.fields.length < 2) {
         return;
       }
       try {
-        const fieldValues = getValueField(frame).values;
-        let resolvedValue: number;
-        if (useAvg && fieldValues.length > 0) {
-          let sum = 0;
-          let count = 0;
-          for (let vi = 0; vi < fieldValues.length; vi++) {
-            const v = fieldValues[vi];
-            if (v !== null && !isNaN(v)) {
-              sum += Math.max(0, v);
-              count++;
-            }
-          }
-          resolvedValue = count > 0 ? sum / count : 0;
-        } else {
-          let lastValid = 0;
-          for (let vi = fieldValues.length - 1; vi >= 0; vi--) {
-            const v = fieldValues[vi];
-            if (v !== null && !isNaN(v)) {
-              lastValid = Math.max(0, v);
-              break;
-            }
-          }
-          resolvedValue = lastValid;
-        }
+        const fieldValues = getValueField(frame).values as Array<number | null | undefined>;
+        const resolvedValue = aggregateFieldValues(fieldValues, mode);
         map.set(getDataFrameName(frame, data.series), resolvedValue);
       } catch (e) {
         console.warn('Network Weathermap: Error while attempting to access query data.', e);
