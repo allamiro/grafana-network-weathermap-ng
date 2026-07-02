@@ -87,6 +87,28 @@ test('Creating a weathermap', () => {
   // TODO: find a working way to check node dragging
 });
 
+test('Uses explicit per-side direction labels in the link tooltip when set', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.directionLabel = 'TX-UPLINK';
+  weathermap.links[0].sides.Z.directionLabel = 'RX-DOWNLINK';
+  testProps.options.weathermap = weathermap;
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Hover the link to open its tooltip.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+
+  // Both explicit labels replace the generic Inbound/Outbound wording.
+  expect(screen.getAllByText(/TX-UPLINK/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/RX-DOWNLINK/).length).toBeGreaterThan(0);
+
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };

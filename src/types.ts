@@ -104,6 +104,10 @@ export interface LinkSide {
   anchor: Anchor;
   dashboardLink: string;
   portLabel?: string;
+  // Optional explicit direction label for this side (e.g. "Inbound", "Outbound",
+  // "To WAN"). When set, the hover tooltip labels this side's value with it
+  // instead of the generic Inbound/Outbound wording.
+  directionLabel?: string;
 }
 
 export interface LinkTooltipMetric {
