@@ -1,0 +1,2460 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "weathermap-demo"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "WAN Demo — Capacity Planning (p95)",
+  "description": "Link values show the 95th percentile over the selected range instead of the live value. EDGE-1 <-> SITE-ATL saturates for ~90s every 7 minutes — visible here long after the burst has passed. Throughput is displayed as percent of provisioned bandwidth.",
+  "uid": "wm-capacity-planning",
+  "version": 1,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 22,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "WAN Demo — Capacity Planning (p95)",
+      "type": "tamirsuliman-weathermap-panel",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_link_bps",
+          "legendFormat": "{{link}} {{direction}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "expr": "wm_device_status",
+          "legendFormat": "STATUS {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "expr": "wm_latency_ms",
+          "legendFormat": "LAT {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "D",
+          "expr": "wm_packet_loss_pct",
+          "legendFormat": "LOSS {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "E",
+          "expr": "wm_link_errors",
+          "legendFormat": "ERR {{link}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "F",
+          "expr": "wm_link_discards",
+          "legendFormat": "DISC {{link}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "weathermap": {
+          "version": 14,
+          "id": "wm-capacity-planning",
+          "nodes": [
+            {
+              "id": "node-core-a",
+              "position": [
+                300,
+                170
+              ],
+              "label": "CORE-A",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 2,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT CORE-A",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS CORE-A",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS CORE-A",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-core-b",
+              "position": [
+                560,
+                170
+              ],
+              "label": "CORE-B",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 2,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT CORE-B",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS CORE-B",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS CORE-B",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-edge-1",
+              "position": [
+                220,
+                330
+              ],
+              "label": "EDGE-1",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 2,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT EDGE-1",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS EDGE-1",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS EDGE-1",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-edge-2",
+              "position": [
+                640,
+                330
+              ],
+              "label": "EDGE-2",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT EDGE-2",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS EDGE-2",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS EDGE-2",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-site-atl",
+              "position": [
+                120,
+                480
+              ],
+              "label": "SITE-ATL",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT SITE-ATL",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS SITE-ATL",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS SITE-ATL",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-site-dfw",
+              "position": [
+                330,
+                480
+              ],
+              "label": "SITE-DFW",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT SITE-DFW",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS SITE-DFW",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS SITE-DFW",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-site-nyc",
+              "position": [
+                640,
+                500
+              ],
+              "label": "SITE-NYC",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT SITE-NYC",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS SITE-NYC",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS SITE-NYC",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-inet",
+              "position": [
+                640,
+                60
+              ],
+              "label": "INET",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Latency",
+                  "query": "LAT INET",
+                  "units": "ms"
+                },
+                {
+                  "label": "Packet Loss",
+                  "query": "LOSS INET",
+                  "units": "percent"
+                }
+              ],
+              "statusQuery": "STATUS INET",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "conn-edge-2<->site-nyc",
+              "position": [
+                760,
+                420
+              ],
+              "label": "",
+              "showLabel": false,
+              "anchors": {
+                "0": {
+                  "numLinks": 2,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": true
+            }
+          ],
+          "links": [
+            {
+              "id": "link-core-a<->core-b/1",
+              "nodes": [
+                {
+                  "id": "node-core-a",
+                  "position": [
+                    300,
+                    170
+                  ],
+                  "label": "CORE-A",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-A",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-A",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-A",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-core-b",
+                  "position": [
+                    560,
+                    170
+                  ],
+                  "label": "CORE-B",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-B",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-B",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-B",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 10000000000,
+                  "query": "core-a<->core-b/1 tx",
+                  "labelOffset": 55,
+                  "anchor": 4,
+                  "dashboardLink": "",
+                  "portLabel": "Eth-Trunk1"
+                },
+                "Z": {
+                  "bandwidth": 10000000000,
+                  "query": "core-a<->core-b/1 rx",
+                  "labelOffset": 55,
+                  "anchor": 3,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR core-a<->core-b/1",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC core-a<->core-b/1",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-core-a<->core-b/2",
+              "nodes": [
+                {
+                  "id": "node-core-a",
+                  "position": [
+                    300,
+                    170
+                  ],
+                  "label": "CORE-A",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-A",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-A",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-A",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-core-b",
+                  "position": [
+                    560,
+                    170
+                  ],
+                  "label": "CORE-B",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-B",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-B",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-B",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 10000000000,
+                  "query": "core-a<->core-b/2 tx",
+                  "labelOffset": 55,
+                  "anchor": 4,
+                  "dashboardLink": "",
+                  "portLabel": "Eth-Trunk2"
+                },
+                "Z": {
+                  "bandwidth": 10000000000,
+                  "query": "core-a<->core-b/2 rx",
+                  "labelOffset": 55,
+                  "anchor": 3,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR core-a<->core-b/2",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC core-a<->core-b/2",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-core-a<->edge-1",
+              "nodes": [
+                {
+                  "id": "node-core-a",
+                  "position": [
+                    300,
+                    170
+                  ],
+                  "label": "CORE-A",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-A",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-A",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-A",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-edge-1",
+                  "position": [
+                    220,
+                    330
+                  ],
+                  "label": "EDGE-1",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT EDGE-1",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS EDGE-1",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS EDGE-1",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 10000000000,
+                  "query": "core-a<->edge-1 tx",
+                  "labelOffset": 55,
+                  "anchor": 2,
+                  "dashboardLink": "",
+                  "portLabel": "HundredGigE0/0/1"
+                },
+                "Z": {
+                  "bandwidth": 10000000000,
+                  "query": "core-a<->edge-1 rx",
+                  "labelOffset": 55,
+                  "anchor": 1,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR core-a<->edge-1",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC core-a<->edge-1",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-core-b<->edge-2",
+              "nodes": [
+                {
+                  "id": "node-core-b",
+                  "position": [
+                    560,
+                    170
+                  ],
+                  "label": "CORE-B",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-B",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-B",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-B",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-edge-2",
+                  "position": [
+                    640,
+                    330
+                  ],
+                  "label": "EDGE-2",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT EDGE-2",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS EDGE-2",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS EDGE-2",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 10000000000,
+                  "query": "core-b<->edge-2 tx",
+                  "labelOffset": 55,
+                  "anchor": 2,
+                  "dashboardLink": "",
+                  "portLabel": "HundredGigE0/0/2"
+                },
+                "Z": {
+                  "bandwidth": 10000000000,
+                  "query": "core-b<->edge-2 rx",
+                  "labelOffset": 55,
+                  "anchor": 1,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR core-b<->edge-2",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC core-b<->edge-2",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-edge-1<->site-atl",
+              "nodes": [
+                {
+                  "id": "node-edge-1",
+                  "position": [
+                    220,
+                    330
+                  ],
+                  "label": "EDGE-1",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT EDGE-1",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS EDGE-1",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS EDGE-1",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-site-atl",
+                  "position": [
+                    120,
+                    480
+                  ],
+                  "label": "SITE-ATL",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT SITE-ATL",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS SITE-ATL",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS SITE-ATL",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 1000000000,
+                  "query": "edge-1<->site-atl tx",
+                  "labelOffset": 55,
+                  "anchor": 2,
+                  "dashboardLink": "",
+                  "portLabel": "GigabitEthernet0/1"
+                },
+                "Z": {
+                  "bandwidth": 1000000000,
+                  "query": "edge-1<->site-atl rx",
+                  "labelOffset": 55,
+                  "anchor": 1,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR edge-1<->site-atl",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC edge-1<->site-atl",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-edge-1<->site-dfw",
+              "nodes": [
+                {
+                  "id": "node-edge-1",
+                  "position": [
+                    220,
+                    330
+                  ],
+                  "label": "EDGE-1",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT EDGE-1",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS EDGE-1",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS EDGE-1",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-site-dfw",
+                  "position": [
+                    330,
+                    480
+                  ],
+                  "label": "SITE-DFW",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT SITE-DFW",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS SITE-DFW",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS SITE-DFW",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 1000000000,
+                  "query": "edge-1<->site-dfw tx",
+                  "labelOffset": 55,
+                  "anchor": 2,
+                  "dashboardLink": "",
+                  "portLabel": "GigabitEthernet0/2"
+                },
+                "Z": {
+                  "bandwidth": 1000000000,
+                  "query": "edge-1<->site-dfw rx",
+                  "labelOffset": 55,
+                  "anchor": 1,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR edge-1<->site-dfw",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC edge-1<->site-dfw",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-edge-2<->site-nyc/a",
+              "nodes": [
+                {
+                  "id": "node-edge-2",
+                  "position": [
+                    640,
+                    330
+                  ],
+                  "label": "EDGE-2",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT EDGE-2",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS EDGE-2",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS EDGE-2",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "conn-edge-2<->site-nyc",
+                  "position": [
+                    760,
+                    420
+                  ],
+                  "label": "",
+                  "showLabel": false,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": true
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 1000000000,
+                  "query": "edge-2<->site-nyc tx",
+                  "labelOffset": 55,
+                  "anchor": 2,
+                  "dashboardLink": "",
+                  "portLabel": "GigabitEthernet0/3"
+                },
+                "Z": {
+                  "bandwidth": 0,
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR edge-2<->site-nyc",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC edge-2<->site-nyc",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-edge-2<->site-nyc/z",
+              "nodes": [
+                {
+                  "id": "conn-edge-2<->site-nyc",
+                  "position": [
+                    760,
+                    420
+                  ],
+                  "label": "",
+                  "showLabel": false,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": true
+                },
+                {
+                  "id": "node-site-nyc",
+                  "position": [
+                    640,
+                    500
+                  ],
+                  "label": "SITE-NYC",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT SITE-NYC",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS SITE-NYC",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS SITE-NYC",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 0,
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": ""
+                },
+                "Z": {
+                  "bandwidth": 1000000000,
+                  "query": "edge-2<->site-nyc rx",
+                  "labelOffset": 55,
+                  "anchor": 1,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR edge-2<->site-nyc",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC edge-2<->site-nyc",
+                  "units": "pps"
+                }
+              ]
+            },
+            {
+              "id": "link-core-b<->inet",
+              "nodes": [
+                {
+                  "id": "node-core-b",
+                  "position": [
+                    560,
+                    170
+                  ],
+                  "label": "CORE-B",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT CORE-B",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS CORE-B",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS CORE-B",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-inet",
+                  "position": [
+                    640,
+                    60
+                  ],
+                  "label": "INET",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "tooltipMetrics": [
+                    {
+                      "label": "Latency",
+                      "query": "LAT INET",
+                      "units": "ms"
+                    },
+                    {
+                      "label": "Packet Loss",
+                      "query": "LOSS INET",
+                      "units": "percent"
+                    }
+                  ],
+                  "statusQuery": "STATUS INET",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 10000000000,
+                  "query": "core-b<->inet tx",
+                  "labelOffset": 55,
+                  "anchor": 1,
+                  "dashboardLink": "",
+                  "portLabel": "HundredGigE0/0/9"
+                },
+                "Z": {
+                  "bandwidth": 10000000000,
+                  "query": "core-b<->inet rx",
+                  "labelOffset": 55,
+                  "anchor": 2,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": true,
+              "tooltipMetrics": [
+                {
+                  "label": "Errors",
+                  "queryA": "ERR core-b<->inet",
+                  "units": "pps"
+                },
+                {
+                  "label": "Discards",
+                  "queryA": "DISC core-b<->inet",
+                  "units": "pps"
+                }
+              ]
+            }
+          ],
+          "scale": [
+            {
+              "percent": 0,
+              "color": "#73BF69"
+            },
+            {
+              "percent": 40,
+              "color": "#FADE2A"
+            },
+            {
+              "percent": 60,
+              "color": "#FF9830"
+            },
+            {
+              "percent": 80,
+              "color": "#F2495C"
+            },
+            {
+              "percent": 95,
+              "color": "#C4162A"
+            }
+          ],
+          "settings": {
+            "link": {
+              "spacing": {
+                "horizontal": 10,
+                "vertical": 5
+              },
+              "stroke": {
+                "color": "rgba(204, 204, 220, 0.16)"
+              },
+              "label": {
+                "background": "#181b1f",
+                "border": "rgba(204, 204, 220, 0.25)",
+                "font": "rgb(204, 204, 220)"
+              },
+              "showAllWithPercentage": true,
+              "valueMappingMode": "p95",
+              "defaultUnits": "bps",
+              "linkDecimals": 1,
+              "dynamicStroke": {
+                "enabled": false,
+                "minWidth": 1,
+                "maxWidth": 10
+              },
+              "flowAnimation": {
+                "enabled": false,
+                "speed": 2
+              },
+              "gradientColor": false
+            },
+            "fontSizing": {
+              "node": 10,
+              "link": 8
+            },
+            "colorScaleMode": "percent",
+            "panel": {
+              "backgroundColor": "#111217",
+              "showTimestamp": true,
+              "panelSize": {
+                "width": 900,
+                "height": 620
+              },
+              "zoomScale": 0,
+              "offset": {
+                "x": 0,
+                "y": 0
+              },
+              "grid": {
+                "enabled": false,
+                "size": 10,
+                "guidesEnabled": false
+              }
+            },
+            "tooltip": {
+              "fontSize": 10,
+              "textColor": "white",
+              "backgroundColor": "black",
+              "inboundColor": "#00cf00",
+              "outboundColor": "#fade2a",
+              "scaleToBandwidth": true
+            },
+            "scale": {
+              "position": {
+                "x": 0,
+                "y": 0
+              },
+              "size": {
+                "width": 60,
+                "height": 220
+              },
+              "title": "p95 Load",
+              "fontSizing": {
+                "title": 14,
+                "threshold": 11
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

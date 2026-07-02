@@ -6,6 +6,7 @@
     "jest-polyfills.js",
     ".prettierrc.js",
     "playwright.config.ts",
-    "tests/"
+    "tests/",
+    "testing/scripts/"
   ]
 }
