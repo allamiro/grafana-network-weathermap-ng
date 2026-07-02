@@ -152,6 +152,54 @@ test('Connected links', () => {
   expect(screen.getAllByTestId('link')).toHaveLength(2);
 });
 
+test('Shows an error notice when a query fails', () => {
+  let testProps = { ...mPanelProps };
+  testProps.options.weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  testProps.data = {
+    state: LoadingState.Error,
+    series: [],
+    error: { message: 'boom' },
+    timeRange: getDefaultRelativeTimeRange(),
+  } as unknown as PanelProps<SimpleOptions>['data'];
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const notice = screen.getByTestId('weathermap-data-notice');
+  expect(notice.textContent).toContain('Query error');
+  expect(notice.textContent).toContain('boom');
+});
+
+test('Shows a no-data notice when queries are configured but return nothing', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'A-series';
+  testProps.options.weathermap = weathermap;
+  testProps.data = {
+    state: LoadingState.Done,
+    series: [],
+    timeRange: getDefaultRelativeTimeRange(),
+  } as unknown as PanelProps<SimpleOptions>['data'];
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const notice = screen.getByTestId('weathermap-data-notice');
+  expect(notice.textContent).toContain('No data');
+});
+
+test('Shows no notice for a topology-only map with no queries', () => {
+  let testProps = { ...mPanelProps };
+  testProps.options.weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  testProps.data = {
+    state: LoadingState.Done,
+    series: [],
+    timeRange: getDefaultRelativeTimeRange(),
+  } as unknown as PanelProps<SimpleOptions>['data'];
+
+  render(<WeathermapPanel {...testProps} />);
+
+  expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
+});
+
 test('Check edit mode display', () => {
   let testProps = { ...mPanelProps };
   testProps.options.weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
