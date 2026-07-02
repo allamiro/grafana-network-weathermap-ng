@@ -12,6 +12,8 @@ import {
   Position,
   Weathermap,
   HoveredLink,
+  HoveredNode,
+  NodeTooltipMetric,
   Threshold,
 } from 'types';
 import { css, cx } from '@emotion/css';
@@ -630,6 +632,31 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     setHoveredLink(null as unknown as HoveredLink);
   };
 
+  const [hoveredNode, setHoveredNode] = useState(null as unknown as HoveredNode);
+
+  const handleNodeHover = (d: DrawnNode, e: React.MouseEvent<SVGElement>) => {
+    // Only show a tooltip when the node actually has metrics configured, and
+    // never while a node is being dragged in edit mode.
+    if (e.shiftKey || draggedNode || !d.tooltipMetrics || d.tooltipMetrics.length === 0) {
+      return;
+    }
+    let mouseX = e.clientX;
+    let mouseY = e.clientY;
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    }
+    setHoveredNode({ node: d, mouseX, mouseY });
+  };
+
+  const handleNodeHoverLoss = (e: React.MouseEvent<SVGElement>) => {
+    if (e.shiftKey) {
+      return;
+    }
+    setHoveredNode(null as unknown as HoveredNode);
+  };
+
   // Navigate to a user-provided dashboard link only if it passes URL validation.
   // Values may have been produced by template-variable substitution at runtime,
   // so they are re-sanitized here before ever reaching window.open.
@@ -920,6 +947,59 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             ) : (
               ''
             )}
+          </div>
+        ) : (
+          ''
+        )}
+        {hoveredNode && hoveredNode.node.tooltipMetrics && hoveredNode.node.tooltipMetrics.length > 0 ? (
+          <div
+            data-testid="weathermap-node-tooltip"
+            className={css`
+              position: absolute;
+              top: ${hoveredNode.mouseY - 10}px;
+              left: ${hoveredNode.mouseX + 14}px;
+              transform: translate(
+                ${hoveredNode.mouseX > width2 * 0.65 ? '-100%' : '0%'},
+                ${hoveredNode.mouseY < 120 ? '0%' : '-100%'}
+              );
+              pointer-events: none;
+              background-color: ${wm.settings.tooltip.backgroundColor};
+              color: ${wm.settings.tooltip.textColor} !important;
+              font-size: ${wm.settings.tooltip.fontSize} !important;
+              z-index: 10000;
+              display: flex;
+              flex-direction: column;
+              padding: ${wm.settings.tooltip.fontSize}px;
+              border-radius: 4px;
+              border: 1px solid ${theme.colors.border.medium};
+            `}
+          >
+            <div
+              style={{
+                fontSize: wm.settings.tooltip.fontSize,
+                borderBottom: `1px solid ${theme.colors.border.medium}`,
+                marginBottom: '4px',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              {hoveredNode.node.label}
+            </div>
+            {hoveredNode.node.tooltipMetrics.map((metric: NodeTooltipMetric, idx: number) => {
+              const fmt = getlinkValueFormatter(metric.units || 'none');
+              const raw = metric.query ? dataFrameMap.get(metric.query) : undefined;
+              let valueText = 'n/a';
+              if (raw !== undefined) {
+                const formatted = fmt(raw, wm.settings.link.linkDecimals);
+                valueText = `${formatted.text} ${formatted.suffix}`.trim();
+              }
+              return (
+                <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
+                  {metric.label ? `${metric.label}: ` : ''}
+                  {valueText}
+                </div>
+              );
+            })}
           </div>
         ) : (
           ''
@@ -1503,6 +1583,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       // Force an update
                       onOptionsChange(options);
                     },
+                    onMouseMove: (e) => handleNodeHover(d, e),
+                    onMouseLeave: (e) => handleNodeHoverLoss(e),
                     disabled: !isEditMode,
                     data: data,
                   }}

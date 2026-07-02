@@ -62,6 +62,12 @@ export interface NodeStatusValueMapping {
   color: string;
 }
 
+export interface NodeTooltipMetric {
+  label: string;
+  query?: string;
+  units?: string;
+}
+
 export interface Node {
   id: string;
   position: [number, number];
@@ -69,6 +75,7 @@ export interface Node {
   showLabel?: boolean;
   dashboardLink?: string;
   openInSameTab?: boolean;
+  tooltipMetrics?: NodeTooltipMetric[];
   anchors: {
     [Anchor.Center]: NodeAnchor;
     [Anchor.Top]: NodeAnchor;
@@ -175,6 +182,12 @@ export interface DrawnLink extends Link {
 export interface HoveredLink {
   link: DrawnLink;
   side: 'A' | 'Z';
+  mouseX: number;
+  mouseY: number;
+}
+
+export interface HoveredNode {
+  node: DrawnNode;
   mouseX: number;
   mouseY: number;
 }

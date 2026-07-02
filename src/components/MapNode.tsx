@@ -22,6 +22,8 @@ interface NodeProps {
   onDrag: DraggableEventHandler;
   onStop: DraggableEventHandler;
   onClick: React.MouseEventHandler<SVGGElement>;
+  onMouseMove?: React.MouseEventHandler<SVGGElement>;
+  onMouseLeave?: React.MouseEventHandler<SVGGElement>;
   disabled: boolean;
   data: PanelData;
 }
@@ -46,7 +48,8 @@ function calculateRectY(d: DrawnNode, wm: Weathermap) {
 }
 
 const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
-  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, disabled, data } = props;
+  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, onMouseMove, onMouseLeave, disabled, data } =
+    props;
   const styles = useStyles2(getStyles);
 
   // React 19 removed ReactDOM.findDOMNode, which react-draggable falls back to
@@ -104,6 +107,8 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
         cursor={disabled ? (node.dashboardLink ? 'pointer' : '') : 'move'}
         display={node.label !== undefined ? 'inline' : 'none'}
         onClick={onClick}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
         transform={`translate(${
           wm.settings.panel.grid.enabled &&
           draggedNode &&

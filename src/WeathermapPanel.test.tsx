@@ -200,6 +200,50 @@ test('Shows no notice for a topology-only map with no queries', () => {
   expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
 });
 
+test('Shows a node tooltip with configured metrics on hover', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.nodes[0].tooltipMetrics = [{ label: 'Latency', query: 'latency-series', units: 's' }];
+  testProps.options.weathermap = weathermap;
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No tooltip until we hover.
+  expect(screen.queryByTestId('weathermap-node-tooltip')).toBeNull();
+
+  // Hover the node that has metrics configured.
+  const nodeGroup = screen.getByText(weathermap.nodes[0].label!).closest('g')!;
+  fireEvent.mouseMove(nodeGroup);
+
+  const tooltip = screen.getByTestId('weathermap-node-tooltip');
+  expect(tooltip.textContent).toContain('Latency');
+  // With no matching series the value resolves to n/a rather than crashing.
+  expect(tooltip.textContent).toContain('n/a');
+
+  // Leaving the node hides the tooltip again.
+  fireEvent.mouseLeave(nodeGroup);
+  expect(screen.queryByTestId('weathermap-node-tooltip')).toBeNull();
+});
+
+test('Shows no node tooltip when the node has no configured metrics', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  testProps.options.weathermap = weathermap;
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const nodeGroup = screen.getByText(weathermap.nodes[0].label!).closest('g')!;
+  fireEvent.mouseMove(nodeGroup);
+
+  expect(screen.queryByTestId('weathermap-node-tooltip')).toBeNull();
+});
+
 test('Check edit mode display', () => {
   let testProps = { ...mPanelProps };
   testProps.options.weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
