@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.7) (2026-07-02)
+
+### Bug Fixes
+
+* **macos-interactions**: pan, zoom, and multi-select now work on macOS. The Cmd (⌘) key is accepted everywhere Ctrl was used (viewport pan, node-drag suppression, multi-select), and zoom uses the dominant scroll axis so macOS Shift+scroll (remapped to horizontal) and trackpad gestures still zoom. Linux/Windows behaviour (Ctrl/Shift/middle-mouse, vertical scroll) is unchanged ([#57](https://github.com/allamiro/grafana-network-weathermap-ng/issues/57), PR [#156](https://github.com/allamiro/grafana-network-weathermap-ng/pull/156))
+
 ## [1.5.6](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.6) (2026-07-02)
 
 ### Features
