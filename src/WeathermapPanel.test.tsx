@@ -87,6 +87,43 @@ test('Creating a weathermap', () => {
   // TODO: find a working way to check node dragging
 });
 
+test('Draws the background image inside the canvas when Move With Map is enabled', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.panel.backgroundImage = {
+    url: 'https://example.com/bg.png',
+    fit: 'contain',
+    attachToCanvas: true,
+  };
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  const images = Array.from(container.querySelectorAll('image'));
+  expect(images.some((im) => im.getAttribute('href') === 'https://example.com/bg.png')).toBe(true);
+});
+
+test('Keeps the background image static (no in-canvas image) when Move With Map is off', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.panel.backgroundImage = {
+    url: 'https://example.com/bg.png',
+    fit: 'contain',
+  };
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  const images = Array.from(container.querySelectorAll('image'));
+  expect(images.some((im) => im.getAttribute('href') === 'https://example.com/bg.png')).toBe(false);
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };

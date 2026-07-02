@@ -931,13 +931,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             top: 0,
             left: 0,
             backgroundImage:
-              wm.settings.panel.backgroundImage && sanitizeUrl(wm.settings.panel.backgroundImage.url)
+              wm.settings.panel.backgroundImage &&
+              !wm.settings.panel.backgroundImage.attachToCanvas &&
+              sanitizeUrl(wm.settings.panel.backgroundImage.url)
                 ? `url(${sanitizeUrl(wm.settings.panel.backgroundImage.url)})`
                 : 'none',
             backgroundSize: wm.settings.panel.backgroundImage?.fit,
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            backgroundColor: wm.settings.panel.backgroundImage ? 'none' : wm.settings.panel.backgroundColor,
+            backgroundColor:
+              wm.settings.panel.backgroundImage && !wm.settings.panel.backgroundImage.attachToCanvas
+                ? 'none'
+                : wm.settings.panel.backgroundColor,
           }}
           id={`nw-${wm.id}${isEditMode ? '_' : ''}`}
           width={width2}
@@ -1046,6 +1051,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             })`}
             overflow="visible"
           >
+            {wm.settings.panel.backgroundImage &&
+            wm.settings.panel.backgroundImage.attachToCanvas &&
+            sanitizeUrl(wm.settings.panel.backgroundImage.url) ? (
+              <image
+                href={sanitizeUrl(wm.settings.panel.backgroundImage.url)}
+                x={0}
+                y={0}
+                width={wm.settings.panel.panelSize.width}
+                height={wm.settings.panel.panelSize.height}
+                preserveAspectRatio={
+                  wm.settings.panel.backgroundImage.fit === 'cover'
+                    ? 'xMidYMid slice'
+                    : wm.settings.panel.backgroundImage.fit === 'auto'
+                    ? 'none'
+                    : 'xMidYMid meet'
+                }
+              />
+            ) : (
+              ''
+            )}
             {wm.settings.panel.grid.guidesEnabled ? (
               <>
                 <rect

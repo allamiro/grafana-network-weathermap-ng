@@ -17,6 +17,9 @@ export interface PanelOptions {
 export interface BGImageOptions {
   url: string;
   fit: string;
+  // When true, the background image is drawn inside the map canvas so it pans
+  // and zooms together with the nodes/links instead of staying static.
+  attachToCanvas?: boolean;
 }
 
 export interface TooltipOptions {
