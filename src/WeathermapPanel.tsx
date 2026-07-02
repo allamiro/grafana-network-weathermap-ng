@@ -511,7 +511,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       return;
     }
 
-    const delta = e.deltaY > 0 ? 1 : -1;
+    // Use the dominant scroll axis so macOS Shift+scroll (which the OS remaps to
+    // horizontal/deltaX) and trackpad gestures still zoom reliably.
+    const scroll = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (scroll === 0) {
+      return;
+    }
+
+    const delta = scroll > 0 ? 1 : -1;
     onOptionsChange({
       weathermap: {
         ...wm,
@@ -538,7 +545,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   const [offset, setOffset] = useState(wm.settings.panel.offset);
 
   const drag = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
-    if (e.ctrlKey || e.buttons === 4 || e.shiftKey) {
+    if (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey) {
       e.nativeEvent.preventDefault();
       const zoomAmt = Math.pow(1.2, wm.settings.panel.zoomScale);
 
@@ -1074,7 +1081,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             setDragging(true);
           }}
           onMouseMove={(e) => {
-            if (isDragging && (e.ctrlKey || e.buttons === 4 || e.shiftKey)) {
+            if (isDragging && (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey)) {
               drag(e);
             }
           }}
@@ -1565,7 +1572,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     wm: wm,
                     onDrag: (e, position) => {
                       // Return early if we actually want to just pan the whole weathermap.
-                      if (e.ctrlKey) {
+                      if (e.ctrlKey || e.metaKey) {
                         return;
                       }
 
@@ -1626,7 +1633,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       });
                     },
                     onClick: (e) => {
-                      if (e.ctrlKey && isEditMode) {
+                      if ((e.ctrlKey || e.metaKey) && isEditMode) {
                         setSelectedNodes((v) => {
                           let cIndex = v.findIndex((n) => n.id === tempNodes[i].id);
                           if (cIndex > -1) {

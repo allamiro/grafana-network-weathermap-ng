@@ -222,6 +222,39 @@ test('Right-clicking a VIA in edit mode removes it', () => {
   expect(captured!.weathermap.links.length).toBe(1);
 });
 
+test('Panning the viewport works with the Cmd key (macOS)', () => {
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+  const svg = container.querySelector('#nw-testing')!;
+  const prev = container.querySelector('g')!.getAttribute('transform');
+
+  // Cmd (metaKey) + drag should pan just like Ctrl/middle-mouse on other OSes.
+  fireEvent.mouseDown(svg);
+  fireEvent(svg, new MouseMoveEvent({ movementX: 10, movementY: 10, metaKey: true, bubbles: true }));
+  fireEvent.mouseUp(svg);
+
+  expect(container.querySelector('g')!.getAttribute('transform')).not.toEqual(prev);
+});
+
+test('Zoom responds to horizontal scroll (macOS Shift+scroll remap)', () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getConnectedLinkData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+  // macOS remaps Shift+scroll to the horizontal axis; only deltaX is set.
+  fireEvent.wheel(container.querySelector('#nw-testing_')!, { deltaX: 1, deltaY: 0 });
+  expect(testProps.options.weathermap.settings.panel.zoomScale).not.toEqual(0);
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };
