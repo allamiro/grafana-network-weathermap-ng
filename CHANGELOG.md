@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.5](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.5) (2026-07-02)
+
+### Features
+
+* **value-display-modes**: the panel's "Value Display Mode" can now resolve each metric as an aggregate across the selected dashboard time range — **Average**, **Min**, **Max**, and **95th Percentile** are available alongside the existing **Last** (most recent point). Useful for capacity-planning views where a single-point snapshot is misleading ([#58](https://github.com/allamiro/grafana-network-weathermap-ng/issues/58), PR [#151](https://github.com/allamiro/grafana-network-weathermap-ng/pull/151))
+
 ## [1.5.4](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.4) (2026-07-02)
 
 ### Features
