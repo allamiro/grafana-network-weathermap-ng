@@ -1,4 +1,4 @@
-import { defaultNodes, getData, theme } from 'testData';
+import { defaultNodes, getData, legacyWeathermap, theme } from 'testData';
 import { DrawnNode, Weathermap } from 'types';
 import {
   addViaToLink,
@@ -50,6 +50,24 @@ test('node calculations', () => {
 test('versioned state updates', () => {
   let wm: Weathermap = getData(theme);
   expect(handleVersionedStateUpdates(wm, theme)).toHaveProperty('version', CURRENT_VERSION);
+});
+
+test('versioned state updates backfill settings missing from pre-v14 options (#162)', () => {
+  const migrated = handleVersionedStateUpdates(JSON.parse(JSON.stringify(legacyWeathermap)), theme);
+
+  expect(migrated.version).toBe(CURRENT_VERSION);
+  // Theme-derived colors are undefined under the stub test theme, so assert
+  // on the theme-independent defaults.
+  expect(migrated.settings.tooltip.fontSize).toBe(9);
+  expect(migrated.settings.tooltip.textColor).toBe('white');
+  expect(migrated.settings.scale.size.width).toBe(50);
+  expect(migrated.settings.scale.position.x).toBe(0);
+  // Pre-existing settings survive the merge.
+  expect(migrated.settings.fontSizing.link).toBe(7);
+  expect(migrated.settings.panel.panelSize.width).toBe(600);
+  // The old object-style scale converts to the array format.
+  expect(Array.isArray(migrated.scale)).toBe(true);
+  expect(migrated.scale).toContainEqual({ percent: 10, color: '#73BF69' });
 });
 
 describe('isSafeUrl', () => {

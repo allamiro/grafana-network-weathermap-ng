@@ -149,3 +149,47 @@ export const getConnectedLinkData = (theme: GrafanaTheme2): Weathermap => {
   data.id = 'testing';
   return data;
 };
+
+// Mirrors the shape of weathermaps saved before options schema v14 (e.g. the
+// bundled test dashboard): no version field and no tooltip/scale settings (#162).
+export const legacyWeathermap = {
+  id: 'legacy-weathermap',
+  nodes: [],
+  links: [],
+  scale: {
+    '10': '#73BF69',
+    '50': '#C4162A',
+  },
+  settings: {
+    fontSizing: {
+      link: 7,
+      node: 10,
+    },
+    linkArrow: {
+      height: 10,
+      offset: 2,
+      width: 8,
+    },
+    link: {
+      label: {
+        background: 'rgba(204, 204, 220, 0.1)',
+        border: 'rgba(204, 204, 220, 0.25)',
+        font: 'rgb(204, 204, 220)',
+      },
+      spacing: {
+        horizontal: 10,
+        vertical: 5,
+      },
+      stroke: {
+        color: 'rgba(204, 204, 220, 0.1)',
+      },
+    },
+    panel: {
+      backgroundColor: '#ffffff',
+      panelSize: {
+        width: 600,
+        height: 600,
+      },
+    },
+  },
+} as unknown as Weathermap;

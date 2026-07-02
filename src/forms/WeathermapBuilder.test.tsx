@@ -4,7 +4,7 @@ import { StandardEditorProps } from '@grafana/data';
 import { WeathermapBuilder } from './WeathermapBuilder';
 import { Weathermap } from 'types';
 import { CURRENT_VERSION } from 'utils';
-import { legacyWeathermap } from '../module.test';
+import { legacyWeathermap } from 'testData';
 
 const renderBuilder = (value: Weathermap | undefined) => {
   const onChange = jest.fn();
