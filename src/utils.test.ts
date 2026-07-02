@@ -1,6 +1,7 @@
 import { defaultNodes, getData, theme } from 'testData';
 import { DrawnNode, Weathermap } from 'types';
 import {
+  aggregateFieldValues,
   calculateRectangleAutoHeight,
   calculateRectangleAutoWidth,
   CURRENT_VERSION,
@@ -110,5 +111,43 @@ describe('sanitizeUrl', () => {
     expect(sanitizeUrl('//evil.com')).toBe('');
     expect(sanitizeUrl(undefined)).toBe('');
     expect(sanitizeUrl(null)).toBe('');
+  });
+});
+
+describe('aggregateFieldValues', () => {
+  const vals = [10, 20, 30, 40, 100];
+
+  test('last returns the most recent valid value', () => {
+    expect(aggregateFieldValues(vals, 'last')).toBe(100);
+    expect(aggregateFieldValues(vals, undefined)).toBe(100);
+  });
+
+  test('avg returns the mean', () => {
+    expect(aggregateFieldValues([10, 20, 30], 'avg')).toBe(20);
+  });
+
+  test('min and max', () => {
+    expect(aggregateFieldValues(vals, 'min')).toBe(10);
+    expect(aggregateFieldValues(vals, 'max')).toBe(100);
+  });
+
+  test('p95 uses nearest-rank', () => {
+    // 20 points 1..20 -> ceil(0.95*20)=19 -> value 19
+    const twenty = Array.from({ length: 20 }, (_, i) => i + 1);
+    expect(aggregateFieldValues(twenty, 'p95')).toBe(19);
+  });
+
+  test('skips null/NaN and clamps negatives to 0', () => {
+    expect(aggregateFieldValues([null, 10, NaN, -5, 20], 'max')).toBe(20);
+    // negative clamped to 0, so min is 0
+    expect(aggregateFieldValues([10, -5, 20], 'min')).toBe(0);
+    // last valid value is 20 (nulls skipped)
+    expect(aggregateFieldValues([10, 20, null], 'last')).toBe(20);
+  });
+
+  test('returns 0 for empty or all-invalid input', () => {
+    expect(aggregateFieldValues([], 'avg')).toBe(0);
+    expect(aggregateFieldValues([null, NaN], 'max')).toBe(0);
+    expect(aggregateFieldValues(undefined, 'last')).toBe(0);
   });
 });

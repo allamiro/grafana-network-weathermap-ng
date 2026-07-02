@@ -1,6 +1,6 @@
 import { DataFrame, Field, FieldType, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
 import merge from 'lodash.merge';
-import { Anchor, DrawnNode, Link, Node, Weathermap } from 'types';
+import { Anchor, DrawnNode, Link, Node, ValueMappingMode, Weathermap } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 
 export const CURRENT_VERSION = 14;
@@ -450,4 +450,78 @@ export function sanitizeUrl(raw: string | undefined | null): string {
 
   const trimmed = raw.trim();
   return isSafeUrl(trimmed) ? trimmed : '';
+}
+
+/**
+ * Resolve a single display value from a field's data points according to the
+ * chosen value-mapping mode. Null/NaN entries are skipped and negative values
+ * are clamped to 0 (matching how the panel treats throughput). Returns 0 when
+ * there are no valid data points.
+ *
+ * - last: the most recent valid value (default, original behaviour)
+ * - avg:  arithmetic mean of the valid values
+ * - min:  smallest valid value
+ * - max:  largest valid value
+ * - p95:  95th percentile (nearest-rank) of the valid values
+ */
+export function aggregateFieldValues(
+  values: Array<number | null | undefined> | null | undefined,
+  mode: ValueMappingMode | undefined
+): number {
+  if (!values || values.length === 0) {
+    return 0;
+  }
+
+  const valid: number[] = [];
+  let lastValid = 0;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v !== null && v !== undefined && !isNaN(v)) {
+      const clamped = Math.max(0, v);
+      valid.push(clamped);
+      lastValid = clamped;
+    }
+  }
+
+  if (valid.length === 0) {
+    return 0;
+  }
+
+  switch (mode) {
+    case 'avg': {
+      let sum = 0;
+      for (const v of valid) {
+        sum += v;
+      }
+      return sum / valid.length;
+    }
+    case 'min': {
+      let m = valid[0];
+      for (const v of valid) {
+        if (v < m) {
+          m = v;
+        }
+      }
+      return m;
+    }
+    case 'max': {
+      let m = valid[0];
+      for (const v of valid) {
+        if (v > m) {
+          m = v;
+        }
+      }
+      return m;
+    }
+    case 'p95': {
+      const sorted = [...valid].sort((a, b) => a - b);
+      // Nearest-rank method: smallest value >= 95% of the data.
+      const rank = Math.ceil(0.95 * sorted.length);
+      const idx = Math.min(sorted.length - 1, Math.max(0, rank - 1));
+      return sorted[idx];
+    }
+    case 'last':
+    default:
+      return lastValid;
+  }
 }
