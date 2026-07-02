@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.3) (2026-07-02)
+
+### Bug Fixes
+
+* **security**: pin the transitive `form-data` dependency to `4.0.6` via an npm `overrides` entry, resolving the HIGH-severity CRLF-injection advisory GHSA-hmw2-7cc7-3qxx (affecting `>=4.0.0 <4.0.6`) that osv-scanner flagged in `package-lock.json`. `form-data` is a dev-only transitive dependency (via `jest-environment-jsdom` → `jsdom`) and is not part of the shipped plugin bundle; `npm audit` now reports 0 high/critical vulnerabilities. No plugin runtime changes from 1.5.2.
+
 ## [1.5.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.2) (2026-07-01)
 
 ### Features
