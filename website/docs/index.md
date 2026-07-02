@@ -11,6 +11,19 @@ Maintained by <a href="https://github.com/allamiro">Tamir Suliman</a> — Plugin
 
 ---
 
+## 📖 Documentation
+
+New here? Start with the step-by-step guide:
+
+- **[Getting Started](guide/getting-started.md)** — from an empty panel to a live traffic map in ~10 minutes
+- **[Nodes (Devices)](guide/nodes.md)** — labels, icons, status coloring, node tooltips, dashboard links
+- **[Links](guide/links.md)** — queries & bandwidth, units, direction labels, port labels, parallel links, VIAs
+- **[Panel Options](guide/panel-options.md)** — background image, value display modes, timeline slider, color scale, tooltips
+- **[Interactions & Editing](guide/interactions.md)** — pan/zoom/select on Linux, Windows & macOS; VIA editing; export
+- **[Use Cases](guide/use-cases.md)** — capacity planning, incident retros, floor plans, multi-hop paths, and more
+
+---
+
 ## About This Fork
 
 This plugin is a continuation of the original [knightss27/grafana-network-weathermap](https://github.com/knightss27/grafana-network-weathermap) which was archived in 2023. The goal of this fork is to keep the plugin working with current Grafana releases and to fix outstanding bugs.
