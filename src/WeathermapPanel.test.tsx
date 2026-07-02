@@ -46,6 +46,16 @@ class MouseMoveEvent extends MouseEvent {
   }
 }
 
+// Restore the editPanel location spy after every test — even if an assertion
+// throws mid-test — so `editPanel=1` never leaks into subsequent tests. Scoped
+// to this spy only so global scaffolding mocks (e.g. canvas measureText) stay
+// intact.
+let getSearchSpy: jest.SpyInstance | undefined;
+afterEach(() => {
+  getSearchSpy?.mockRestore();
+  getSearchSpy = undefined;
+});
+
 test('Creating a weathermap', () => {
   let testProps = { ...mPanelProps };
   testProps.options.weathermap = handleVersionedStateUpdates(getData(theme), theme);
@@ -166,7 +176,7 @@ test('Keeps the background image static (no in-canvas image) when Move With Map 
 });
 
 test('Double-clicking a link in edit mode inserts a VIA', () => {
-  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
   let captured: SimpleOptions | null = null;
   let testProps = { ...mPanelProps };
   testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
@@ -181,11 +191,10 @@ test('Double-clicking a link in edit mode inserts a VIA', () => {
   expect(captured!.weathermap.nodes.length).toBe(3); // A, B, and the new VIA
   expect(captured!.weathermap.nodes.some((n) => n.isConnection)).toBe(true);
   expect(captured!.weathermap.links.length).toBe(2);
-  getSearchSpy.mockRestore();
 });
 
 test('Right-clicking a VIA in edit mode removes it', () => {
-  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
   let captured: SimpleOptions | null = null;
   let testProps = { ...mPanelProps };
   testProps.options = { weathermap: handleVersionedStateUpdates(getConnectedLinkData(theme), theme) };
@@ -202,7 +211,6 @@ test('Right-clicking a VIA in edit mode removes it', () => {
   expect(captured!.weathermap.nodes.some((n) => n.isConnection)).toBe(false);
   expect(captured!.weathermap.nodes.length).toBe(2);
   expect(captured!.weathermap.links.length).toBe(1);
-  getSearchSpy.mockRestore();
 });
 
 // Tests plays badly with new deps
@@ -369,7 +377,7 @@ test('Check edit mode display', () => {
     testProps.options = options;
   };
 
-  const getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
 
   // Render the panel
   const { container, rerender } = render(<WeathermapPanel {...testProps} />);
@@ -392,5 +400,4 @@ test('Check edit mode display', () => {
   rerender(<WeathermapPanel {...testProps} />);
   fireEvent.wheel(container.querySelector('#nw-testing')!, { deltaY: -1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).toEqual(0);
-  getSearchSpy.mockRestore();
 });

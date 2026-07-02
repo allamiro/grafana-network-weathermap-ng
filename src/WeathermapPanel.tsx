@@ -1270,7 +1270,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       }}
                       onMouseOut={handleLinkHoverLoss}
                       onClick={() => {
-                        if (d.sides.A.dashboardLink.length > 0) {
+                        if (!isEditMode && d.sides.A.dashboardLink.length > 0) {
                           openDashboardLink(d.sides.A.dashboardLink);
                         }
                       }}
@@ -1316,7 +1316,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
-                            if (d.sides.A.dashboardLink.length > 0) {
+                            if (!isEditMode && d.sides.A.dashboardLink.length > 0) {
                               openDashboardLink(d.sides.A.dashboardLink);
                             }
                           }}
@@ -1341,7 +1341,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
-                            if (d.sides.Z.dashboardLink.length > 0) {
+                            if (!isEditMode && d.sides.Z.dashboardLink.length > 0) {
                               openDashboardLink(d.sides.Z.dashboardLink);
                             }
                           }}
@@ -1372,7 +1372,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           onMouseOut={handleLinkHoverLoss}
                           onClick={() => {
-                            if (d.sides.Z.dashboardLink.length > 0) {
+                            if (!isEditMode && d.sides.Z.dashboardLink.length > 0) {
                               openDashboardLink(d.sides.Z.dashboardLink);
                             }
                           }}

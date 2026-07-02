@@ -212,4 +212,16 @@ describe('VIA helpers (addViaToLink / removeVia)', () => {
     expect(wm.nodes).toHaveLength(before.nodes);
     expect(wm.links).toHaveLength(before.links);
   });
+
+  test('removeVia is a no-op for a C->C self-loop (same in/out link)', () => {
+    const wm: Weathermap = getData(theme);
+    const conn = wm.nodes.find((n) => n.isConnection) ?? wm.nodes[0];
+    conn.isConnection = true;
+    // A single self-loop link would otherwise satisfy the one-in/one-out check.
+    wm.links = [{ ...wm.links[0], id: 'self', nodes: [conn, conn] }];
+    removeVia(wm, conn.id);
+    expect(wm.links).toHaveLength(1);
+    expect(wm.links[0].id).toBe('self');
+    expect(wm.nodes.some((n) => n.id === conn.id)).toBe(true);
+  });
 });

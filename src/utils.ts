@@ -534,7 +534,10 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
 
   const inLinks = wm.links.filter((l) => l.nodes[1].id === conn.id);
   const outLinks = wm.links.filter((l) => l.nodes[0].id === conn.id);
-  if (inLinks.length !== 1 || outLinks.length !== 1) {
+  // Require exactly one distinct incoming and one distinct outgoing link. A
+  // C->C self-loop would satisfy the length check with the same link on both
+  // sides, so reject that too and stay a no-op on malformed data.
+  if (inLinks.length !== 1 || outLinks.length !== 1 || inLinks[0].id === outLinks[0].id) {
     return wm;
   }
 
