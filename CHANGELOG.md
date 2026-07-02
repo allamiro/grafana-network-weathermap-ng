@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.8](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.8) (2026-07-02)
+
+### Features
+
+* **timeline-slider**: an optional timeline slider (Panel Options → Link Options → "Timeline Slider") lets viewers scrub through the selected dashboard time range and see link values as they were at that moment — for incident retrospectives, trend analysis, and capacity planning. Off by default; a "Live" button returns to the latest/aggregate value ([#158](https://github.com/allamiro/grafana-network-weathermap-ng/issues/158), PR [#159](https://github.com/allamiro/grafana-network-weathermap-ng/pull/159))
+
 ## [1.5.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.7) (2026-07-02)
 
 ### Bug Fixes
