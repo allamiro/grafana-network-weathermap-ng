@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.10](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.10) (2026-07-02)
+
+### Bug Fixes
+
+* **editor-form-ids**: explicit unique ids on the node/link picker Selects, the per-node icon Select, and the color-scale threshold inputs. Grafana 13's options pane assigns the options-item id to bare controls, which produced duplicate form field ids on Grafana 13; no behavior change on Grafana 11/12. Verified in-editor on Grafana 11.0.0, 12.0.0, 12.3.8, and 13.1.0 ([#167](https://github.com/allamiro/grafana-network-weathermap-ng/issues/167), PR [#168](https://github.com/allamiro/grafana-network-weathermap-ng/pull/168))
+
 ## [1.5.9](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.9) (2026-07-02)
 
 Addresses all required changes from the Grafana plugin catalog review of v1.5.6 ([#162](https://github.com/allamiro/grafana-network-weathermap-ng/issues/162)).
