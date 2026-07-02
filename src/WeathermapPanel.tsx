@@ -657,6 +657,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     setHoveredNode(null as unknown as HoveredNode);
   };
 
+  // Resolve the tooltip label for a given link side, preferring an explicit
+  // per-side direction label (#70) and falling back to the generic wording.
+  const sideDirectionLabel = (link: DrawnLink, side: 'A' | 'Z', fallback: string): string => {
+    const label = link.sides[side].directionLabel;
+    return label && label.trim() !== '' ? label : fallback;
+  };
+
   // Navigate to a user-provided dashboard link only if it passes URL validation.
   // Values may have been produced by template-variable substitution at runtime,
   // so they are re-sanitized here before ever reaching window.open.
@@ -794,15 +801,21 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               {hoveredLink.link.target.label}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-              Usage - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentValueText}, Outbound:{' '}
+              Usage - {sideDirectionLabel(hoveredLink.link, hoveredLink.side === 'A' ? 'Z' : 'A', 'Inbound')}:{' '}
+              {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentValueText},{' '}
+              {sideDirectionLabel(hoveredLink.link, hoveredLink.side, 'Outbound')}:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentValueText}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-              Bandwidth - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentBandwidthText}, Outbound:{' '}
+              Bandwidth - {sideDirectionLabel(hoveredLink.link, hoveredLink.side === 'A' ? 'Z' : 'A', 'Inbound')}:{' '}
+              {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentBandwidthText},{' '}
+              {sideDirectionLabel(hoveredLink.link, hoveredLink.side, 'Outbound')}:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentBandwidthText}
             </div>
             <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-              Throughput (%) - Inbound: {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentPercentageText}, Outbound:{' '}
+              Throughput (%) - {sideDirectionLabel(hoveredLink.link, hoveredLink.side === 'A' ? 'Z' : 'A', 'Inbound')}:{' '}
+              {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'Z' : 'A'].currentPercentageText},{' '}
+              {sideDirectionLabel(hoveredLink.link, hoveredLink.side, 'Outbound')}:{' '}
               {hoveredLink.link.sides[hoveredLink.side === 'A' ? 'A' : 'Z'].currentPercentageText}
             </div>
             {hoveredLink.link.tooltipMetrics && hoveredLink.link.tooltipMetrics.length > 0 && (
@@ -925,7 +938,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       marginRight: '4px',
                     }}
                   ></div>
-                  <div style={{ fontSize: wm.settings.tooltip.fontSize }}>Inbound</div>
+                  <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
+                    {sideDirectionLabel(hoveredLink.link, 'Z', 'Inbound')}
+                  </div>
                   <div
                     style={{
                       width: '10px',
@@ -940,7 +955,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       fontSize: wm.settings.tooltip.fontSize,
                     }}
                   >
-                    Outbound
+                    {sideDirectionLabel(hoveredLink.link, 'A', 'Outbound')}
                   </div>
                 </div>
               </React.Fragment>
