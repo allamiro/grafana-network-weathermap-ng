@@ -125,6 +125,9 @@ export interface Link {
   stroke: number;
   showThroughputPercentage: boolean;
   linkOffset?: number;
+  // Percentage (0-100) along the A->Z line where the two directional arrows
+  // meet. Defaults to 50 (the midpoint) when unset.
+  arrowMeetPercent?: number;
   tooltipMetrics?: LinkTooltipMetric[];
   statusQuery?: string;
   statusDownColor?: string;

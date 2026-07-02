@@ -87,6 +87,25 @@ test('Creating a weathermap', () => {
   // TODO: find a working way to check node dragging
 });
 
+test('Renders a link with a custom arrow meeting point without breaking geometry', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].arrowMeetPercent = 90;
+  // Fresh options object so we don't mutate the shared mock props.
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const link = screen.getByTestId('link');
+  expect(link).not.toBeNull();
+  // A shifted meeting point must still produce finite coordinates
+  // (no divide-by-zero / NaN in the arrow geometry).
+  expect(link.innerHTML).not.toContain('NaN');
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };

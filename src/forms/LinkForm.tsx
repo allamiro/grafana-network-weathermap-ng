@@ -407,6 +407,24 @@ export const LinkForm = (props: Props) => {
                   name={'linkOffset'}
                 />
               </InlineField>
+              <InlineField
+                grow
+                label={'Arrow Meeting Point (%)'}
+                className={styles.inlineField}
+                tooltip={'Where along the A→Z line the two directional arrows meet. 50% is the midpoint (default); lower values move the junction toward the A side, higher toward the Z side.'}
+              >
+                <Slider
+                  min={5}
+                  max={95}
+                  step={1}
+                  value={link.arrowMeetPercent ?? 50}
+                  onChange={(num) => {
+                    let options = value;
+                    options.links[i].arrowMeetPercent = num;
+                    onChange(options);
+                  }}
+                />
+              </InlineField>
               <ControlledCollapse label="Stroke and Arrow">
                 <InlineField grow label="Link Stroke Width" className={styles.inlineField}>
                   <Slider
