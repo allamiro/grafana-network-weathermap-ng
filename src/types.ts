@@ -143,8 +143,10 @@ export interface Link {
   stroke: number;
   showThroughputPercentage: boolean;
   linkOffset?: number;
-  // Percentage (0-100) along the A->Z line where the two directional arrows
-  // meet. Defaults to 50 (the midpoint) when unset.
+  // Percentage along the A->Z line where the two directional arrows meet.
+  // Defaults to 50 (the midpoint) when unset. The renderer clamps the effective
+  // value to 5-95 to keep the junction from overlapping either node box, so
+  // values outside that range render at the nearest bound.
   arrowMeetPercent?: number;
   tooltipMetrics?: LinkTooltipMetric[];
   statusQuery?: string;

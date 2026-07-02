@@ -626,8 +626,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const handleNodeHover = (d: DrawnNode, e: React.MouseEvent<SVGElement>) => {
     // Only show a tooltip when the node actually has metrics configured, and
-    // never while a node is being dragged in edit mode.
+    // never while a node is being dragged in edit mode. Clear any stale tooltip
+    // on the early-return path so it doesn't linger once a drag begins.
     if (e.shiftKey || draggedNode || !d.tooltipMetrics || d.tooltipMetrics.length === 0) {
+      setHoveredNode(null as unknown as HoveredNode);
       return;
     }
     let mouseX = e.clientX;
@@ -824,10 +826,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   };
                   const parts: string[] = [];
                   if (metric.queryA !== undefined && metric.queryA !== '') {
-                    parts.push(`Inbound: ${fmtVal(inboundVal)}`);
+                    parts.push(`${sideDirectionLabel(hoveredLink.link, 'A', 'Inbound')}: ${fmtVal(inboundVal)}`);
                   }
                   if (metric.queryZ !== undefined && metric.queryZ !== '') {
-                    parts.push(`Outbound: ${fmtVal(outboundVal)}`);
+                    parts.push(`${sideDirectionLabel(hoveredLink.link, 'Z', 'Outbound')}: ${fmtVal(outboundVal)}`);
                   }
                   return (
                     <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
