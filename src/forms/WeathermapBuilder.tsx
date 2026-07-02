@@ -97,24 +97,25 @@ export const WeathermapBuilder = (props: Props) => {
     },
   };
 
-  if (!props.value) {
-    props.onChange(defaultValue);
-  } else if (!props.value.version || props.value.version !== CURRENT_VERSION) {
+  // onChange does not update props.value within this render pass, so the child
+  // forms must also receive the migrated options directly — otherwise they
+  // crash on settings (e.g. tooltip, scale) that older saved dashboards lack (#162).
+  let wm = props.value;
+  if (!wm) {
+    wm = defaultValue;
+    props.onChange(wm);
+  } else if (!wm.version || wm.version !== CURRENT_VERSION) {
     // State versioning and merging to deal with missing properties.
-    let wm = props.value;
-    props.onChange(handleVersionedStateUpdates(wm, theme));
+    wm = handleVersionedStateUpdates(wm, theme);
+    props.onChange(wm);
   }
 
-  if (props.value) {
-    return (
-      <React.Fragment>
-        <NodeForm {...props}></NodeForm>
-        <LinkForm {...props}></LinkForm>
-        <ColorForm {...props}></ColorForm>
-        <PanelForm {...props}></PanelForm>
-      </React.Fragment>
-    );
-  } else {
-    return <React.Fragment />;
-  }
+  return (
+    <React.Fragment>
+      <NodeForm {...props} value={wm}></NodeForm>
+      <LinkForm {...props} value={wm}></LinkForm>
+      <ColorForm {...props} value={wm}></ColorForm>
+      <PanelForm {...props} value={wm}></PanelForm>
+    </React.Fragment>
+  );
 };
