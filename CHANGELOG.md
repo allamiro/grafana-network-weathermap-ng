@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.9](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.9) (2026-07-02)
+
+Addresses all required changes from the Grafana plugin catalog review of v1.5.6 ([#162](https://github.com/allamiro/grafana-network-weathermap-ng/issues/162)).
+
+### Bug Fixes
+
+* **panel-editor**: opening the panel editor on dashboards saved before options schema v14 no longer throws `Cannot read properties of undefined (reading 'backgroundColor')` on Grafana 11.0.0 — the editor forms now render the migrated options directly instead of waiting for the migration to round-trip through `onChange` ([#162](https://github.com/allamiro/grafana-network-weathermap-ng/issues/162), PR [#163](https://github.com/allamiro/grafana-network-weathermap-ng/pull/163))
+* **node-editor**: the Status Color Target control keeps its selected indicator when switching between Border, Background, and Both, and the browser no longer reports duplicate form field ids — radio groups now use stable deterministic ids and immutable option updates ([#162](https://github.com/allamiro/grafana-network-weathermap-ng/issues/162), PR [#164](https://github.com/allamiro/grafana-network-weathermap-ng/pull/164))
+
+### Documentation
+
+* **catalog-readme**: new user-focused README at `src/README.md` shown in the Grafana plugin catalog — what the plugin does, use cases, setup walkthrough, and screenshots; the root README remains the GitHub-facing document ([#162](https://github.com/allamiro/grafana-network-weathermap-ng/issues/162), PR [#165](https://github.com/allamiro/grafana-network-weathermap-ng/pull/165))
+
 ## [1.5.8](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.8) (2026-07-02)
 
 ### Features
