@@ -351,6 +351,9 @@ function buildCustomTopology(nodesSpec, linksSpec) {
     if (spec.padding) {
       opts.padding = spec.padding;
     }
+    if (spec.colors) {
+      opts.colors = spec.colors;
+    }
     nodes[name] = makeNode(name, opts);
   }
 
@@ -362,19 +365,26 @@ function buildCustomTopology(nodesSpec, linksSpec) {
     const aAnchor = l.aAnchor ?? A.Center;
     const zAnchor = l.zAnchor ?? A.Center;
 
-    const sideA = {
-      bandwidth: l.cap,
-      query: `${l.frame} tx`,
-      anchor: aAnchor,
-      ...(l.portLabel ? { portLabel: l.portLabel } : {}),
-      ...(l.directionLabels ? { directionLabel: 'Out' } : {}),
-    };
-    const sideZ = {
-      bandwidth: l.cap,
-      query: `${l.frame} rx`,
-      anchor: zAnchor,
-      ...(l.directionLabels ? { directionLabel: 'In' } : {}),
-    };
+    // Power cables carry the server's wattage on both sides.
+    const sideA = l.power
+      ? { anchor: aAnchor, query: l.powerQuery, bandwidth: l.cap, ...(l.aLabelOffset !== undefined ? { labelOffset: l.aLabelOffset } : {}) }
+      : {
+          bandwidth: l.cap,
+          query: `${l.frame} tx`,
+          anchor: aAnchor,
+          ...(l.aLabelOffset !== undefined ? { labelOffset: l.aLabelOffset } : {}),
+          ...(l.portLabel ? { portLabel: l.portLabel } : {}),
+          ...(l.directionLabels ? { directionLabel: 'Out' } : {}),
+        };
+    const sideZ = l.power
+      ? { anchor: zAnchor, query: l.powerQuery, bandwidth: l.cap, ...(l.zLabelOffset !== undefined ? { labelOffset: l.zLabelOffset } : {}) }
+      : {
+          bandwidth: l.cap,
+          query: `${l.frame} rx`,
+          anchor: zAnchor,
+          ...(l.zLabelOffset !== undefined ? { labelOffset: l.zLabelOffset } : {}),
+          ...(l.directionLabels ? { directionLabel: 'In' } : {}),
+        };
 
     if (l.vias && l.vias.length > 0) {
       // Chain the link through connection nodes, as the editor's "add VIA"
@@ -397,7 +407,12 @@ function buildCustomTopology(nodesSpec, linksSpec) {
             chain[s + 1],
             first ? sideA : { anchor: A.Center },
             last ? sideZ : { anchor: A.Center },
-            { showThroughputPercentage: Boolean(l.percent), ...(l.arrowMeetPercent ? { arrowMeetPercent: l.arrowMeetPercent } : {}) }
+            {
+              showThroughputPercentage: Boolean(l.percent),
+              ...(l.stroke ? { stroke: l.stroke } : {}),
+              ...(l.units ? { units: l.units } : {}),
+              ...(l.arrowMeetPercent ? { arrowMeetPercent: l.arrowMeetPercent } : {}),
+            }
           )
         );
       }
@@ -409,6 +424,8 @@ function buildCustomTopology(nodesSpec, linksSpec) {
     links.push(
       makeLink(`link-${l.frame}${l.offset ? `/${l.offset}` : ''}`, nodeA, nodeZ, sideA, sideZ, {
         showThroughputPercentage: Boolean(l.percent),
+        ...(l.stroke ? { stroke: l.stroke } : {}),
+        ...(l.units ? { units: l.units } : {}),
         ...(l.offset !== undefined ? { linkOffset: l.offset } : {}),
       })
     );
@@ -438,7 +455,17 @@ const TARGETS = [
 // off every other dashboard.
 const PORT_STATUS_TARGET = targetDefaults({ refId: 'G', expr: 'wm_port_status', legendFormat: 'PORT {{port}}' });
 
-function makeDashboard({ uid, title, description, weathermap, refresh = '10s', timeFrom = 'now-1h', withPortStatus = false }) {
+// Device-qualified variant for the multi-device rack: two switches both have
+// a Gi0/1, so frames must carry the device name to stay unique.
+const RACK_CABLING_TARGET = targetDefaults({
+  refId: 'H',
+  expr: 'wm_port_status{device=~"R-RTR|R-FW|R-SW1|R-SW2|SRV-1|SRV-2|SRV-3|PDU-A|PDU-B"}',
+  legendFormat: 'PORT {{device}} {{port}}',
+});
+
+const POWER_TARGET = targetDefaults({ refId: 'I', expr: 'wm_power_watts', legendFormat: 'PWR {{device}} {{feed}}' });
+
+function makeDashboard({ uid, title, description, weathermap, refresh = '10s', timeFrom = 'now-1h', extraTargets = [] }) {
   return {
     annotations: { list: [] },
     editable: true,
@@ -462,7 +489,7 @@ function makeDashboard({ uid, title, description, weathermap, refresh = '10s', t
         id: 1,
         title,
         type: 'tamirsuliman-weathermap-panel',
-        targets: withPortStatus ? [...TARGETS, PORT_STATUS_TARGET] : TARGETS,
+        targets: [...TARGETS, ...extraTargets],
         options: { weathermap },
       },
     ],
@@ -511,6 +538,101 @@ function buildRackPorts() {
     padding: { horizontal: 8, vertical: 5 },
   };
   return buildCustomTopology(nodesSpec, []);
+}
+
+
+// Multi-device rack cabling (rear view): port/NIC/PSU/outlet nodes placed on
+// the faceplates drawn by /rack2.svg (1000x760), network cables routed through
+// the left channel, power cables to the redundant PDU-A/PDU-B strips.
+function buildRackCabling() {
+  const mappings = [
+    { value: 0, color: '#F2495C' }, // down / outlet off
+    { value: 1, color: '#73BF69' }, // up / powered
+    { value: 2, color: '#55575c' }, // admin-disabled
+  ];
+  const pad = { horizontal: 5, vertical: 3 };
+  const framePort = (dev, port) => `PORT ${dev} ${port}`;
+  const nodesSpec = {};
+  const port = (name, label, dev, portId, x, y) => {
+    nodesSpec[name] = {
+      label,
+      pos: [x, y],
+      statusQuery: framePort(dev, portId),
+      mappings,
+      colorTarget: 'background',
+      padding: pad,
+      // Muted border so port markers don't compete with the traffic links.
+      colors: { font: '#e6e9ef', background: '#22252b', border: '#39445a', statusDown: '#F2495C' },
+    };
+  };
+
+  // Router and firewall: 4 rear ports each.
+  for (let p = 1; p <= 4; p++) {
+    port(`RTR-P${p}`, String(p), 'R-RTR', `Ge0/${p}`, 350 + p * 50, 128);
+    port(`FW-P${p}`, String(p), 'R-FW', `P${p}`, 350 + p * 50, 196);
+  }
+  // Two access switches: 8 ports each.
+  for (let p = 1; p <= 8; p++) {
+    port(`SW1-P${p}`, String(p), 'R-SW1', `Gi0/${p}`, 250 + p * 45, 264);
+    port(`SW2-P${p}`, String(p), 'R-SW2', `Gi0/${p}`, 250 + p * 45, 332);
+  }
+  // Servers: two NICs, iLO, and dual PSU inlets (A/B feeds).
+  const srvY = { 'SRV-1': 450, 'SRV-2': 518, 'SRV-3': 586 };
+  for (const [srv, y] of Object.entries(srvY)) {
+    const key = srv.replace('-', '');
+    port(`${key}-ETH0`, 'eth0', srv, 'eth0', 450, y);
+    port(`${key}-ETH1`, 'eth1', srv, 'eth1', 505, y);
+    port(`${key}-ILO`, 'ilo', srv, 'ilo', 555, y);
+    if (srv === 'SRV-2') {
+      // Single-supply server (diversity): one inlet, fed from PDU-A only.
+      port(`${key}-PSUA`, 'A', srv, 'psu-a', 648, y);
+    } else {
+      port(`${key}-PSUA`, 'A', srv, 'psu-a', 610, y);
+      port(`${key}-PSUB`, 'B', srv, 'psu-b', 648, y);
+    }
+  }
+  // Two PDU strips (A = primary, B = redundant feed).
+  for (let o = 1; o <= 8; o++) {
+    port(`PDUA-O${o}`, String(o), 'PDU-A', `outlet${o}`, 757, 120 + 78 * (o - 1));
+    port(`PDUB-O${o}`, String(o), 'PDU-B', `outlet${o}`, 842, 120 + 78 * (o - 1));
+  }
+
+  const net = { cap: 1e9, stroke: 4 };
+  // Power flows one way (PDU -> server), so the outlet is the A side and the
+  // arrows lead from the feed into the PSU inlet.
+  const pwr = (srv, feed, outlet, inlet, viaX, y) => ({
+    frame: `pwr-${srv}-${feed}`,
+    a: outlet,
+    z: inlet,
+    power: true,
+    powerQuery: `PWR ${srv.toUpperCase().replace('SRV', 'SRV-')} ${feed}`,
+    cap: 1100,
+    units: 'watt',
+    stroke: 3,
+    aLabelOffset: 78,
+    zLabelOffset: 35,
+    vias: [[viaX, y]],
+  });
+  const linksSpec = [
+    // Trunks.
+    { frame: 'rtr:1<->fw:1', a: 'RTR-P1', z: 'FW-P1', cap: 10e9, stroke: 4 },
+    { frame: 'fw:2<->sw1:1', a: 'FW-P2', z: 'SW1-P1', cap: 10e9, stroke: 4, aLabelOffset: 80, zLabelOffset: 30, vias: [[158, 196], [158, 264]] },
+    { frame: 'sw1:8<->sw2:8', a: 'SW1-P8', z: 'SW2-P8', cap: 10e9, stroke: 4 },
+    // Switch-to-server runs through the left NET channel.
+    { frame: 'sw1:2<->srv1:eth0', a: 'SW1-P2', z: 'SRV1-ETH0', ...net, aLabelOffset: 85, zLabelOffset: 25, vias: [[172, 264], [172, 450]] },
+    { frame: 'sw1:3<->srv2:eth0', a: 'SW1-P3', z: 'SRV2-ETH0', ...net, aLabelOffset: 85, zLabelOffset: 45, vias: [[186, 264], [186, 518]] },
+    { frame: 'sw2:2<->srv3:eth0', a: 'SW2-P2', z: 'SRV3-ETH0', ...net, aLabelOffset: 85, zLabelOffset: 65, vias: [[200, 332], [200, 586]] },
+    { frame: 'sw2:3<->srv1:eth1', a: 'SW2-P3', z: 'SRV1-ETH1', ...net, aLabelOffset: 85, zLabelOffset: 85, vias: [[214, 332], [214, 450]] },
+    // Power: PDU-A feeds every server's A inlet; PDU-B feeds the dual-supply
+    // servers' B inlets. SRV-2 has a single supply.
+    pwr('srv1', 'a', 'PDUA-O2', 'SRV1-PSUA', 706, 450),
+    pwr('srv2', 'a', 'PDUA-O4', 'SRV2-PSUA', 713, 518),
+    pwr('srv3', 'a', 'PDUA-O6', 'SRV3-PSUA', 720, 586),
+    pwr('srv1', 'b', 'PDUB-O2', 'SRV1-PSUB', 795, 450),
+    pwr('srv3', 'b', 'PDUB-O6', 'SRV3-PSUB', 807, 586),
+  ];
+
+  return buildCustomTopology(nodesSpec, linksSpec);
 }
 
 const dashboards = [
@@ -617,7 +739,7 @@ const dashboards = [
           'FW-1': { pos: [180, 165], statusQuery: 'STATUS FW-1', icon: 'networking/firewall' },
           'SW-CORE': { pos: [600, 170], statusQuery: 'STATUS SW-CORE', icon: 'networking/switch' },
           'RACK1-TOR': { pos: [470, 440], statusQuery: 'STATUS RACK1-TOR', dashboardLink: '/d/wm-rack-ports', icon: 'networking/switch' },
-          'RACK2-TOR': { pos: [730, 440], statusQuery: 'STATUS RACK2-TOR', icon: 'networking/switch' },
+          'RACK2-TOR': { pos: [730, 440], statusQuery: 'STATUS RACK2-TOR', icon: 'networking/switch', dashboardLink: '/d/wm-rack-cabling' },
           STORAGE: { pos: [470, 520], statusQuery: 'STATUS STORAGE', icon: 'networking/file-server' },
         },
         [
@@ -637,7 +759,7 @@ const dashboards = [
   }),
   makeDashboard({
     uid: 'wm-rack-ports',
-    withPortStatus: true,
+    extraTargets: [PORT_STATUS_TARGET],
     title: 'WAN Demo — Rack Port Status',
     description:
       'A switch faceplate drawn as the background with each port as a status-colored node: green = up, red = down (ports 7 and 19 are unpatched; port 13 flaps every ~5 minutes), gray = admin-disabled (23/24). T1/T2 are the 10G uplinks.',
@@ -701,6 +823,22 @@ const dashboards = [
       ),
       { scale: { title: 'Member Load' } }
     ),
+  }),
+  makeDashboard({
+    uid: 'wm-rack-cabling',
+    title: 'WAN Demo — Rack Cabling (multi-device, rear view)',
+    description:
+      'Rear elevation of one rack: router, firewall, two switches, three servers, and redundant PDU-A/PDU-B strips. Every port/NIC/PSU inlet/outlet is a status-colored node; network cables run through the left channel with live traffic, power cables carry each feed\u2019s live wattage. SW1 port 5 is down, SRV-2 lost its standby NIC, and SRV-3\u2019s A feed sits in PDU-A\u2019s dead outlet 6 \u2014 its full draw shifts to the B feed.',
+    weathermap: makeWeathermap('wm-rack-cabling', buildRackCabling(), {
+      panel: {
+        backgroundImage: { url: 'http://localhost:8080/rack2.svg', fit: 'contain', attachToCanvas: true },
+        panelSize: { width: 1000, height: 760 },
+      },
+      fontSizing: { node: 8, link: 7 },
+      scale: { title: 'Load %', position: { x: 1, y: 58 }, size: { width: 38, height: 150 }, fontSizing: { title: 12, threshold: 10 } },
+    }),
+    extraTargets: [RACK_CABLING_TARGET, POWER_TARGET],
+    refresh: '10s',
   }),
 ];
 

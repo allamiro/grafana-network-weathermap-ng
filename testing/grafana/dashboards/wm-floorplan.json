@@ -337,6 +337,8 @@
                 "drawInside": false
               },
               "isConnection": false,
+              "dashboardLink": "/d/wm-rack-cabling",
+              "openInSameTab": false,
               "statusQuery": "STATUS RACK2-TOR",
               "nodeStatusColorTarget": "both"
             },
@@ -817,6 +819,8 @@
                     "drawInside": false
                   },
                   "isConnection": false,
+                  "dashboardLink": "/d/wm-rack-cabling",
+                  "openInSameTab": false,
                   "statusQuery": "STATUS RACK2-TOR",
                   "nodeStatusColorTarget": "both"
                 }
