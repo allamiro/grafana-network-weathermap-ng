@@ -428,6 +428,23 @@ export const LinkForm = (props: Props) => {
               </InlineField>
               <InlineField
                 grow
+                label={'Single Direction (A → Z)'}
+                className={styles.inlineField}
+                tooltip={
+                  'Render this link as a one-way flow: one full-length line with a single arrow into the Z side, and only the A-side value label. For flows that physically go one way (power feeds, unidirectional replication).'
+                }
+              >
+                <InlineSwitch
+                  value={link.singleDirection ?? false}
+                  onChange={(e) => {
+                    let options = value;
+                    options.links[i].singleDirection = e.currentTarget.checked;
+                    onChange(options);
+                  }}
+                />
+              </InlineField>
+              <InlineField
+                grow
                 label={'Arrow Meeting Point (%)'}
                 className={styles.inlineField}
                 tooltip={'Where along the A→Z line the two directional arrows meet. 50% is the midpoint (default); lower values move the junction toward the A side, higher toward the Z side.'}
