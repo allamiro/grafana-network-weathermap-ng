@@ -423,6 +423,8 @@ function buildCustomTopology(nodesSpec, linksSpec) {
 // Dashboard envelope
 // ---------------------------------------------------------------------------
 
+const targetDefaults = (t) => ({ ...t, exemplar: false, instant: false, range: true, interval: '', format: 'time_series' });
+
 const TARGETS = [
   { refId: 'A', expr: 'wm_link_bps', legendFormat: '{{link}} {{direction}}' },
   { refId: 'B', expr: 'wm_device_status', legendFormat: 'STATUS {{device}}' },
@@ -430,10 +432,13 @@ const TARGETS = [
   { refId: 'D', expr: 'wm_packet_loss_pct', legendFormat: 'LOSS {{device}}' },
   { refId: 'E', expr: 'wm_link_errors', legendFormat: 'ERR {{link}}' },
   { refId: 'F', expr: 'wm_link_discards', legendFormat: 'DISC {{link}}' },
-  { refId: 'G', expr: 'wm_port_status', legendFormat: 'PORT {{port}}' },
-].map((t) => ({ ...t, exemplar: false, instant: false, range: true, interval: '', format: 'time_series' }));
+].map(targetDefaults);
 
-function makeDashboard({ uid, title, description, weathermap, refresh = '10s', timeFrom = 'now-1h' }) {
+// Only the rack board consumes wm_port_status frames; keep the extra query
+// off every other dashboard.
+const PORT_STATUS_TARGET = targetDefaults({ refId: 'G', expr: 'wm_port_status', legendFormat: 'PORT {{port}}' });
+
+function makeDashboard({ uid, title, description, weathermap, refresh = '10s', timeFrom = 'now-1h', withPortStatus = false }) {
   return {
     annotations: { list: [] },
     editable: true,
@@ -457,7 +462,7 @@ function makeDashboard({ uid, title, description, weathermap, refresh = '10s', t
         id: 1,
         title,
         type: 'tamirsuliman-weathermap-panel',
-        targets: TARGETS,
+        targets: withPortStatus ? [...TARGETS, PORT_STATUS_TARGET] : TARGETS,
         options: { weathermap },
       },
     ],
@@ -587,7 +592,7 @@ const dashboards = [
         [
           { frame: 'nyc<->lon', a: 'NYC', z: 'LON', cap: 100e9, portLabel: 'TAT-14', directionLabels: true },
           { frame: 'nyc<->fra', a: 'NYC', z: 'FRA', cap: 100e9, portLabel: 'AC-2', directionLabels: true },
-          { frame: 'lon<->fra', a: 'LON', z: 'FRA', cap: 100e9 },
+          { frame: 'lon<->fra', a: 'LON', z: 'FRA', cap: 100e9, portLabel: 'PEB-1', directionLabels: true },
           { frame: 'lon<->dxb', a: 'LON', z: 'DXB', cap: 100e9, portLabel: 'EIG-1', directionLabels: true },
           { frame: 'fra<->dxb', a: 'FRA', z: 'DXB', cap: 100e9, portLabel: 'SMW-5', directionLabels: true },
         ]
@@ -632,6 +637,7 @@ const dashboards = [
   }),
   makeDashboard({
     uid: 'wm-rack-ports',
+    withPortStatus: true,
     title: 'WAN Demo — Rack Port Status',
     description:
       'A switch faceplate drawn as the background with each port as a status-colored node: green = up, red = down (ports 7 and 19 are unpatched; port 13 flaps every ~5 minutes), gray = admin-disabled (23/24). T1/T2 are the 10G uplinks.',
