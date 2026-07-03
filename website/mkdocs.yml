@@ -38,6 +38,7 @@ nav:
       - Interactions & Editing: guide/interactions.md
       - Use Cases: guide/use-cases.md
   - Customization: customization.md
+  - Icon Reference: icons.md
   - Reference: reference.md
   - FAQ: faq.md
   - Contributing: https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/CONTRIBUTING.md
