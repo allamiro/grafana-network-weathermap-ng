@@ -309,6 +309,9 @@ function makeWeathermap(id, topology, settingsOverrides = {}) {
 
   // Deep-ish merge for the settings levels the scenarios tweak.
   const merged = { ...base, settings: { ...base.settings, ...settingsOverrides } };
+  if (settingsOverrides.statusLegend) {
+    merged.settings.statusLegend = settingsOverrides.statusLegend;
+  }
   for (const key of ['link', 'scale', 'panel', 'fontSizing']) {
     if (settingsOverrides[key]) {
       merged.settings[key] = { ...base.settings[key], ...settingsOverrides[key] };
@@ -635,6 +638,27 @@ function buildRackCabling() {
   return buildCustomTopology(nodesSpec, linksSpec);
 }
 
+// Variant of the rack-cabling topology with the #179 dense-map rendering
+// features enabled: one-way power cables, hover highlight, label collision
+// avoidance, zoom-dependent labels, a status legend, and emphasized PSU
+// labels. Requires plugin >= 1.5.12.
+function buildInteractiveRack() {
+  const topo = buildRackCabling();
+  for (const l of topo.links) {
+    if (l.units === 'watt') {
+      // Power physically flows one way: PDU outlet (A) -> PSU inlet (Z).
+      l.singleDirection = true;
+    }
+  }
+  for (const n of topo.nodes) {
+    if (n.label === 'A' || n.label === 'B') {
+      n.fontSize = 11;
+      n.fontBold = true;
+    }
+  }
+  return topo;
+}
+
 const dashboards = [
   makeDashboard({
     uid: 'wm-wan-utilization',
@@ -833,6 +857,32 @@ const dashboards = [
       panel: {
         backgroundImage: { url: 'http://localhost:8080/rack2.svg', fit: 'contain', attachToCanvas: true },
         panelSize: { width: 1000, height: 760 },
+      },
+      fontSizing: { node: 8, link: 7 },
+      scale: { title: 'Load %', position: { x: 1, y: 58 }, size: { width: 38, height: 150 }, fontSizing: { title: 12, threshold: 10 } },
+    }),
+    extraTargets: [RACK_CABLING_TARGET, POWER_TARGET],
+    refresh: '10s',
+  }),
+  makeDashboard({
+    uid: 'wm-rack-interactive',
+    title: 'WAN Demo — Interactive Rack View',
+    description:
+      'The rack-cabling topology with the dense-map readability features enabled (plugin >= 1.5.12): hover a cable to highlight its whole path and fade the rest; power cables render as true one-way flows into the PSU inlets; value labels de-overlap automatically and hide when zoomed out two steps; a built-in status legend explains the colors; the PSU inlet labels are bold for emphasis.',
+    weathermap: makeWeathermap('wm-rack-interactive', buildInteractiveRack(), {
+      panel: {
+        backgroundImage: { url: 'http://localhost:8080/rack2.svg', fit: 'contain', attachToCanvas: true },
+        panelSize: { width: 1000, height: 760 },
+      },
+      link: { hoverHighlight: true, labelCollision: true, labelHideZoom: 2 },
+      statusLegend: {
+        enabled: true,
+        position: { x: 1, y: 40 },
+        items: [
+          { color: '#73BF69', label: 'up / powered', id: 'leg-up' },
+          { color: '#F2495C', label: 'down / off', id: 'leg-down' },
+          { color: '#55575c', label: 'admin-disabled', id: 'leg-disabled' },
+        ],
       },
       fontSizing: { node: 8, link: 7 },
       scale: { title: 'Load %', position: { x: 1, y: 58 }, size: { width: 38, height: 150 }, fontSizing: { title: 12, threshold: 10 } },

@@ -1148,6 +1148,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               position: absolute;
               top: ${wm.settings.statusLegend.position.y}%;
               left: ${wm.settings.statusLegend.position.x}%;
+              z-index: 2;
               padding: 6px 10px;
               border-radius: 4px;
               background-color: ${theme.colors.background.secondary};
