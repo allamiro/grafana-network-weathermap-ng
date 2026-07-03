@@ -19,11 +19,11 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -40,7 +40,8 @@ jobs:
           fail-if-incompatible: 'no'
 
   # Job 2: matrix check — verify the plugin TypeScript compiles cleanly
-  # against each supported Grafana SDK version (10.x, 11.x, 12.x).
+  # against each supported Grafana SDK version (11.x, 12.x, 13.x — the
+  # plugin's grafanaDependency is >=11.0.0, so 10.x is not checked).
   # Uses --no-save so the installed test versions don't modify package.json.
   compatibility-matrix:
     name: Grafana ${{ matrix.grafana-version }} API check
@@ -48,13 +49,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        grafana-version: ['10.4.0', '11.0.0', '12.0.0']
+        grafana-version: ['11.0.0', '12.0.0', '13.1.0']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
