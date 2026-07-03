@@ -30,5 +30,10 @@ e2e-results/
 # Editors
 .idea
 
+# Tool caches and local build outputs
+.eslintcache
+website/site/
+testing/exporter/wm-prometheus
+
 # Release
 grafana-weathermap-*.zip
