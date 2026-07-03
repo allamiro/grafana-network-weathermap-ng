@@ -1,0 +1,130 @@
+/* Dracula color scheme (https://draculatheme.com/contribute#color-palette)
+ * applied to Material for MkDocs' dark ("slate") scheme via its CSS
+ * variables — no extra theme package needed, all Material features keep
+ * working. Light mode is untouched.
+ *
+ * Palette: bg #282a36 · line #44475a · fg #f8f8f2 · comment #6272a4
+ *          cyan #8be9fd · green #50fa7b · orange #ffb86c · pink #ff79c6
+ *          purple #bd93f9 · red #ff5555 · yellow #f1fa8c
+ */
+
+[data-md-color-scheme='slate'],
+[data-md-color-scheme='slate'][data-md-color-primary='black'] {
+  /* surfaces */
+  --md-default-bg-color: #282a36;
+  --md-default-fg-color: rgba(248, 248, 242, 0.87);
+  --md-default-fg-color--light: rgba(248, 248, 242, 0.6);
+  --md-default-fg-color--lighter: rgba(248, 248, 242, 0.36);
+  --md-default-fg-color--lightest: rgba(248, 248, 242, 0.12);
+
+  /* header, tabs, footer */
+  --md-primary-fg-color: #1e1f29;
+  --md-primary-fg-color--light: #44475a;
+  --md-primary-fg-color--dark: #191a21;
+  --md-primary-bg-color: #f8f8f2;
+  --md-primary-bg-color--light: rgba(248, 248, 242, 0.7);
+  --md-footer-bg-color: #191a21;
+  --md-footer-bg-color--dark: #14151b;
+
+  /* accents and links */
+  --md-accent-fg-color: #ff79c6;
+  --md-accent-fg-color--transparent: rgba(255, 121, 198, 0.1);
+  --md-typeset-a-color: #8be9fd;
+
+  /* typeset details */
+  --md-typeset-mark-color: rgba(241, 250, 140, 0.3);
+  --md-typeset-kbd-color: #44475a;
+  --md-typeset-kbd-accent-color: #6272a4;
+  --md-typeset-kbd-border-color: #191a21;
+  --md-typeset-table-color: rgba(248, 248, 242, 0.12);
+  --md-typeset-table-color--light: rgba(248, 248, 242, 0.035);
+
+  /* code blocks */
+  --md-code-bg-color: #21222c;
+  --md-code-fg-color: #f8f8f2;
+  --md-code-hl-color: #bd93f9;
+  --md-code-hl-color--light: rgba(189, 147, 249, 0.15);
+
+  /* syntax highlighting (pymdownx/pygments token classes) */
+  --md-code-hl-number-color: #bd93f9;
+  --md-code-hl-special-color: #ff79c6;
+  --md-code-hl-function-color: #50fa7b;
+  --md-code-hl-constant-color: #bd93f9;
+  --md-code-hl-keyword-color: #ff79c6;
+  --md-code-hl-string-color: #f1fa8c;
+  --md-code-hl-name-color: #f8f8f2;
+  --md-code-hl-operator-color: #ff79c6;
+  --md-code-hl-punctuation-color: #f8f8f2;
+  --md-code-hl-comment-color: #6272a4;
+  --md-code-hl-generic-color: #8be9fd;
+  --md-code-hl-variable-color: #ffb86c;
+
+  /* admonitions pick up the accent automatically; map the common ones to
+   * dracula hues for a consistent look */
+  --md-admonition-fg-color: var(--md-default-fg-color);
+  --md-admonition-bg-color: rgba(68, 71, 90, 0.35);
+}
+
+/* admonition accents: tip=green, info/note=cyan, warning=orange, danger=red */
+[data-md-color-scheme='slate'] .md-typeset .admonition.tip,
+[data-md-color-scheme='slate'] .md-typeset details.tip {
+  border-color: #50fa7b;
+}
+[data-md-color-scheme='slate'] .md-typeset .tip > .admonition-title,
+[data-md-color-scheme='slate'] .md-typeset .tip > summary {
+  background-color: rgba(80, 250, 123, 0.12);
+}
+[data-md-color-scheme='slate'] .md-typeset .tip > .admonition-title::before,
+[data-md-color-scheme='slate'] .md-typeset .tip > summary::before {
+  background-color: #50fa7b;
+}
+[data-md-color-scheme='slate'] .md-typeset .admonition.info,
+[data-md-color-scheme='slate'] .md-typeset details.info,
+[data-md-color-scheme='slate'] .md-typeset .admonition.note,
+[data-md-color-scheme='slate'] .md-typeset details.note {
+  border-color: #8be9fd;
+}
+[data-md-color-scheme='slate'] .md-typeset .info > .admonition-title,
+[data-md-color-scheme='slate'] .md-typeset .info > summary,
+[data-md-color-scheme='slate'] .md-typeset .note > .admonition-title,
+[data-md-color-scheme='slate'] .md-typeset .note > summary {
+  background-color: rgba(139, 233, 253, 0.12);
+}
+[data-md-color-scheme='slate'] .md-typeset .info > .admonition-title::before,
+[data-md-color-scheme='slate'] .md-typeset .info > summary::before,
+[data-md-color-scheme='slate'] .md-typeset .note > .admonition-title::before,
+[data-md-color-scheme='slate'] .md-typeset .note > summary::before {
+  background-color: #8be9fd;
+}
+[data-md-color-scheme='slate'] .md-typeset .admonition.warning,
+[data-md-color-scheme='slate'] .md-typeset details.warning {
+  border-color: #ffb86c;
+}
+[data-md-color-scheme='slate'] .md-typeset .warning > .admonition-title,
+[data-md-color-scheme='slate'] .md-typeset .warning > summary {
+  background-color: rgba(255, 184, 108, 0.12);
+}
+[data-md-color-scheme='slate'] .md-typeset .warning > .admonition-title::before,
+[data-md-color-scheme='slate'] .md-typeset .warning > summary::before {
+  background-color: #ffb86c;
+}
+[data-md-color-scheme='slate'] .md-typeset .admonition.danger,
+[data-md-color-scheme='slate'] .md-typeset details.danger {
+  border-color: #ff5555;
+}
+[data-md-color-scheme='slate'] .md-typeset .danger > .admonition-title,
+[data-md-color-scheme='slate'] .md-typeset .danger > summary {
+  background-color: rgba(255, 85, 85, 0.12);
+}
+[data-md-color-scheme='slate'] .md-typeset .danger > .admonition-title::before,
+[data-md-color-scheme='slate'] .md-typeset .danger > summary::before {
+  background-color: #ff5555;
+}
+
+/* search input on the dracula header */
+[data-md-color-scheme='slate'] .md-search__form {
+  background-color: rgba(68, 71, 90, 0.6);
+}
+[data-md-color-scheme='slate'] .md-search__form:hover {
+  background-color: rgba(68, 71, 90, 0.9);
+}
