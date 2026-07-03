@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="src/img/logo.svg" alt="Grafana Network Weathermap NG" width="200" height="200">
+  <img src="src/img/logo.svg" alt="Network Weathermap NG" width="200" height="200">
 
-  # Grafana Network Weathermap NG
+  # Network Weathermap NG
 
   **A modernized, actively maintained network weathermap panel plugin for Grafana**
 
