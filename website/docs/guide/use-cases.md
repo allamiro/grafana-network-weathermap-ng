@@ -174,7 +174,7 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 1. Draw the rack rear elevation (device faceplates, cable channels, PDU strips) as the **Background** image with **Move With Map** enabled.
 2. Add one small node per port/NIC/PSU-inlet/PDU-outlet, placed over the drawn openings, each with a **Status Query** and threshold mappings (`0 → red`, `1 → green`, `2 → gray`).
 3. Draw each network cable as a link between the two port nodes it patches, routed through the cable channel with VIAs; give each cable its live traffic query.
-4. Draw power cables from PDU outlets to PSU inlets with the PDU outlet as the **A side** so the arrows lead feed → server; set **Units** to `watt` and use the server's power-draw series on both sides.
+4. Draw power cables from PDU outlets to PSU inlets with the PDU outlet as the **A side** so the arrows lead feed → server; set **Units** to `watt` and use each PSU's **per-feed** power-draw series on both sides of its cable (e.g. `power{feed="A"}` on the A-feed cable, `{feed="B"}` on the B-feed cable) — that way a dead outlet shows 0 W on its own cable while the surviving feed carries the full draw.
 5. Mix dual- and single-supply servers as your rack really is — a dual-fed server survives a dead outlet (its full draw shifts to the B feed and the wattage labels show it); a single-supply server visibly does not have that safety net.
 
 !!! note "Where power metrics come from"

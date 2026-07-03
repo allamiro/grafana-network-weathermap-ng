@@ -72,4 +72,4 @@ The exporter (`testing/exporter/main.go`) produces:
 - Every link also gets staggered ~45 s micro-bursts every 13 minutes so the maps keep changing like a real enterprise network.
 
 The exporter also serves the demo background images over HTTP (port 8080,
-published by the compose file): `/floorplan.svg`, `/worldmap.svg`, `/rack.svg`.
+published by the compose file): `/floorplan.svg`, `/worldmap.svg`, `/rack.svg`, `/rack2.svg`.
