@@ -95,16 +95,6 @@
           "range": true,
           "interval": "",
           "format": "time_series"
-        },
-        {
-          "refId": "G",
-          "expr": "wm_port_status",
-          "legendFormat": "PORT {{port}}",
-          "exemplar": false,
-          "instant": false,
-          "range": true,
-          "interval": "",
-          "format": "time_series"
         }
       ],
       "options": {
@@ -784,14 +774,17 @@
                   "query": "lon<->fra tx",
                   "labelOffset": 55,
                   "anchor": 0,
-                  "dashboardLink": ""
+                  "dashboardLink": "",
+                  "portLabel": "PEB-1",
+                  "directionLabel": "Out"
                 },
                 "Z": {
                   "bandwidth": 100000000000,
                   "query": "lon<->fra rx",
                   "labelOffset": 55,
                   "anchor": 0,
-                  "dashboardLink": ""
+                  "dashboardLink": "",
+                  "directionLabel": "In"
                 }
               },
               "units": "bps",

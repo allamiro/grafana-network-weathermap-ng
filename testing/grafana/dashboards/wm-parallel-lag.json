@@ -95,16 +95,6 @@
           "range": true,
           "interval": "",
           "format": "time_series"
-        },
-        {
-          "refId": "G",
-          "expr": "wm_port_status",
-          "legendFormat": "PORT {{port}}",
-          "exemplar": false,
-          "instant": false,
-          "range": true,
-          "interval": "",
-          "format": "time_series"
         }
       ],
       "options": {
