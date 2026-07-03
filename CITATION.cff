@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Grafana Network Weathermap NG"
+authors:
+  - family-names: "Suliman"
+    given-names: "Tamir"
+repository-code: "https://github.com/allamiro/grafana-network-weathermap-ng"
+url: "https://allamiro.github.io/grafana-network-weathermap-ng/"
+license: Apache-2.0
+version: 1.5.11
+date-released: "2026-07-03"

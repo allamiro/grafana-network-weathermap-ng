@@ -117,6 +117,21 @@ Contributions are welcome. Please open an issue first to discuss significant cha
 
 **Tamir Suliman** — [allamiro@gmail.com](mailto:allamiro@gmail.com) — [GitHub](https://github.com/allamiro)
 
+## Citing
+
+If you use this project in research or publications, please cite it — GitHub's
+**"Cite this repository"** button (powered by [CITATION.cff](CITATION.cff)) provides
+APA and BibTeX entries, e.g.:
+
+```bibtex
+@software{Suliman_Grafana_Network_Weathermap_NG,
+  author  = {Suliman, Tamir},
+  title   = {Grafana Network Weathermap NG},
+  url     = {https://github.com/allamiro/grafana-network-weathermap-ng},
+  license = {Apache-2.0}
+}
+```
+
 ## License
 
-Apache-2.0 — see [LICENSE](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/LICENSE) for details.
+Apache-2.0 — see [LICENSE](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/LICENSE) and [NOTICE](https://github.com/allamiro/grafana-network-weathermap-ng/blob/main/NOTICE) for details. Redistributions must retain the attribution in the NOTICE file per Apache-2.0 §4(d).
