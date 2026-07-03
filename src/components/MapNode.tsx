@@ -7,6 +7,7 @@ import {
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
   getDataFrameName,
+  getValueField,
   sanitizeUrl,
 } from '../utils';
 import { css } from '@emotion/css';
@@ -68,8 +69,20 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
   let nodeStatusColor: string | null = null;
   if (node.statusQuery) {
     const recentFrame = data.series
-      .filter((series) => getDataFrameName(series, data.series) === node.statusQuery)
-      .map((frame) => frame.fields[1].values[frame.fields[1].values.length - 1]);
+      .filter((series) => {
+        // A transient empty or valueless frame (fresh exporter, scrape gap,
+        // regex matching nothing) must not take down the whole panel (#178) —
+        // name resolution throws for frames without a value field.
+        try {
+          return getDataFrameName(series, data.series) === node.statusQuery;
+        } catch (e) {
+          return false;
+        }
+      })
+      .map((frame) => {
+        const valueField = getValueField(frame);
+        return valueField.values[valueField.values.length - 1];
+      });
 
     const rawValue = recentFrame.length > 0 ? recentFrame[0] : undefined;
 
