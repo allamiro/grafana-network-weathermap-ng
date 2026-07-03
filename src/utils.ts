@@ -167,14 +167,15 @@ export function calculateRectangleAutoHeight(d: DrawnNode, wm: Weathermap): numb
       )
       .map((l) => l.stroke)
   );
-  let minHeight = wm.settings.fontSizing.node + 2 * d.padding.vertical; // fontSize + padding
+  const nodeFontSize = d.fontSize ?? wm.settings.fontSizing.node;
+  let minHeight = nodeFontSize + 2 * d.padding.vertical; // fontSize + padding
 
   if (d.nodeIcon?.drawInside) {
     minHeight += d.nodeIcon.size.height + 2 * d.nodeIcon.padding.vertical;
   }
 
   if (d.nodeIcon && d.label === '') {
-    minHeight -= wm.settings.fontSizing.node;
+    minHeight -= nodeFontSize;
   }
 
   const linkHeight = maxLinkHeight + wm.settings.link.spacing.vertical + 2 * d.padding.vertical;
@@ -683,4 +684,101 @@ export function aggregateFieldValues(
     default:
       return lastValid;
   }
+}
+
+/**
+ * Resolve the full VIA chain a link belongs to (#179): starting from one link,
+ * walk backward through connection-node sources and forward through
+ * connection-node targets, collecting every segment of the logical link.
+ * Returns the set of link ids in the chain (always includes the given link).
+ */
+export function resolveLinkChain(links: Link[], linkId: string): Set<string> {
+  const chain = new Set<string>([linkId]);
+  const byId = new Map(links.map((l) => [l.id, l]));
+  const start = byId.get(linkId);
+  if (!start) {
+    return chain;
+  }
+
+  // Walk backward: while the current segment starts at a connection node,
+  // include the segment feeding that connection.
+  let current: Link | undefined = start;
+  for (let guard = 0; guard < links.length && current && current.nodes[0]?.isConnection; guard++) {
+    const prev = links.find((l) => l.id !== current!.id && l.nodes[1]?.id === current!.nodes[0].id);
+    if (!prev || chain.has(prev.id)) {
+      break;
+    }
+    chain.add(prev.id);
+    current = prev;
+  }
+
+  // Walk forward: while the current segment ends at a connection node,
+  // include the segment leaving that connection.
+  current = start;
+  for (let guard = 0; guard < links.length && current && current.nodes[1]?.isConnection; guard++) {
+    const next = links.find((l) => l.id !== current!.id && l.nodes[0]?.id === current!.nodes[1].id);
+    if (!next || chain.has(next.id)) {
+      break;
+    }
+    chain.add(next.id);
+    current = next;
+  }
+
+  return chain;
+}
+
+export interface LabelPlacement {
+  key: string;
+  // The segment the label slides along, and its preferred position (percent).
+  segment: { x1: number; y1: number; x2: number; y2: number };
+  offsetPercent: number;
+  width: number;
+  height: number;
+}
+
+const labelBoxAt = (l: LabelPlacement, pct: number) => {
+  const x = l.segment.x1 + ((l.segment.x2 - l.segment.x1) * pct) / 100;
+  const y = l.segment.y1 + ((l.segment.y2 - l.segment.y1) * pct) / 100;
+  return { x0: x - l.width / 2, y0: y - l.height / 2, x1: x + l.width / 2, y1: y + l.height / 2 };
+};
+
+const boxesOverlap = (a: ReturnType<typeof labelBoxAt>, b: ReturnType<typeof labelBoxAt>) =>
+  a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+
+/**
+ * Greedy label de-overlap pass (#179): keeps each label on its own link
+ * segment, nudging its offset percentage away from already-placed labels.
+ * Returns the resolved offset percent per label key; labels that cannot be
+ * de-overlapped within the segment keep their preferred position.
+ */
+export function spreadLabels(labels: LabelPlacement[], step = 8, min = 10, max = 90): Map<string, number> {
+  const placed: Array<ReturnType<typeof labelBoxAt>> = [];
+  const result = new Map<string, number>();
+
+  for (const label of labels) {
+    let chosen = label.offsetPercent;
+    let found = false;
+    // Try the preferred spot, then alternate outward: +step, -step, +2step, ...
+    for (let k = 0; k <= Math.ceil((max - min) / step); k++) {
+      for (const dir of k === 0 ? [0] : [1, -1]) {
+        const pct = label.offsetPercent + dir * k * step;
+        if (pct < min || pct > max) {
+          continue;
+        }
+        const box = labelBoxAt(label, pct);
+        if (!placed.some((p) => boxesOverlap(box, p))) {
+          chosen = pct;
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        break;
+      }
+    }
+    placed.push(labelBoxAt(label, chosen));
+    result.set(label.key, chosen);
+  }
+
+  return result;
 }

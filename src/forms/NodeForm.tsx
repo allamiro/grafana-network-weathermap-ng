@@ -743,6 +743,33 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     <InlineField grow label={'Constant Spacing'}>
                       <InlineSwitch value={node.useConstantSpacing} onChange={(e) => handleSpacingChange(e, i)} />
                     </InlineField>
+                    <InlineField
+                      grow
+                      label={'Label Font Size (override)'}
+                      tooltip={'Overrides the global Node Font Size for this node only. 0 resets to the global size.'}
+                    >
+                      <Input
+                        value={node.fontSize ?? 0}
+                        type={'number'}
+                        min={0}
+                        onChange={(e) => {
+                          let weathermap: Weathermap = value;
+                          const v = e.currentTarget.valueAsNumber;
+                          weathermap.nodes[i].fontSize = v > 0 ? v : undefined;
+                          onChange(weathermap);
+                        }}
+                      />
+                    </InlineField>
+                    <InlineField grow label={'Bold Label'}>
+                      <InlineSwitch
+                        value={node.fontBold ?? false}
+                        onChange={(e) => {
+                          let weathermap: Weathermap = value;
+                          weathermap.nodes[i].fontBold = e.currentTarget.checked;
+                          onChange(weathermap);
+                        }}
+                      />
+                    </InlineField>
                     <InlineField grow label={'Compact Vertical Links'}>
                       <InlineSwitch value={node.compactVerticalLinks} onChange={(e) => handleCompactChange(e, i)} />
                     </InlineField>

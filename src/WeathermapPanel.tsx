@@ -45,6 +45,9 @@ import {
   calculateRectangleAutoHeight,
   CURRENT_VERSION,
   handleVersionedStateUpdates,
+  resolveLinkChain,
+  spreadLabels,
+  LabelPlacement,
   getDataFrameName,
   getValueField,
   sanitizeUrl,
@@ -76,7 +79,10 @@ function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
     toReturn.dashboardLink = tmplSrv?.replace(toReturn.dashboardLink) ?? toReturn.dashboardLink;
   }
 
-  toReturn.labelWidth = measureText(toReturn.label ? toReturn.label : '', wm.settings.fontSizing.node).width;
+  toReturn.labelWidth = measureText(
+    toReturn.label ? toReturn.label : '',
+    toReturn.fontSize ?? wm.settings.fontSizing.node
+  ).width;
   toReturn.anchors = {
     0: { numLinks: toReturn.anchors[0].numLinks, numFilledLinks: 0 },
     1: { numLinks: toReturn.anchors[1].numLinks, numFilledLinks: 0 },
@@ -470,6 +476,25 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.arrows.width
     );
 
+    // Single-direction links (#179): one full-length A line ending in one
+    // arrow at the Z node edge. VIA middle segments (connection targets) are
+    // already full-length with no arrows, so only final segments change.
+    if (d.singleDirection && !tempNodes[toReturn.target.index].isConnection) {
+      toReturn.lineEndA = shiftAlong(
+        toReturn.lineStartZ,
+        toReturn.lineStartZ,
+        toReturn.lineStartA,
+        -toReturn.arrows.height
+      );
+      toReturn.arrowCenterA = toReturn.lineStartZ;
+      toReturn.arrowPolygonA = getArrowPolygon(
+        toReturn.lineStartA,
+        toReturn.arrowCenterA,
+        toReturn.arrows.height,
+        toReturn.arrows.width
+      );
+    }
+
     if (d.statusQuery) {
       const sv = frameMap.get(d.statusQuery);
       toReturn.isDown = sv === undefined || sv < 1;
@@ -662,6 +687,47 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
     setHoveredLink(null as unknown as HoveredLink);
   };
+
+  // Hover highlight (#179): when enabled, hovering a link keeps its whole VIA
+  // chain at full opacity and fades every other link and value label.
+  const hoverChain =
+    wm.settings.link.hoverHighlight && hoveredLink ? resolveLinkChain(wm.links, hoveredLink.link.id) : null;
+  const linkOpacity = (id: string) => (hoverChain && !hoverChain.has(id) ? 0.12 : 1);
+
+  // Zoom-dependent labels (#179): hide value labels once zoomed out past the
+  // configured number of wheel steps.
+  const labelHideZoom = wm.settings.link.labelHideZoom ?? 0;
+  const hideValueLabels = labelHideZoom > 0 && wm.settings.panel.zoomScale >= labelHideZoom;
+
+  // Label collision avoidance (#179): opt-in greedy pass that nudges value
+  // labels along their own link until they stop overlapping each other.
+  let collisionOffsets: Map<string, number> | null = null;
+  if (wm.settings.link.labelCollision && !hideValueLabels) {
+    const placements: LabelPlacement[] = [];
+    const fs = wm.settings.fontSizing.link;
+    for (const d of links) {
+      if (d.nodes[0].id === d.nodes[1].id) {
+        continue;
+      }
+      placements.push({
+        key: `${d.id}:A`,
+        segment: { x1: d.lineStartZ.x, y1: d.lineStartZ.y, x2: d.lineStartA.x, y2: d.lineStartA.y },
+        offsetPercent: (tempNodes[d.target.index].isConnection ? 1 : 0.5) * d.sides.A.labelOffset,
+        width: measureText(`${d.sides.A.currentText}`, fs).width + fs * 1.5,
+        height: fs * 2,
+      });
+      if (!tempNodes[d.target.index].isConnection && !d.singleDirection) {
+        placements.push({
+          key: `${d.id}:Z`,
+          segment: { x1: d.lineStartA.x, y1: d.lineStartA.y, x2: d.lineStartZ.x, y2: d.lineStartZ.y },
+          offsetPercent: 0.5 * d.sides.Z.labelOffset,
+          width: measureText(`${d.sides.Z.currentText}`, fs).width + fs * 1.5,
+          height: fs * 2,
+        });
+      }
+    }
+    collisionOffsets = spreadLabels(placements);
+  }
 
   // VIA editing on the canvas (#67): double-click a link to insert a waypoint
   // (a connection node at the link midpoint, which can then be dragged), and
@@ -1076,6 +1142,39 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           ''
         )}
         <ColorScale thresholds={wm.scale} settings={wm.settings} />
+        {wm.settings.statusLegend?.enabled && wm.settings.statusLegend.items.length > 0 ? (
+          <div
+            className={css`
+              position: absolute;
+              top: ${wm.settings.statusLegend.position.y}%;
+              left: ${wm.settings.statusLegend.position.x}%;
+              padding: 6px 10px;
+              border-radius: 4px;
+              background-color: ${theme.colors.background.secondary};
+              border: 1px solid ${theme.colors.border.weak};
+              font-size: 12px;
+              pointer-events: none;
+            `}
+            data-testid="status-legend"
+          >
+            {wm.settings.statusLegend.items.map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '18px' }}>
+                <span
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '2px',
+                    backgroundColor: item.color,
+                    display: 'inline-block',
+                  }}
+                ></span>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        ) : (
+          ''
+        )}
         <svg
           style={{
             position: 'absolute',
@@ -1286,6 +1385,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     key={i}
                     className="line"
                     data-testid="link"
+                    opacity={linkOpacity(d.id)}
                     strokeOpacity={1}
                     width={Math.abs(d.target.x - d.source.x)}
                     height={Math.abs(d.target.y - d.source.y)}
@@ -1363,6 +1463,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           style={d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
                         ></polygon>
+                        {!d.singleDirection && (
+                        <React.Fragment>
                         <line
                           strokeWidth={getLinkStroke(d.sides.Z.currentValue, d.sides.Z.bandwidth, d.stroke)}
                           stroke={
@@ -1419,6 +1521,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           }}
                           style={d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}}
                         ></polygon>
+                        </React.Fragment>
+                        )}
                       </React.Fragment>
                     )}
                   </g>
@@ -1427,17 +1531,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             </g>
             <g>
               {links.map((d, i) => {
-                if (d.nodes[0].id === d.nodes[1].id) {
+                if (d.nodes[0].id === d.nodes[1].id || hideValueLabels) {
                   return;
                 }
-                const transform = getPercentPoint(
-                  d.lineStartZ,
-                  d.lineStartA,
-                  (tempNodes[d.target.index].isConnection ? 1 : 0.5) * (d.sides.A.labelOffset / 100)
-                );
+                const aPct =
+                  collisionOffsets?.get(`${d.id}:A`) ??
+                  (tempNodes[d.target.index].isConnection ? 1 : 0.5) * d.sides.A.labelOffset;
+                const transform = getPercentPoint(d.lineStartZ, d.lineStartA, aPct / 100);
                 return (
                   <g
                     fontStyle={'italic'}
+                    opacity={linkOpacity(d.id)}
                     transform={`translate(${transform.x},${transform.y})`}
                     onMouseMove={(e) => {
                       handleLinkHover(d, 'A', e);
@@ -1481,13 +1585,20 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             </g>
             <g>
               {links.map((d, i) => {
-                if (d.nodes[0].id === d.nodes[1].id || tempNodes[d.target.index].isConnection) {
+                if (
+                  d.nodes[0].id === d.nodes[1].id ||
+                  tempNodes[d.target.index].isConnection ||
+                  d.singleDirection ||
+                  hideValueLabels
+                ) {
                   return;
                 }
-                const transform = getPercentPoint(d.lineStartA, d.lineStartZ, 0.5 * (d.sides.Z.labelOffset / 100));
+                const zPct = collisionOffsets?.get(`${d.id}:Z`) ?? 0.5 * d.sides.Z.labelOffset;
+                const transform = getPercentPoint(d.lineStartA, d.lineStartZ, zPct / 100);
                 return (
                   <g
                     fontStyle={'italic'}
+                    opacity={linkOpacity(d.id)}
                     transform={`translate(${transform.x},${transform.y})`}
                     onMouseMove={(e) => {
                       handleLinkHover(d, 'Z', e);

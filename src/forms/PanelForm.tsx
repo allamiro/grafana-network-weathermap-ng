@@ -534,6 +534,165 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           />
         </InlineField>
+        <FormDivider title="Interaction & Labels" />
+        <InlineField
+          grow
+          label="Hover Highlight"
+          className={styles.inlineField}
+          tooltip={'Hovering a link highlights its whole path (including VIA segments) and fades unrelated links.'}
+        >
+          <InlineSwitch
+            value={value.settings.link.hoverHighlight ?? false}
+            onChange={(e) => {
+              let options = value;
+              options.settings.link.hoverHighlight = e.currentTarget.checked;
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <InlineField
+          grow
+          label="Label Collision Avoidance"
+          className={styles.inlineField}
+          tooltip={'Nudge overlapping link value labels along their links so they stop covering each other.'}
+        >
+          <InlineSwitch
+            value={value.settings.link.labelCollision ?? false}
+            onChange={(e) => {
+              let options = value;
+              options.settings.link.labelCollision = e.currentTarget.checked;
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <InlineField
+          grow
+          label="Hide Labels When Zoomed Out"
+          className={styles.inlineField}
+          tooltip={
+            'Hide link value labels once the map is zoomed out this many scroll steps or more. 0 always shows labels.'
+          }
+        >
+          <Slider
+            min={0}
+            max={10}
+            step={1}
+            value={value.settings.link.labelHideZoom ?? 0}
+            onChange={(num) => {
+              let options = value;
+              options.settings.link.labelHideZoom = num;
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <FormDivider title="Status Legend" />
+        <InlineField
+          grow
+          label="Show Status Legend"
+          className={styles.inlineField}
+          tooltip={'A small legend explaining your status colors, positioned in panel percent coordinates.'}
+        >
+          <InlineSwitch
+            value={value.settings.statusLegend?.enabled ?? false}
+            onChange={(e) => {
+              let options = value;
+              if (!options.settings.statusLegend) {
+                options.settings.statusLegend = {
+                  enabled: e.currentTarget.checked,
+                  position: { x: 1, y: 1 },
+                  items: [
+                    { color: '#73BF69', label: 'up' },
+                    { color: '#F2495C', label: 'down' },
+                  ],
+                };
+              } else {
+                options.settings.statusLegend.enabled = e.currentTarget.checked;
+              }
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        {value.settings.statusLegend?.enabled ? (
+          <React.Fragment>
+            <InlineField grow label="Legend Position X (%)" className={styles.inlineField}>
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                value={value.settings.statusLegend.position.x}
+                onChange={(num) => {
+                  let options = value;
+                  options.settings.statusLegend!.position.x = num;
+                  onChange(options);
+                }}
+              />
+            </InlineField>
+            <InlineField grow label="Legend Position Y (%)" className={styles.inlineField}>
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                value={value.settings.statusLegend.position.y}
+                onChange={(num) => {
+                  let options = value;
+                  options.settings.statusLegend!.position.y = num;
+                  onChange(options);
+                }}
+              />
+            </InlineField>
+            {value.settings.statusLegend.items.map((item, li) => (
+              <InlineFieldRow key={li} className={styles.inlineRow}>
+                <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
+                  Color:
+                  <ColorPicker
+                    color={item.color}
+                    onChange={(color) => {
+                      let options = value;
+                      options.settings.statusLegend!.items[li].color = color;
+                      onChange(options);
+                    }}
+                  />
+                </InlineLabel>
+                <InlineField grow label="Label">
+                  <Input
+                    value={item.label}
+                    type={'text'}
+                    onChange={(e) => {
+                      let options = value;
+                      options.settings.statusLegend!.items[li].label = e.currentTarget.value;
+                      onChange(options);
+                    }}
+                  />
+                </InlineField>
+                <Button
+                  variant="destructive"
+                  icon="trash-alt"
+                  size="sm"
+                  aria-label="Remove legend item"
+                  onClick={() => {
+                    let options = value;
+                    options.settings.statusLegend!.items.splice(li, 1);
+                    onChange(options);
+                  }}
+                />
+              </InlineFieldRow>
+            ))}
+            <Button
+              variant="secondary"
+              icon="plus"
+              size="sm"
+              onClick={() => {
+                let options = value;
+                options.settings.statusLegend!.items.push({ color: '#FF9830', label: 'label' });
+                onChange(options);
+              }}
+            >
+              Add Legend Item
+            </Button>
+          </React.Fragment>
+        ) : (
+          ''
+        )}
         <FormDivider title="Tootlip Options" />
         <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
           Background Color:

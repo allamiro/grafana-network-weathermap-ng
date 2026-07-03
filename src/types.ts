@@ -108,6 +108,11 @@ export interface Node {
   statusQuery?: string;
   statusValueMappings?: NodeStatusValueMapping[];
   nodeStatusColorTarget?: 'border' | 'background' | 'both';
+  // Per-node font overrides (#179): structural labels can stay small/muted
+  // while important device names stand out. Fall back to the global
+  // settings.fontSizing.node when unset.
+  fontSize?: number;
+  fontBold?: boolean;
 }
 
 export interface LinkSide {
@@ -152,6 +157,10 @@ export interface Link {
   statusQuery?: string;
   statusDownColor?: string;
   statusBlink?: boolean;
+  // Render only the A->Z direction (#179): one full-length line, one arrow at
+  // the Z end, and only the A-side value label. For flows that physically go
+  // one way (power feeds, unidirectional replication).
+  singleDirection?: boolean;
 }
 
 export interface DrawnNode extends Node {
@@ -247,6 +256,15 @@ export interface WeathermapSettings {
       speed: number;
     };
     gradientColor?: boolean;
+    // Hovering a link highlights its whole VIA chain and fades unrelated
+    // links (#179). Off by default.
+    hoverHighlight?: boolean;
+    // Hide link value labels once zoomed out this many wheel steps or more
+    // (zoomScale >= threshold). 0/unset = always show (#179).
+    labelHideZoom?: number;
+    // Opt-in greedy de-overlap pass that nudges colliding value labels along
+    // their link (#179). Off by default so existing maps render unchanged.
+    labelCollision?: boolean;
   };
   fontSizing: {
     node: number;
@@ -256,6 +274,13 @@ export interface WeathermapSettings {
   panel: PanelOptions;
   tooltip: TooltipOptions;
   scale: TrafficPanelSettings;
+  // Optional built-in legend explaining status colors (#179), positioned in
+  // panel percent coordinates like the utilization scale.
+  statusLegend?: {
+    enabled: boolean;
+    position: Position;
+    items: Array<{ color: string; label: string }>;
+  };
 }
 
 export interface Threshold {

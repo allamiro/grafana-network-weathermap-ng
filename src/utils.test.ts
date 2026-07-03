@@ -2,6 +2,8 @@ import { defaultNodes, getData, legacyWeathermap, theme } from 'testData';
 import { DrawnNode, Weathermap } from 'types';
 import {
   addViaToLink,
+  resolveLinkChain,
+  spreadLabels,
   aggregateFieldValues,
   calculateRectangleAutoHeight,
   calculateRectangleAutoWidth,
@@ -291,5 +293,66 @@ describe('timeline helpers (valueAtTime / getTimeField)', () => {
       ],
     };
     expect(getTimeField(frame)).toBeUndefined();
+  });
+});
+
+describe('resolveLinkChain (#179)', () => {
+  const node = (id: string, isConnection = false) => ({ id, isConnection } as never);
+  const link = (id: string, a: unknown, z: unknown) => ({ id, nodes: [a, z] } as never);
+
+  it('walks a VIA chain in both directions from a middle segment', () => {
+    const a = node('a');
+    const c1 = node('c1', true);
+    const c2 = node('c2', true);
+    const z = node('z');
+    const links = [link('l1', a, c1), link('l2', c1, c2), link('l3', c2, z), link('other', node('x'), node('y'))];
+    expect([...resolveLinkChain(links as never, 'l2')].sort()).toEqual(['l1', 'l2', 'l3']);
+    expect([...resolveLinkChain(links as never, 'l1')].sort()).toEqual(['l1', 'l2', 'l3']);
+    expect([...resolveLinkChain(links as never, 'l3')].sort()).toEqual(['l1', 'l2', 'l3']);
+  });
+
+  it('returns just the link itself when it has no connection endpoints', () => {
+    const links = [link('solo', node('a'), node('z'))];
+    expect([...resolveLinkChain(links as never, 'solo')]).toEqual(['solo']);
+    expect([...resolveLinkChain(links as never, 'missing')]).toEqual(['missing']);
+  });
+});
+
+describe('spreadLabels (#179)', () => {
+  const seg = { x1: 0, y1: 0, x2: 100, y2: 0 };
+
+  it('keeps non-overlapping labels at their preferred offsets', () => {
+    const result = spreadLabels([
+      { key: 'a', segment: seg, offsetPercent: 20, width: 10, height: 10 },
+      { key: 'b', segment: seg, offsetPercent: 80, width: 10, height: 10 },
+    ]);
+    expect(result.get('a')).toBe(20);
+    expect(result.get('b')).toBe(80);
+  });
+
+  it('nudges the second of two colliding labels apart', () => {
+    const result = spreadLabels([
+      { key: 'a', segment: seg, offsetPercent: 50, width: 20, height: 10 },
+      { key: 'b', segment: seg, offsetPercent: 50, width: 20, height: 10 },
+    ]);
+    expect(result.get('a')).toBe(50);
+    expect(result.get('b')).not.toBe(50);
+    // The two resolved boxes must no longer overlap horizontally.
+    expect(Math.abs(result.get('b')! - result.get('a')!)).toBeGreaterThanOrEqual(20);
+  });
+
+  it('stays within the allowed offset range', () => {
+    const labels = Array.from({ length: 8 }, (_, i) => ({
+      key: `k${i}`,
+      segment: seg,
+      offsetPercent: 50,
+      width: 18,
+      height: 10,
+    }));
+    const result = spreadLabels(labels);
+    for (const pct of result.values()) {
+      expect(pct).toBeGreaterThanOrEqual(10);
+      expect(pct).toBeLessThanOrEqual(90);
+    }
   });
 });

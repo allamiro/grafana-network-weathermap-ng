@@ -38,7 +38,9 @@ function calculateTextY(d: DrawnNode) {
 function calculateRectX(d: DrawnNode, wm: Weathermap) {
   const offset = Math.min(
     -calculateRectangleAutoWidth(d, wm) / 2,
-    d.label !== undefined ? -(measureText(d.label, wm.settings.fontSizing.node).width / 2 + d.padding.horizontal) : 0
+    d.label !== undefined
+      ? -(measureText(d.label, d.fontSize ?? wm.settings.fontSizing.node).width / 2 + d.padding.horizontal)
+      : 0
   );
   return offset;
 }
@@ -167,7 +169,8 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
                 dominantBaseline={'central'}
                 fill={node.colors.font}
                 className={styles.nodeText}
-                fontSize={node.isConnection ? '6px' : `${wm.settings.fontSizing.node}px`}
+                fontSize={node.isConnection ? '6px' : `${node.fontSize ?? wm.settings.fontSizing.node}px`}
+                fontWeight={node.fontBold ? 'bold' : undefined}
               >
                 {node.label !== undefined && !(node.isConnection && disabled) ? node.label : ''}
               </text>
@@ -185,7 +188,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
                   ? -(
                       node.nodeIcon.size.height +
                       node.nodeIcon.padding.vertical +
-                      measureText(node.label!, wm.settings.fontSizing.node).actualBoundingBoxAscent
+                      measureText(node.label!, node.fontSize ?? wm.settings.fontSizing.node).actualBoundingBoxAscent
                     ) / 2
                   : -node.nodeIcon.size.height / 2
                 : node.label!.length > 0
