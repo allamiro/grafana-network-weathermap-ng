@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.11](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.11) (2026-07-03)
+
+### Chores
+
+* **plugin-metadata**: the description shown in Grafana's visualization picker now credits the author — "Next-generation, actively maintained network weathermap by Tamir Suliman…" (PR [#172](https://github.com/allamiro/grafana-network-weathermap-ng/pull/172))
+* **attribution**: added a NOTICE file (fork copyright, preserved upstream credit to Seth Knights, demo world-map asset provenance) that now ships inside the plugin archive per Apache-2.0 §4(d), the fork's copyright line in the LICENSE appendix, and a CITATION.cff enabling GitHub's "Cite this repository" button (PR [#173](https://github.com/allamiro/grafana-network-weathermap-ng/pull/173))
+* **testing/docs** (not part of the plugin archive): simulated-WAN exporter and nine scenario demo dashboards with a step-by-step use-cases guide ([#170](https://github.com/allamiro/grafana-network-weathermap-ng/issues/170), PR [#171](https://github.com/allamiro/grafana-network-weathermap-ng/pull/171))
+
 ## [1.5.10](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.10) (2026-07-02)
 
 ### Bug Fixes
