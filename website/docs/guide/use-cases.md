@@ -184,6 +184,26 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ---
 
+## 12. Dense-map readability & interaction
+
+**Goal:** keep a busy map (dozens of cables, ports, and labels) readable and explorable — highlight what you're looking at, cut label clutter, and explain your colors on the map itself. *Requires plugin 1.5.12+.*
+
+![Interactive rack view](../img/use-cases/wm-rack-interactive.png)
+
+1. **Panel Options → Hover Highlight** — hovering a link keeps its whole path (including every VIA segment) at full opacity and fades all other links and value labels, so a single cable can be traced through the densest map:
+
+    ![Hover highlight tracing one cable](../img/use-cases/wm-rack-interactive-hover.png)
+
+2. **Panel Options → Label Collision Avoidance** — overlapping value labels nudge themselves apart along their own links automatically, replacing hand-tuned label offsets.
+3. **Panel Options → Hide Labels When Zoomed Out** — value labels disappear once you zoom out past the configured number of scroll steps and return as you zoom in, keeping the overview clean.
+4. **Panel Options → Status Legend** — a built-in legend with your own color+label rows (visible top-left in the screenshots), positioned in panel percent coordinates.
+5. **Per link: Single Direction (A → Z)** — flows that physically go one way (power feeds, one-way replication) render as one full-length line with a single arrow into the destination and one value label, instead of the two-sided default.
+6. **Per node: Label Font Size / Bold** (under the node's Advanced section) — emphasize important labels (here the PSU inlet `A`/`B` markers) while structural labels stay muted.
+
+**Demo:** *WAN Demo — Interactive Rack View* — the rack-cabling topology with all six features enabled: hover any cable to trace it, note the one-way power feeds carrying live wattage into each PSU inlet, and zoom out two steps to watch the labels declutter.
+
+---
+
 ## Tips that apply everywhere
 
 - **Template variables** (`$var`, `${var}`) are resolved at draw time in labels, queries, status queries, dashboard links, and bandwidth queries — build one panel that serves many sites.

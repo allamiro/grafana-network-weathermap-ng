@@ -44,6 +44,7 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — Building Floor Plan** | Firewall/core/ToR/storage devices with bundled icons over a server-room floor plan (`:8080/floorplan.svg`) that pans/zooms with the map. RACK1-TOR drills into the rack ports board. |
 | **WAN Demo — Rack Port Status** | A switch faceplate (`:8080/rack.svg`) with one status-colored node per port: green up, red down (7/19 hard down, 13 flaps ~5 min), gray admin-disabled (23/24). |
 | **WAN Demo — Rack Cabling (multi-device, rear view)** | Full rear elevation (`:8080/rack2.svg`): router, firewall, two switches, three servers, redundant PDU-A/PDU-B. Port/NIC/PSU/outlet status nodes, VIA-routed network cables with live traffic, and power cables carrying per-feed wattage. SW1 port 5 down; SRV-2 is single-supply; SRV-3's A feed sits in PDU-A's dead outlet 6 and shifts its draw to the B feed. Faceplate art comes from the reusable components in `testing/exporter/faceplates.go`. |
+| **WAN Demo — Interactive Rack View** | The rack-cabling topology with the dense-map readability features on (plugin ≥ 1.5.12): hover highlight with VIA-chain tracing, one-way power cables, label collision avoidance, zoom-dependent labels, built-in status legend, bold PSU labels. |
 | **WAN Demo — Multi-hop Path (VIAs)** | One DC interconnect routed through three VIA points, as double-click VIA editing produces. |
 | **WAN Demo — Parallel Links (LAG members)** | Three-member LAG spread with Link Offset, each member with its own query, port label, and utilization %. |
 
