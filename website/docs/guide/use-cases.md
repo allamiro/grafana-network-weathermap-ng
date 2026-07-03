@@ -143,7 +143,7 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ![Global backbone demo](../img/use-cases/wm-global-backbone.png)
 
-1. Use a world-map image as the **Background** (public-domain equirectangular SVGs are available on [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:Blank_SVG_maps_of_the_world)); set **Image Fit** to `contain` and enable **Move With Map**.
+1. Use a world-map image as the **Background** (public-domain equirectangular SVGs are available on [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:SVG_blank_maps_of_the_world)); set **Image Fit** to `contain` and enable **Move With Map**.
 2. Place a node per PoP/city at its location on the map.
 3. Add the submarine/backbone links between them with per-direction queries and capacities; use **Port Labels** for the cable/system names.
 
