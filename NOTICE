@@ -19,5 +19,10 @@ Lipiridis, licensed under the MIT License.
 Platform and programming-language logos (src/icons/platforms,
 src/icons/languages) are from the devicon project
 (https://github.com/devicons/devicon), licensed under the MIT License.
+
+Network and server vendor logos (src/icons/vendors) are from the Simple
+Icons project (https://github.com/simple-icons/simple-icons), released
+under CC0 1.0 Universal.
+
 Product names and logos are trademarks of their respective owners and are
 used for identification only.

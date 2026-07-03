@@ -98,6 +98,7 @@ function descTable(set, names, descriptions) {
 const sets = {
   networking: list('networking'),
   rack: list('rack'),
+  vendors: list('vendors'),
   aerospace: list('aerospace'),
   platforms: list('platforms'),
   languages: list('languages'),
@@ -116,7 +117,7 @@ const flagRest = sets.flags.filter((f) => !FLAG_SAMPLE.includes(f));
 
 const page = `# Icon Reference
 
-The plugin bundles **${total} icons** across six sets, selectable per node in the editor
+The plugin bundles **${total} icons** across ${Object.keys(sets).length} sets, selectable per node in the editor
 (**Nodes → Icon**). Every icon has an id of the form \`set/name\` — that id is what the
 panel stores, and the icon is served from the plugin itself
 (\`public/plugins/tamirsuliman-weathermap-panel/icons/<set>/<name>.svg\`), so maps need no
@@ -146,6 +147,21 @@ dark style. Combine them with per-port status nodes to build boards like the
 [rack cabling demo](guide/use-cases.md#11-rack-cabling-power-redundancy-multi-device-rear-view).
 
 ${descTable('rack', sets.rack, RACK_DESCRIPTIONS)}
+
+---
+
+## Vendors (${sets.vendors.length})
+
+Network and server hardware vendors — Juniper, F5, Fortinet, Palo Alto,
+MikroTik, Ubiquiti, Huawei, Dell, HP, Lenovo, Supermicro, and more. Plain
+names (\`vendors/juniper\`) are brand logos (from the CC0-licensed
+[Simple Icons](https://github.com/simple-icons/simple-icons) project, filled
+with the brand color); \`vendors/<vendor>-<device>\` names
+(\`vendors/juniper-router\`) combine a device shape from the Networking set
+with the vendor logo as a corner badge. Product names and logos are
+trademarks of their respective owners, used for identification only.
+
+${grid('vendors', sets.vendors, { dark: true })}
 
 ---
 

@@ -30,6 +30,7 @@ import {
   PlatformIcons,
   LanguageIcons,
   AerospaceIcons,
+  VendorIcons,
 } from './iconOptions';
 import { getDataFrameName, sanitizeUrl } from 'utils';
 
@@ -296,6 +297,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const aerospaceIconsFormatted = AerospaceIcons.map((t) => {
     return { label: t, value: 'aerospace/' + t };
   });
+  const vendorIconsFormatted = VendorIcons.map((t) => {
+    return { label: t, value: 'vendors/' + t };
+  });
 
   let dataWithIds: string[] = [];
   context.data.forEach((d, i) => {
@@ -426,6 +430,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       { label: 'Platforms & Apps', value: 'platforms', options: platformIconsFormatted },
                       { label: 'Programming Languages', value: 'languages', options: languageIconsFormatted },
                       { label: 'Aerospace', value: 'aerospace', options: aerospaceIconsFormatted },
+                      { label: 'Vendors', value: 'vendors', options: vendorIconsFormatted },
                       { label: 'Custom Icon', value: 'custom_icon' },
                     ]}
                     className={styles.nodeSelect}
