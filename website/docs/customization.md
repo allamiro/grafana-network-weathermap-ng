@@ -5,7 +5,7 @@ Once you've gotten a basic layout done, you may be wondering how to customize th
 ## Common Terminology
 
 The diagram below illustrates some of the basic terminology this plugin uses.
-![Basic Constants](/img/customization/1-constants.png)
+![Basic Constants](img/customization/1-constants.png)
 
 ## Panel Settings
 
@@ -35,7 +35,7 @@ One of the most important parts of creating a weathermap is arranging the links 
         - (`Center | Top | Bottom | Left | Right`)
     - This makes it easy to try and avoid having too many overlapping links. By default, links are auto-spaced to be as far apart as possible when parallel to each other vertically (attached to a `Bottom` of one link, and `Top` of another). When parallel horiztonally (attached to a `Right` of one link, and `Left` of another), nodes will automatically grow to accomodate them.
 - Label Offset # (`number`): A number between 0 and 100 representing the location of the link's label as a percentage of that link's length. (Play around with it to see how it works! This is especially useful if you have close / overlapping links which need their labels to not overlap.)
-- See the [link reference](/reference/#link) for other options.
+- See the [link reference](reference.md#link) for other options.
 
 ### Global Link Options
 
@@ -60,7 +60,7 @@ These options are for link labels (their current throughput):
 - Height (`number`): Icon bounding box height.
 - Padding, Horizontal & Vertical ( `number`, `number`): Padding between the icon's bounding box and node edges or text.
 - Draw Inside (`boolean`): When true, will put the icon within the node's border (you may need to adjust the padding a little).
-  ![Drawn inside example](/img/customization/2-icon-0.png)
+  ![Drawn inside example](img/customization/2-icon-0.png)
 
 #### Padding
 
@@ -77,15 +77,15 @@ These options are for link labels (their current throughput):
     - Link "turns/connections" are a beta feature added fairly recently. They work by turning nodes into invisible vertices through which links can be extended, and are especially useful if you want your links to all follow a specific path (i.e. to represent some physical organization or just for clarity). 
     - Link connections work like this:
         1. Have two nodes you want to connect with a link.
-            ![connection example p1](/img/customization/connect-1.png)
+            ![connection example p1](img/customization/connect-1.png)
         2. Add however many nodes you need to represent all the vertices of your path, and toggle the "Use As Connection" button for each. This will now render the node as transparent, with a "C?" label letting you know it is a connection. *It is recommended to simply delete connection nodes after converting them, instead of un-toggling this option if you want to use them for something else.*
-            ![connection example p2](/img/customization/connect-2.png)
+            ![connection example p2](img/customization/connect-2.png)
         3. *In order, from the A-side to the Z-side*, connect the first node to the last through these connections by creating new links. **NOTE:** Each connection node will only accept **2 links**, one in and one out (i.e. you can not use a connection for multiple different links). This must be done from A-Z sides as each connection link will inherit the data from the A-side.
-            ![connection example p3](/img/customization/connect-3.png)
+            ![connection example p3](img/customization/connect-3.png)
         4. When you have finished adding links from A-Z sides, you should see the A-side is extended and the Z-side remains connected to the final node in your path. Notice that when selecting connection nodes as sides for a link, query options dissappear (as they will be inherited from the A-side).
-            ![connection example p4](/img/customization/connect-4.png)
+            ![connection example p4](img/customization/connect-4.png)
         5. When you exit edit mode, connection nodes will dissappear and your link will be drawn following their path! You can set the queries for each side of the extended link in the options for the links that touch either of your nodes (i.e. the first and last links of the connected path).
-            ![connection example p5](/img/customization/connect-5.png)
+            ![connection example p5](img/customization/connect-5.png)
 
 #### Colors
 
@@ -93,7 +93,7 @@ These options are for link labels (their current throughput):
 - Border (`picker`): Node border color.
 - Font (`picker`): Node font color.
 
-See [node reference](/reference/#node) for more options.
+See [node reference](reference.md#node) for more options.
 
 ## Font Options
 

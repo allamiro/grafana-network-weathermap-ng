@@ -1,4 +1,4 @@
-site_name: Grafana Network Weathermap NG
+site_name: Network Weathermap NG
 site_description: A modernized, actively maintained network weathermap panel plugin for Grafana
 site_author: Tamir Suliman
 repo_url: https://github.com/allamiro/grafana-network-weathermap-ng
