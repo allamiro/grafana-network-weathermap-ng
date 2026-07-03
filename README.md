@@ -124,7 +124,7 @@ If you use this project in research or publications, please cite it — GitHub's
 APA and BibTeX entries, e.g.:
 
 ```bibtex
-@software{Suliman_Grafana_Network_Weathermap_NG,
+@software{Suliman_Network_Weathermap_NG,
   author  = {Suliman, Tamir},
   title   = {Network Weathermap NG},
   url     = {https://github.com/allamiro/grafana-network-weathermap-ng},
