@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.12](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.12) (2026-07-03)
+
+### Features
+
+* **dense-map rendering/UX** ([#179](https://github.com/allamiro/grafana-network-weathermap-ng/issues/179), PR [#184](https://github.com/allamiro/grafana-network-weathermap-ng/pull/184)): six opt-in, default-off options — **single-direction links** (one full-length line and a single arrow for one-way flows like power feeds), **hover highlight** (the hovered link's whole VIA chain stays bright while unrelated links fade), **label collision avoidance**, **zoom-dependent value labels**, a built-in **status legend**, and **per-node font size/bold overrides**
+* **icon library — 997 bundled icons across 10 sets** (PRs [#181](https://github.com/allamiro/grafana-network-weathermap-ng/pull/181), [#183](https://github.com/allamiro/grafana-network-weathermap-ng/pull/183)): country flags in circle (265) and square (257) styles, rack construction parts incl. fiber LC/SC ports and panels (18), Kubernetes + Apache project logos (9), programming languages (22), aerospace symbols (5) — with a generated [Icon Reference](https://allamiro.github.io/grafana-network-weathermap-ng/icons/) docs page listing every icon
+
+### Bug Fixes
+
+* **empty data frame crashed the panel** on maps with node status queries — the status-color lookup resolved frame names unguarded; one transient empty series (fresh exporter, scrape gap, regex matching nothing) latched the error boundary until reload. Status values now also read via the value-field helper instead of assuming field order ([#178](https://github.com/allamiro/grafana-network-weathermap-ng/issues/178), PR [#186](https://github.com/allamiro/grafana-network-weathermap-ng/pull/186))
+* **status-legend overlay was painted over by the map SVG** — missing z-index (PR [#185](https://github.com/allamiro/grafana-network-weathermap-ng/pull/185))
+
+### Chores (not part of the plugin archive)
+
+* demo/testing: multi-device rack cabling with redundant power feeds ([#177](https://github.com/allamiro/grafana-network-weathermap-ng/issues/177)), the Interactive Rack View showcase for the new rendering features, docs use-cases 11–12, and the icon reference page
+
 ## [1.5.11](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.11) (2026-07-03)
 
 ### Chores
