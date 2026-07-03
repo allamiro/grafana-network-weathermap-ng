@@ -11,16 +11,19 @@ theme:
     - search.highlight
   logo: assets/logo.svg
   palette:
-    - scheme: default
-      primary: black
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
+    # Dracula (dark) is the default; styled via stylesheets/dracula.css
     - scheme: slate
       primary: black
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+    - scheme: default
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+extra_css:
+  - stylesheets/dracula.css
 markdown_extensions:
   - admonition
   - pymdownx.details
