@@ -62,3 +62,13 @@ Open **Panel options → Export**:
 ## Timeline scrubbing
 
 If the [Timeline Slider](panel-options.md#timeline-slider) is enabled, drag the slider at the bottom of the panel to move through history; press **Live** to return to the latest state.
+
+The *WAN Demo — Incident Replay* dashboard from the [testing stack](https://github.com/allamiro/grafana-network-weathermap-ng/tree/main/testing#readme) shows the difference. **Live** — the slider label reads *Live (latest)* and the map shows current values; everything here is healthy:
+
+![Timeline in Live state](../img/use-cases/wm-incident-live.png)
+
+**Scrubbed** — the label shows the selected historical timestamp, and the map replays that moment: `SITE-DFW`'s link has collapsed to a few Mb/s during its outage window. Press **Live** to snap back:
+
+![Timeline scrubbed into an outage](../img/use-cases/wm-incident-replay.png)
+
+Only link values replay while scrubbing; node status coloring follows the latest value.

@@ -165,6 +165,25 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ---
 
+## 11. Rack cabling & power redundancy (multi-device rear view)
+
+**Goal:** one rack's rear elevation — router, firewall, switches, servers — with the actual cable runs between ports **and** the A/B power feeds, so a failed feed or unpatched port is visible at a glance.
+
+![Rack cabling demo](../img/use-cases/wm-rack-cabling.png)
+
+1. Draw the rack rear elevation (device faceplates, cable channels, PDU strips) as the **Background** image with **Move With Map** enabled.
+2. Add one small node per port/NIC/PSU-inlet/PDU-outlet, placed over the drawn openings, each with a **Status Query** and threshold mappings (`0 → red`, `1 → green`, `2 → gray`).
+3. Draw each network cable as a link between the two port nodes it patches, routed through the cable channel with VIAs; give each cable its live traffic query.
+4. Draw power cables from PDU outlets to PSU inlets with the PDU outlet as the **A side** so the arrows lead feed → server; set **Units** to `watt` and use each PSU's **per-feed** power-draw series on both sides of its cable (e.g. `power{feed="A"}` on the A-feed cable, `{feed="B"}` on the B-feed cable) — that way a dead outlet shows 0 W on its own cable while the surviving feed carries the full draw.
+5. Mix dual- and single-supply servers as your rack really is — a dual-fed server survives a dead outlet (its full draw shifts to the B feed and the wattage labels show it); a single-supply server visibly does not have that safety net.
+
+!!! note "Where power metrics come from"
+    Smart/metered PDUs (APC, Raritan, Vertiv, …) expose per-outlet state, voltage, current, and power over **SNMP** — scrape them with the Prometheus `snmp_exporter`. If your PDU is dumb (no metrics), get the wattage from the **server side** instead: BMC interfaces via `ipmi_exporter` or Redfish (iDRAC/iLO), or the OS's power sensors via `node_exporter`'s hwmon collectors. The map doesn't care which — it just needs one series per feed.
+
+**Demo:** *WAN Demo — Rack Cabling (multi-device, rear view)* — SW1 port 5 down, SRV-2's standby NIC down, and SRV-3's A feed plugged into PDU-A's dead outlet 6: its A cable reads 0 W while the B feed carries the full draw.
+
+---
+
 ## Tips that apply everywhere
 
 - **Template variables** (`$var`, `${var}`) are resolved at draw time in labels, queries, status queries, dashboard links, and bandwidth queries — build one panel that serves many sites.

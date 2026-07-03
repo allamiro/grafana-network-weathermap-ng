@@ -65,12 +65,22 @@ var simLinks = []simLink{
 	{link: "lon<->fra", device: "LON", peer: "FRA", iface: "PEB-1", capacity: 100e9, txBase: 0.25, rxBase: 0.25},
 	{link: "lon<->dxb", device: "LON", peer: "DXB", iface: "EIG-1", capacity: 100e9, txBase: 0.50, rxBase: 0.30},
 	{link: "fra<->dxb", device: "FRA", peer: "DXB", iface: "SMW-5", capacity: 100e9, txBase: 0.35, rxBase: 0.45},
+	// In-rack cables (rack-cabling demo): router/firewall/switch trunks and
+	// switch-to-server NIC runs inside one rack.
+	{link: "rtr:1<->fw:1", device: "R-RTR", peer: "R-FW", iface: "Ge0/1", capacity: 10e9, txBase: 0.35, rxBase: 0.45},
+	{link: "fw:2<->sw1:1", device: "R-FW", peer: "R-SW1", iface: "P2", capacity: 10e9, txBase: 0.35, rxBase: 0.40},
+	{link: "sw1:8<->sw2:8", device: "R-SW1", peer: "R-SW2", iface: "Gi0/8", capacity: 10e9, txBase: 0.25, rxBase: 0.30},
+	{link: "sw1:2<->srv1:eth0", device: "R-SW1", peer: "SRV-1", iface: "Gi0/2", capacity: 1e9, txBase: 0.40, rxBase: 0.55},
+	{link: "sw1:3<->srv2:eth0", device: "R-SW1", peer: "SRV-2", iface: "Gi0/3", capacity: 1e9, txBase: 0.30, rxBase: 0.45},
+	{link: "sw2:2<->srv3:eth0", device: "R-SW2", peer: "SRV-3", iface: "Gi0/2", capacity: 1e9, txBase: 0.55, rxBase: 0.65},
+	{link: "sw2:3<->srv1:eth1", device: "R-SW2", peer: "SRV-1", iface: "Gi0/3", capacity: 1e9, txBase: 0.10, rxBase: 0.15},
 }
 
 var simDevices = []string{
 	"CORE-A", "CORE-B", "EDGE-1", "EDGE-2", "SITE-ATL", "SITE-DFW", "SITE-NYC", "INET",
 	"AGG-A", "AGG-B", "DC-WEST", "DC-EAST", "FW-1", "SW-CORE", "RACK1-TOR", "RACK2-TOR", "STORAGE",
 	"NYC", "LON", "FRA", "DXB",
+	"R-RTR", "R-FW", "R-SW1", "R-SW2", "SRV-1", "SRV-2", "SRV-3", "PDU-A", "PDU-B",
 }
 
 // SITE-DFW flaps: down for ~2 minutes out of every 10 (drives node status
@@ -125,6 +135,10 @@ var (
 		Name: "wm_port_status",
 		Help: "Simulated switch port status (0 = down, 1 = up, 2 = admin-disabled).",
 	}, []string{"device", "port"})
+	wmPowerWatts = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "wm_power_watts",
+		Help: "Simulated server power draw in watts per feed (rack-cabling demo).",
+	}, []string{"device", "feed"})
 )
 
 // Port map for the rack demo: RACK1-TOR's 24 access ports + 2 uplinks.
@@ -152,6 +166,64 @@ func simulatePorts(now time.Time) {
 	// 10G uplinks to the core switch.
 	wmPortStatus.WithLabelValues(rackDevice, "Te1/1/1").Set(1)
 	wmPortStatus.WithLabelValues(rackDevice, "Te1/1/2").Set(1)
+
+	// Multi-device rack (rack-cabling demo): SW1 port 5 is hard down, SRV-2's
+	// standby NIC is down, SRV-3's iLO is unreachable, PDU outlet 6 is off.
+	for p := 1; p <= 8; p++ {
+		s1 := 1.0
+		if p == 5 {
+			s1 = 0
+		}
+		wmPortStatus.WithLabelValues("R-SW1", "Gi0/"+strconv.Itoa(p)).Set(s1)
+		wmPortStatus.WithLabelValues("R-SW2", "Gi0/"+strconv.Itoa(p)).Set(1)
+	}
+	for p := 1; p <= 4; p++ {
+		wmPortStatus.WithLabelValues("R-RTR", "Ge0/"+strconv.Itoa(p)).Set(1)
+		wmPortStatus.WithLabelValues("R-FW", "P"+strconv.Itoa(p)).Set(1)
+	}
+	for _, srv := range []string{"SRV-1", "SRV-2", "SRV-3"} {
+		wmPortStatus.WithLabelValues(srv, "eth0").Set(1)
+		eth1 := 1.0
+		if srv == "SRV-2" {
+			eth1 = 0
+		}
+		wmPortStatus.WithLabelValues(srv, "eth1").Set(eth1)
+		ilo := 1.0
+		if srv == "SRV-3" {
+			ilo = 0
+		}
+		wmPortStatus.WithLabelValues(srv, "ilo").Set(ilo)
+		// Dual power feeds: psu-a on PDU-A, psu-b on PDU-B. SRV-3's A feed is
+		// plugged into PDU-A's dead outlet 6, so its full draw shifts to the B
+		// feed — the redundancy story on the rack-cabling dashboard.
+		total := 280 + 140*math.Abs(math.Sin(float64(now.UnixMilli())/900000+float64(len(srv))))
+		psuA, psuB := 1.0, 1.0
+		wattsA, wattsB := total*0.55, total*0.45
+		if srv == "SRV-3" {
+			psuA = 0
+			wattsA = 0
+			wattsB = total
+		}
+		// SRV-2 has a single supply (diversity in the demo rack); the others
+		// are dual-fed from PDU-A and PDU-B.
+		if srv == "SRV-2" {
+			wattsA = total
+		}
+		wmPortStatus.WithLabelValues(srv, "psu-a").Set(psuA)
+		wmPowerWatts.WithLabelValues(srv, "a").Set(wattsA)
+		if srv != "SRV-2" {
+			wmPortStatus.WithLabelValues(srv, "psu-b").Set(psuB)
+			wmPowerWatts.WithLabelValues(srv, "b").Set(wattsB)
+		}
+	}
+	for o := 1; o <= 8; o++ {
+		v := 1.0
+		if o == 6 {
+			v = 0
+		}
+		wmPortStatus.WithLabelValues("PDU-A", "outlet"+strconv.Itoa(o)).Set(v)
+		wmPortStatus.WithLabelValues("PDU-B", "outlet"+strconv.Itoa(o)).Set(1)
+	}
 }
 
 // diurnal maps wall-clock time onto a compressed "day" so a full peak/trough
@@ -247,6 +319,7 @@ func main() {
 	http.HandleFunc("/floorplan.svg", serveFloorplan)
 	http.HandleFunc("/worldmap.svg", serveWorldmap)
 	http.HandleFunc("/rack.svg", serveRack)
+	http.HandleFunc("/rack2.svg", serveRack2)
 	log.Infof("Starting exporter: http://%s/metrics", address)
 	log.Fatal(http.ListenAndServe(address, nil))
 }
@@ -296,6 +369,100 @@ func rackHoles() string {
 		out += `<circle cx="135" cy="` + itoa(y) + `" r="4"/><circle cx="765" cy="` + itoa(y) + `" r="4"/>`
 	}
 	return out
+}
+
+// serveRack2 returns the rear elevation of a multi-device rack (router,
+// firewall, two access switches, patch panel, three servers) plus a vertical
+// PDU strip. Used as the background of the rack-cabling demo dashboard; the
+// port/NIC/PSU/outlet squares are weathermap nodes and the cables are links
+// routed through the left (network) and right (power) cable channels.
+func serveRack2(w http.ResponseWriter, r *http.Request) {
+	unit := func(y, h int, label string, labelX int) string {
+		anchor := ""
+		if labelX > 450 {
+			anchor = ` text-anchor="end"`
+		}
+		return `<rect x="220" y="` + itoa(y) + `" width="450" height="` + itoa(h) + `" rx="5" fill="#232a38" stroke="#39445a" stroke-width="2"/>` +
+			`<text x="` + itoa(labelX) + `" y="` + itoa(y+22) + `"` + anchor + ` fill="#c7cdd9" font-family="sans-serif" font-size="14" font-weight="600">` + label + `</text>`
+	}
+	holes := ""
+	for y := 55; y <= 725; y += 22 {
+		holes += `<circle cx="130" cy="` + itoa(y) + `" r="3"/><circle cx="690" cy="` + itoa(y) + `" r="3"/>`
+	}
+
+	// Port openings under every status node position (see buildRackCabling in
+	// testing/scripts/generate-scenario-dashboards.js).
+	frames := ""
+	for p := 1; p <= 4; p++ {
+		frames += fpPortFrame(350+p*50, 128) + fpPortFrame(350+p*50, 196)
+	}
+	for p := 1; p <= 8; p++ {
+		frames += fpPortFrame(250+45*p, 264) + fpPortFrame(250+45*p, 332)
+	}
+	serverArt := ""
+	for i, y := range []int{412, 480, 548} {
+		cy := y + 38
+		serverArt += fpVGA(255, cy) + fpVent(285, y+22, 130, 28) +
+			fpPortFrame(450, cy) + fpPortFrame(505, cy) + fpPortFrame(555, cy)
+		if i == 1 {
+			// SRV-2: single power supply.
+			serverArt += `<rect x="605" y="` + itoa(y+8) + `" width="60" height="46" rx="3" fill="#1b2027" stroke="#4a5162" stroke-width="1.5"/>` +
+				fpFan(620, y+18, 8) + fpPortFrame(648, cy)
+		} else {
+			serverArt += `<rect x="585" y="` + itoa(y+8) + `" width="80" height="46" rx="3" fill="#1b2027" stroke="#4a5162" stroke-width="1.5"/>` +
+				fpFan(602, y+18, 8) + fpFan(650, y+18, 8) +
+				fpPortFrame(610, cy) + fpPortFrame(648, cy)
+		}
+	}
+	patch := ""
+	for j := 0; j < 12; j++ {
+		patch += fpRJ45(300+j*30, 383)
+	}
+	pdu := func(x int, label string) string {
+		out := `<rect x="` + itoa(x) + `" y="60" width="55" height="640" rx="6" fill="#1f2430" stroke="#39445a" stroke-width="3"/>` +
+			`<text x="` + itoa(x+6) + `" y="86" fill="#c7cdd9" font-family="sans-serif" font-size="12" font-weight="600">` + label + `</text>`
+		for o := 1; o <= 8; o++ {
+			y := 120 + 78*(o-1)
+			out += fpC13(x+27, y) + `<text x="` + itoa(x-12) + `" y="` + itoa(y+4) + `" fill="#4a5162" font-family="sans-serif" font-size="10">` + itoa(o) + `</text>`
+		}
+		return out
+	}
+
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "max-age=3600")
+	_, _ = w.Write([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 760">
+  <rect width="1000" height="760" fill="#14161c"/>
+  <text x="110" y="28" fill="#c7cdd9" font-family="sans-serif" font-size="17" font-weight="600">RACK B-02 — rear elevation</text>
+  <!-- rack frame -->
+  <rect x="110" y="40" width="600" height="700" rx="8" fill="#1b1e26" stroke="#4a5162" stroke-width="4"/>
+  <g fill="#2e3340">` + holes + `</g>
+  <!-- left network cable channel (routing gutter) -->
+  <rect x="145" y="48" width="72" height="684" rx="4" fill="#181c24" stroke="#252b36" stroke-width="1"/>
+  <text x="158" y="66" fill="#4a5568" font-family="sans-serif" font-size="10">NET</text>
+  <!-- device faceplates -->
+  ` + unit(90, 60, "R-RTR", 232) + fpVent(295, 104, 80, 36) + fpSFP(630, 120) + fpSFP(630, 136) +
+		unit(158, 60, "R-FW", 232) + fpVent(295, 172, 80, 36) + fpFan(635, 196, 15) +
+		unit(226, 60, "R-SW1", 232) + fpGroupTab(280, 460, 284) + fpGroupTab(470, 640, 284) + fpSFP(650, 240) +
+		unit(294, 60, "R-SW2", 232) + fpGroupTab(280, 460, 352) + fpGroupTab(470, 640, 352) + fpSFP(650, 308) + `
+  <rect x="220" y="362" width="450" height="42" rx="5" fill="#1f2430" stroke="#2e3340" stroke-width="2"/>
+  <text x="232" y="388" fill="#4a5162" font-family="sans-serif" font-size="13">patch</text>
+  ` + patch +
+		unit(412, 60, "SRV-1", 232) + unit(480, 60, "SRV-2", 232) + unit(548, 60, "SRV-3", 232) + serverArt + `
+  <rect x="220" y="616" width="450" height="112" rx="5" fill="#1f2430" stroke="#2e3340" stroke-width="2"/>
+  <text x="232" y="644" fill="#4a5162" font-family="sans-serif" font-size="13">blanking panels</text>
+  ` + fpVent(320, 650, 300, 50) + `
+  <!-- PDU strips: A (primary) and B (redundant) feeds -->
+  <text x="730" y="52" fill="#8a93a5" font-family="sans-serif" font-size="11">Power feeds</text>
+  ` + pdu(730, "PDU-A") + pdu(815, "PDU-B") + frames + `
+  <!-- legend -->
+  <g font-family="sans-serif" font-size="11">
+    <rect x="730" y="712" width="245" height="42" rx="4" fill="#181c24" stroke="#2e3340"/>
+    <rect x="740" y="720" width="10" height="10" rx="2" fill="#73BF69"/><text x="754" y="729" fill="#8a93a5">up</text>
+    <rect x="782" y="720" width="10" height="10" rx="2" fill="#F2495C"/><text x="796" y="729" fill="#8a93a5">down/off</text>
+    <rect x="856" y="720" width="10" height="10" rx="2" fill="#55575c"/><text x="870" y="729" fill="#8a93a5">disabled</text>
+    <text x="740" y="746" fill="#8a93a5">thick = data (load color) · thin = power (W)</text>
+  </g>
+</svg>`))
 }
 
 // serveFloorplan returns a simple server-room floor plan used as the map
