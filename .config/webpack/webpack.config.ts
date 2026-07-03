@@ -145,6 +145,9 @@ const config = async (env): Promise<Configuration> => ({
         { from: hasReadme() ? 'README.md' : '../README.md', to: '.', force: true },
         { from: 'plugin.json', to: '.' },
         { from: '../LICENSE', to: '.' },
+        // Apache-2.0 §4(d): the NOTICE file's attribution must travel with
+        // redistributions, so ship it inside the plugin archive.
+        { from: '../NOTICE', to: '.' },
         { from: '../CHANGELOG.md', to: '.', force: true },
         { from: '**/*.json', to: '.' }, // TODO<Add an error for checking the basic structure of the repo>
         { from: '**/*.svg', to: '.', noErrorOnMissing: true }, // Optional
