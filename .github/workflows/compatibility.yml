@@ -40,8 +40,8 @@ jobs:
           fail-if-incompatible: 'no'
 
   # Job 2: matrix check — verify the plugin TypeScript compiles cleanly
-  # against each supported Grafana SDK version (11.x, 12.x — the plugin's
-  # grafanaDependency is >=11.0.0, so 10.x is not checked).
+  # against each supported Grafana SDK version (11.x, 12.x, 13.x — the
+  # plugin's grafanaDependency is >=11.0.0, so 10.x is not checked).
   # Uses --no-save so the installed test versions don't modify package.json.
   compatibility-matrix:
     name: Grafana ${{ matrix.grafana-version }} API check
@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        grafana-version: ['11.0.0', '12.0.0']
+        grafana-version: ['11.0.0', '12.0.0', '13.1.0']
     steps:
       - uses: actions/checkout@v5
 
