@@ -7,3 +7,7 @@ Copyright 2022 Seth Knights, licensed under the Apache License, Version 2.0.
 
 Bundled world-map background for the demo dashboards is derived from
 "BlankMap-World-Equirectangular.svg" (Wikimedia Commons, public domain).
+
+Country flag icons (src/icons/flags) are from the circle-flags project
+(https://github.com/HatScripts/circle-flags), Copyright (c) HatScripts,
+licensed under the MIT License.

@@ -19,7 +19,7 @@ import {
 import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, NodeStatusValueMapping, NodeTooltipMetric } from 'types';
-import { CiscoIcons, NetworkingIcons, DatabaseIcons, ComputerIcons } from './iconOptions';
+import { CiscoIcons, NetworkingIcons, DatabaseIcons, ComputerIcons, FlagIcons, RackIcons } from './iconOptions';
 import { getDataFrameName, sanitizeUrl } from 'utils';
 
 interface Settings {
@@ -267,6 +267,12 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const computerIconsFormatted = ComputerIcons.map((t) => {
     return { label: t, value: 'computers_monitors/' + t };
   });
+  const flagIconsFormatted = FlagIcons.map((t) => {
+    return { label: t, value: 'flags/' + t };
+  });
+  const rackIconsFormatted = RackIcons.map((t) => {
+    return { label: t, value: 'rack/' + t };
+  });
 
   let dataWithIds: string[] = [];
   context.data.forEach((d, i) => {
@@ -391,6 +397,8 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       { label: 'Networking Icons', value: 'networking', options: networkingIconsFormatted },
                       { label: 'Database Icons', value: 'databases', options: databaseIconsFormatted },
                       { label: 'Computer Icons', value: 'computers_monitors', options: computerIconsFormatted },
+                      { label: 'Country Flags', value: 'flags', options: flagIconsFormatted },
+                      { label: 'Rack Parts', value: 'rack', options: rackIconsFormatted },
                       { label: 'Custom Icon', value: 'custom_icon' },
                     ]}
                     className={styles.nodeSelect}
