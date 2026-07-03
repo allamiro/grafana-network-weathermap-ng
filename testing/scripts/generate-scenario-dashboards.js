@@ -706,10 +706,10 @@ const dashboards = [
       buildCustomTopology(
         {
           // Positions calibrated to the equirectangular world-map background.
-          NYC: { pos: [228, 200], dashboardLink: '/d/wm-wan-utilization', statusQuery: 'STATUS NYC', icon: 'networking/router', iconSize: 26 },
-          LON: { pos: [432, 165], statusQuery: 'STATUS LON', icon: 'networking/router', iconSize: 26 },
-          FRA: { pos: [478, 196], statusQuery: 'STATUS FRA', icon: 'networking/router', iconSize: 26 },
-          DXB: { pos: [590, 252], statusQuery: 'STATUS DXB', icon: 'networking/router', iconSize: 26 },
+          NYC: { pos: [228, 200], dashboardLink: '/d/wm-wan-utilization', statusQuery: 'STATUS NYC', icon: 'flags/us', iconSize: 26 },
+          LON: { pos: [432, 165], statusQuery: 'STATUS LON', icon: 'flags/gb', iconSize: 26 },
+          FRA: { pos: [478, 196], statusQuery: 'STATUS FRA', icon: 'flags/de', iconSize: 26 },
+          DXB: { pos: [590, 252], statusQuery: 'STATUS DXB', icon: 'flags/ae', iconSize: 26 },
         },
         [
           { frame: 'nyc<->lon', a: 'NYC', z: 'LON', cap: 100e9, portLabel: 'TAT-14', directionLabels: true },

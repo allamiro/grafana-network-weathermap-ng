@@ -145,8 +145,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/us.svg",
+                "name": "flags/us",
                 "size": {
                   "width": 26,
                   "height": 26
@@ -206,8 +206,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/gb.svg",
+                "name": "flags/gb",
                 "size": {
                   "width": 26,
                   "height": 26
@@ -265,8 +265,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/de.svg",
+                "name": "flags/de",
                 "size": {
                   "width": 26,
                   "height": 26
@@ -324,8 +324,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/ae.svg",
+                "name": "flags/ae",
                 "size": {
                   "width": 26,
                   "height": 26
@@ -388,8 +388,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/us.svg",
+                    "name": "flags/us",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -449,8 +449,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/gb.svg",
+                    "name": "flags/gb",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -540,8 +540,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/us.svg",
+                    "name": "flags/us",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -601,8 +601,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/de.svg",
+                    "name": "flags/de",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -692,8 +692,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/gb.svg",
+                    "name": "flags/gb",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -751,8 +751,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/de.svg",
+                    "name": "flags/de",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -842,8 +842,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/gb.svg",
+                    "name": "flags/gb",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -901,8 +901,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/ae.svg",
+                    "name": "flags/ae",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -992,8 +992,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/de.svg",
+                    "name": "flags/de",
                     "size": {
                       "width": 26,
                       "height": 26
@@ -1051,8 +1051,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/flags/ae.svg",
+                    "name": "flags/ae",
                     "size": {
                       "width": 26,
                       "height": 26

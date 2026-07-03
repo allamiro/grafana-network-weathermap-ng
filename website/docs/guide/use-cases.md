@@ -26,7 +26,7 @@ End-to-end recipes that combine the options into real dashboards. Each assumes y
    - **Z Side Query** = the reverse direction Z→A. Use either `BKB-CARPINA`'s *bits sent* **or** `SW-CORE`'s *bits received* (both represent Z→A) — not `BKB-CARPINA`'s *bits received*, which is the same A→Z direction as the A side; **Z Bandwidth #** = same capacity.
 3. Set **A Direction Label** = `Outbound`, **Z Direction Label** = `Inbound`.
 4. Add **Port Labels** (e.g. `Eth-Trunk12`) so the physical interface is visible.
-5. Give each node an **Icon** — the plugin bundles 400+ device icons (routers, switches, firewalls, servers, buildings, clouds) across Cisco, networking, database, and computer sets, plus custom icon URLs.
+5. Give each node an **Icon** — the plugin bundles 680+ icons across Cisco, networking, database, computer, **country flag** (ISO 3166, circle style), and **rack part** (faceplates, PSU, fans, PDU, ports) sets, plus custom icon URLs.
 6. Color scale: `0→green, 50→yellow, 80→orange, 95→red` with **Color Scale Mode = percent**.
 
 Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
@@ -144,7 +144,7 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 ![Global backbone demo](../img/use-cases/wm-global-backbone.png)
 
 1. Use a world-map image as the **Background** (public-domain equirectangular SVGs are available on [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:SVG_blank_maps_of_the_world)); set **Image Fit** to `contain` and enable **Move With Map**.
-2. Place a node per PoP/city at its location on the map.
+2. Place a node per PoP/city at its location on the map; the bundled **Country Flags** icon set (ISO two-letter codes) marks each PoP's country.
 3. Add the submarine/backbone links between them with per-direction queries and capacities; use **Port Labels** for the cable/system names.
 
 **Demo:** *WAN Demo — Global Backbone (map background)* — NYC, London, Frankfurt, and Dubai over a recolored public-domain world map; clicking `NYC` drills into the regional WAN.
