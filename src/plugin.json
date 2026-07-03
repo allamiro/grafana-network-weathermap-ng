@@ -3,7 +3,7 @@
   "name": "Network Weathermap NG",
   "id": "tamirsuliman-weathermap-panel",
   "info": {
-    "description": "Next-generation, actively maintained network weathermap panel. A continuation and fork of the deprecated Network Weathermap plugin, updated for modern Grafana.",
+    "description": "Next-generation, actively maintained network weathermap by Tamir Suliman. A continuation and fork of the deprecated Network Weathermap plugin, updated for modern Grafana.",
     "author": {
       "name": "Tamir Suliman",
       "url": "https://github.com/allamiro"
