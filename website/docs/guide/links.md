@@ -13,6 +13,10 @@ Open **Panel options → Links**, select a link from the dropdown, or click **Ad
 
 **Anchor Point** controls where the link attaches to a node (Center, Top, Bottom, Left, Right) — useful for routing links cleanly around a busy map.
 
+![Link editor: A and Z side options with queries and bandwidth](../img/getting-started/06-link.png)
+
+*The full per-side form: side node, side query, fixed bandwidth (10 Gbps here), label offset, anchor point, dashboard link, port label, and direction label.*
+
 ---
 
 ## Queries and bandwidth
@@ -27,6 +31,8 @@ For each side:
 
 With bandwidth set, the tooltip and coloring can express **throughput %** (current ÷ bandwidth), which is how the color scale bands are matched by default.
 
+![Hover tooltip showing usage, bandwidth and throughput percent](../img/getting-started/08-view-tooltip.png)
+
 ---
 
 ## Units and decimals
@@ -40,6 +46,10 @@ With bandwidth set, the tooltip and coloring can express **throughput %** (curre
 
 - **Label Offset** — slide the value text along the link (0–100%). Handy when two labels overlap.
 - **Port Label** — a per-side interface name (e.g. `ge-0/0/1`) rendered next to the link at 25% from each endpoint, rotated to follow the line.
+
+![WAN map with port labels and direction labels on links](../img/use-cases/wm-wan-utilization.png)
+
+*Port labels (interface names near each endpoint) and value labels on a live WAN map — from the [demo dashboards](use-cases.md).*
 
 ---
 
@@ -60,6 +70,10 @@ The two directional arrows meet at the midpoint of a link by default. Use the **
 ## Parallel links (link offset)
 
 To draw **multiple links between the same two nodes** without overlap, set a different **Link Offset (parallel links)** on each. The offset shifts the line perpendicular to its A→Z direction; arrows, labels, and coloring all follow the offset line. Zero (default) keeps the straight line.
+
+![Three parallel LAG member links between the same two nodes](../img/use-cases/wm-parallel-lag.png)
+
+*A three-member LAG drawn with per-link offsets — each member keeps its own query, port label, and utilization %.*
 
 ---
 
@@ -92,6 +106,10 @@ Under **Stroke and Arrow**:
 ## VIAs (waypoints)
 
 A **VIA** is an intermediate bend point on a link — useful to route a link around obstacles or to represent a multi-hop path. VIAs use lightweight *connection nodes* under the hood.
+
+![A link routed through three VIA waypoints](../img/use-cases/wm-multihop.png)
+
+*One DC interconnect routed through three VIAs — exactly what double-click VIA editing produces.*
 
 **Edit a VIA directly on the canvas (edit mode):**
 
