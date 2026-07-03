@@ -7,6 +7,11 @@ on:
       - 'package.json'
   pull_request:
 
+# Least-privilege default for the GITHUB_TOKEN; jobs that need more (the
+# PR-comment step in the latest check) declare their own block.
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 

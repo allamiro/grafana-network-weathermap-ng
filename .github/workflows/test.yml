@@ -7,6 +7,11 @@ on:
       - 'package-lock.json'
   pull_request:
 
+# CI only reads the repo; least-privilege token per CodeQL
+# actions/missing-workflow-permissions.
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
