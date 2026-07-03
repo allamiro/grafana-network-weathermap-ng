@@ -2,11 +2,23 @@
 
 End-to-end recipes that combine the options into real dashboards. Each assumes you've completed [Getting Started](getting-started.md).
 
+!!! tip "Try every scenario live"
+    Each recipe below has a ready-made **demo dashboard** with simulated enterprise traffic. From a checkout of the repo:
+
+    ```bash
+    npm install && npm run build
+    cd testing && docker compose up --build
+    ```
+
+    then open `http://localhost:3101` → **Dashboards**. The data generator keeps producing realistic traffic (diurnal cycles, bursts, a periodically saturating link, a flapping device) for as long as the stack runs. The screenshots on this page are captured from those dashboards.
+
 ---
 
 ## 1. WAN link utilization (two sites)
 
 **Goal:** show a core uplink between two sites, colored by utilization, with clear inbound/outbound labels.
+
+![WAN utilization demo](../img/use-cases/wm-wan-utilization.png)
 
 1. Add nodes `SW-CORE` and `BKB-CARPINA`.
 2. Add a link A=`SW-CORE`, Z=`BKB-CARPINA`.
@@ -14,15 +26,20 @@ End-to-end recipes that combine the options into real dashboards. Each assumes y
    - **Z Side Query** = the reverse direction Z→A. Use either `BKB-CARPINA`'s *bits sent* **or** `SW-CORE`'s *bits received* (both represent Z→A) — not `BKB-CARPINA`'s *bits received*, which is the same A→Z direction as the A side; **Z Bandwidth #** = same capacity.
 3. Set **A Direction Label** = `Outbound`, **Z Direction Label** = `Inbound`.
 4. Add **Port Labels** (e.g. `Eth-Trunk12`) so the physical interface is visible.
-5. Color scale: `0→green, 50→yellow, 80→orange, 95→red` with **Color Scale Mode = percent**.
+5. Give each node an **Icon** — the plugin bundles 400+ device icons (routers, switches, firewalls, servers, buildings, clouds) across Cisco, networking, database, and computer sets, plus custom icon URLs.
+6. Color scale: `0→green, 50→yellow, 80→orange, 95→red` with **Color Scale Mode = percent**.
 
 Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
+
+**Demo:** *WAN Demo — Utilization* — 8 devices, parallel core links, a VIA-curved long-haul, and click-through from the SITE nodes to the floor-plan dashboard.
 
 ---
 
 ## 2. Capacity planning (avg / 95th percentile)
 
 **Goal:** compare typical vs. peak load over a period, not just the instantaneous value.
+
+![Capacity planning demo](../img/use-cases/wm-capacity-planning.png)
 
 1. Build the map as in scenario 1.
 2. Set the dashboard time range to the period of interest (e.g. *last 30 days*).
@@ -31,16 +48,22 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
    - Switch to **Max** to spot the worst-case moment.
 4. Compare against your color-scale bands to find links that are hot at p95.
 
+**Demo:** *WAN Demo — Capacity Planning (p95)* — the `EDGE-1 ↔ SITE-ATL` link saturates for ~90 s every 7 minutes; at p95 that stays visible long after each burst passes.
+
 ---
 
 ## 3. Incident retrospective (timeline replay)
 
 **Goal:** replay how the network looked during an outage window.
 
+![Incident replay demo](../img/use-cases/wm-incident-replay.png)
+
 1. Enable **Panel Options → Timeline Slider**.
 2. Set the dashboard time range to span the incident.
 3. In view mode, **drag the slider** to the moment the incident began and step forward — link colors and values update to that time.
 4. Use the timestamp label to correlate with alerts/logs. Press **Live** to return to now.
+
+**Demo:** *WAN Demo — Incident Replay (timeline)* — `SITE-DFW` goes down for ~2 minutes every 10; scrub back to watch its link collapse and recover.
 
 ---
 
@@ -48,10 +71,14 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 **Goal:** overlay devices on a floor plan or rack layout that zooms/pans with the map.
 
+![Building floor plan demo](../img/use-cases/wm-floorplan.png)
+
 1. **Panel Options → Background → Image**: paste the floor-plan image URL; set **Image Fit** to `contain`.
 2. Enable **Move With Map** so the image scales and pans with the nodes.
 3. Place nodes on top of the plan at their physical locations; use the **Grid** for alignment.
 4. Add links to show inter-rack or inter-room traffic.
+
+**Demo:** *WAN Demo — Building Floor Plan* — firewall, core switch, top-of-rack switches, and storage placed over a server-room plan; clicking `RACK1-TOR` drills into its rack port diagram (scenario 10).
 
 ---
 
@@ -59,10 +86,14 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 **Goal:** draw a link that routes around other elements or represents a multi-hop path.
 
+![Multi-hop VIA demo](../img/use-cases/wm-multihop.png)
+
 1. Create the A and Z nodes and a direct link.
 2. In edit mode, **double-click** the link to drop a VIA, then **drag** it to the bend point.
 3. Repeat to add more bends. Use **Arrow Meeting Point (%)** to place the direction arrows on the most meaningful segment.
 4. **Right-click** any VIA to remove it later.
+
+**Demo:** *WAN Demo — Multi-hop Path (VIAs)* — one DC interconnect routed through three VIA points; the A-side value rides the first segment and the Z-side value the last, exactly as VIA editing produces.
 
 ---
 
@@ -70,9 +101,13 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 **Goal:** at-a-glance device health without reading numbers.
 
+![Device health demo](../img/use-cases/wm-device-health.png)
+
 1. For each node, open **Status** and set a **Query** (e.g. `up`, CPU %, temperature).
 2. Add **Threshold Mappings** (`value ≥ threshold → color`) and pick a **Color Target** (Border / Background / Both).
 3. Optionally add **node Tooltip** metrics (latency, packet loss, CPU) so hovering shows the detail behind the color.
+
+**Demo:** *WAN Demo — Device Health* — every device is colored by packet-loss mappings (green &lt;1%, orange 1–50%, red above); hover any node for its latency/loss tooltip.
 
 ---
 
@@ -80,9 +115,13 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 **Goal:** show a LAG/port-channel or redundant paths as separate lines.
 
+![Parallel LAG links demo](../img/use-cases/wm-parallel-lag.png)
+
 1. Add multiple links between the same two nodes.
 2. Give each a different **Link Offset (parallel links)** value (e.g. `-8`, `0`, `+8`) so they spread apart.
 3. Set each link's own query so the members are individually visible.
+
+**Demo:** *WAN Demo — Parallel Links (LAG members)* — a three-member LAG with per-member queries, port labels, and utilization percentages; unequal hashing shows one member running hot.
 
 ---
 
@@ -93,6 +132,36 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 1. Give each node a **Dashboard Link** (e.g. `/d/abc/switch-detail?var-host=$host`).
 2. Use `${var}` template variables in labels, queries, and links for dynamic, reusable maps.
 3. In view mode, clicking the node navigates to the target (safely, in a new tab by default).
+
+**Demo:** the demo dashboards form a drill-down chain — *Global Backbone* → click `NYC` → *WAN Utilization* → click a `SITE` → *Building Floor Plan* → click `RACK1-TOR` → *Rack Port Status*.
+
+---
+
+## 9. Global backbone on a world map
+
+**Goal:** intercontinental links (e.g. USA ↔ Europe ↔ Middle East) drawn over real geography.
+
+![Global backbone demo](../img/use-cases/wm-global-backbone.png)
+
+1. Use a world-map image as the **Background** (public-domain equirectangular SVGs are available on [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:Blank_SVG_maps_of_the_world)); set **Image Fit** to `contain` and enable **Move With Map**.
+2. Place a node per PoP/city at its location on the map.
+3. Add the submarine/backbone links between them with per-direction queries and capacities; use **Port Labels** for the cable/system names.
+
+**Demo:** *WAN Demo — Global Backbone (map background)* — NYC, London, Frankfurt, and Dubai over a recolored public-domain world map; clicking `NYC` drills into the regional WAN.
+
+---
+
+## 10. Rack / switch port status board
+
+**Goal:** a faceplate-style board showing every switch port's status at a glance.
+
+![Rack port status demo](../img/use-cases/wm-rack-ports.png)
+
+1. Use a rack/faceplate drawing as the **Background** image.
+2. Add one small node per port (label = port number) positioned over the faceplate; no links needed.
+3. Set each node's **Status Query** to that port's status series and add **Threshold Mappings** — e.g. `0 → red` (down), `1 → green` (up), `2 → gray` (admin-disabled) — with **Color Target = Background**.
+
+**Demo:** *WAN Demo — Rack Port Status* — 24 access ports plus two 10G uplinks; ports 7/19 are hard down, port 13 flaps every ~5 minutes, 23/24 are admin-disabled.
 
 ---
 

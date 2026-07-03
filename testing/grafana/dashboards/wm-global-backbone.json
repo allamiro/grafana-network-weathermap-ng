@@ -1,0 +1,1214 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "weathermap-demo"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "WAN Demo — Global Backbone (map background)",
+  "description": "Intercontinental links between the USA, Europe, and the Middle East drawn over a world-map background that pans/zooms with the map. Click NYC to drill into the regional WAN.",
+  "uid": "wm-global-backbone",
+  "version": 1,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 22,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "WAN Demo — Global Backbone (map background)",
+      "type": "tamirsuliman-weathermap-panel",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_link_bps",
+          "legendFormat": "{{link}} {{direction}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "expr": "wm_device_status",
+          "legendFormat": "STATUS {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "expr": "wm_latency_ms",
+          "legendFormat": "LAT {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "D",
+          "expr": "wm_packet_loss_pct",
+          "legendFormat": "LOSS {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "E",
+          "expr": "wm_link_errors",
+          "legendFormat": "ERR {{link}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "F",
+          "expr": "wm_link_discards",
+          "legendFormat": "DISC {{link}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "G",
+          "expr": "wm_port_status",
+          "legendFormat": "PORT {{port}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "weathermap": {
+          "version": 14,
+          "id": "wm-global-backbone",
+          "nodes": [
+            {
+              "id": "node-nyc",
+              "position": [
+                228,
+                200
+              ],
+              "label": "NYC",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 2,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
+                "size": {
+                  "width": 26,
+                  "height": 26
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "dashboardLink": "/d/wm-wan-utilization",
+              "openInSameTab": false,
+              "statusQuery": "STATUS NYC",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-lon",
+              "position": [
+                432,
+                165
+              ],
+              "label": "LON",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 3,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
+                "size": {
+                  "width": 26,
+                  "height": 26
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "STATUS LON",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-fra",
+              "position": [
+                478,
+                196
+              ],
+              "label": "FRA",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 3,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
+                "size": {
+                  "width": 26,
+                  "height": 26
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "STATUS FRA",
+              "nodeStatusColorTarget": "both"
+            },
+            {
+              "id": "node-dxb",
+              "position": [
+                590,
+                252
+              ],
+              "label": "DXB",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 2,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 6,
+                "horizontal": 12
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
+                "size": {
+                  "width": 26,
+                  "height": 26
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "STATUS DXB",
+              "nodeStatusColorTarget": "both"
+            }
+          ],
+          "links": [
+            {
+              "id": "link-nyc<->lon",
+              "nodes": [
+                {
+                  "id": "node-nyc",
+                  "position": [
+                    228,
+                    200
+                  ],
+                  "label": "NYC",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "dashboardLink": "/d/wm-wan-utilization",
+                  "openInSameTab": false,
+                  "statusQuery": "STATUS NYC",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-lon",
+                  "position": [
+                    432,
+                    165
+                  ],
+                  "label": "LON",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 3,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS LON",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 100000000000,
+                  "query": "nyc<->lon tx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "portLabel": "TAT-14",
+                  "directionLabel": "Out"
+                },
+                "Z": {
+                  "bandwidth": 100000000000,
+                  "query": "nyc<->lon rx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "directionLabel": "In"
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": false
+            },
+            {
+              "id": "link-nyc<->fra",
+              "nodes": [
+                {
+                  "id": "node-nyc",
+                  "position": [
+                    228,
+                    200
+                  ],
+                  "label": "NYC",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "dashboardLink": "/d/wm-wan-utilization",
+                  "openInSameTab": false,
+                  "statusQuery": "STATUS NYC",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-fra",
+                  "position": [
+                    478,
+                    196
+                  ],
+                  "label": "FRA",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 3,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS FRA",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 100000000000,
+                  "query": "nyc<->fra tx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "portLabel": "AC-2",
+                  "directionLabel": "Out"
+                },
+                "Z": {
+                  "bandwidth": 100000000000,
+                  "query": "nyc<->fra rx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "directionLabel": "In"
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": false
+            },
+            {
+              "id": "link-lon<->fra",
+              "nodes": [
+                {
+                  "id": "node-lon",
+                  "position": [
+                    432,
+                    165
+                  ],
+                  "label": "LON",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 3,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS LON",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-fra",
+                  "position": [
+                    478,
+                    196
+                  ],
+                  "label": "FRA",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 3,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS FRA",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 100000000000,
+                  "query": "lon<->fra tx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": ""
+                },
+                "Z": {
+                  "bandwidth": 100000000000,
+                  "query": "lon<->fra rx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": ""
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": false
+            },
+            {
+              "id": "link-lon<->dxb",
+              "nodes": [
+                {
+                  "id": "node-lon",
+                  "position": [
+                    432,
+                    165
+                  ],
+                  "label": "LON",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 3,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS LON",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-dxb",
+                  "position": [
+                    590,
+                    252
+                  ],
+                  "label": "DXB",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS DXB",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 100000000000,
+                  "query": "lon<->dxb tx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "portLabel": "EIG-1",
+                  "directionLabel": "Out"
+                },
+                "Z": {
+                  "bandwidth": 100000000000,
+                  "query": "lon<->dxb rx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "directionLabel": "In"
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": false
+            },
+            {
+              "id": "link-fra<->dxb",
+              "nodes": [
+                {
+                  "id": "node-fra",
+                  "position": [
+                    478,
+                    196
+                  ],
+                  "label": "FRA",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 3,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS FRA",
+                  "nodeStatusColorTarget": "both"
+                },
+                {
+                  "id": "node-dxb",
+                  "position": [
+                    590,
+                    252
+                  ],
+                  "label": "DXB",
+                  "showLabel": true,
+                  "anchors": {
+                    "0": {
+                      "numLinks": 2,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 6,
+                    "horizontal": 12
+                  },
+                  "colors": {
+                    "font": "#ffffff",
+                    "background": "#22252b",
+                    "border": "#5794F2",
+                    "statusDown": "#F2495C"
+                  },
+                  "nodeIcon": {
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
+                    "size": {
+                      "width": 26,
+                      "height": 26
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false,
+                  "statusQuery": "STATUS DXB",
+                  "nodeStatusColorTarget": "both"
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 100000000000,
+                  "query": "fra<->dxb tx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "portLabel": "SMW-5",
+                  "directionLabel": "Out"
+                },
+                "Z": {
+                  "bandwidth": 100000000000,
+                  "query": "fra<->dxb rx",
+                  "labelOffset": 55,
+                  "anchor": 0,
+                  "dashboardLink": "",
+                  "directionLabel": "In"
+                }
+              },
+              "units": "bps",
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 6,
+              "showThroughputPercentage": false
+            }
+          ],
+          "scale": [
+            {
+              "percent": 0,
+              "color": "#73BF69"
+            },
+            {
+              "percent": 40,
+              "color": "#FADE2A"
+            },
+            {
+              "percent": 60,
+              "color": "#FF9830"
+            },
+            {
+              "percent": 80,
+              "color": "#F2495C"
+            },
+            {
+              "percent": 95,
+              "color": "#C4162A"
+            }
+          ],
+          "settings": {
+            "link": {
+              "spacing": {
+                "horizontal": 10,
+                "vertical": 5
+              },
+              "stroke": {
+                "color": "rgba(204, 204, 220, 0.16)"
+              },
+              "label": {
+                "background": "#181b1f",
+                "border": "rgba(204, 204, 220, 0.25)",
+                "font": "rgb(204, 204, 220)"
+              },
+              "showAllWithPercentage": false,
+              "valueMappingMode": "last",
+              "defaultUnits": "bps",
+              "linkDecimals": 1,
+              "dynamicStroke": {
+                "enabled": false,
+                "minWidth": 1,
+                "maxWidth": 10
+              },
+              "flowAnimation": {
+                "enabled": false,
+                "speed": 2
+              },
+              "gradientColor": false
+            },
+            "fontSizing": {
+              "node": 10,
+              "link": 8
+            },
+            "colorScaleMode": "percent",
+            "panel": {
+              "backgroundColor": "#111217",
+              "showTimestamp": true,
+              "panelSize": {
+                "width": 900,
+                "height": 620
+              },
+              "zoomScale": 0,
+              "offset": {
+                "x": 0,
+                "y": 0
+              },
+              "grid": {
+                "enabled": false,
+                "size": 10,
+                "guidesEnabled": false
+              },
+              "backgroundImage": {
+                "url": "http://localhost:8080/worldmap.svg",
+                "fit": "contain",
+                "attachToCanvas": true
+              }
+            },
+            "tooltip": {
+              "fontSize": 10,
+              "textColor": "white",
+              "backgroundColor": "black",
+              "inboundColor": "#00cf00",
+              "outboundColor": "#fade2a",
+              "scaleToBandwidth": true
+            },
+            "scale": {
+              "position": {
+                "x": 0,
+                "y": 0
+              },
+              "size": {
+                "width": 60,
+                "height": 220
+              },
+              "title": "Backbone Load",
+              "fontSizing": {
+                "title": 14,
+                "threshold": 11
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
