@@ -126,7 +126,7 @@ APA and BibTeX entries, e.g.:
 ```bibtex
 @software{Suliman_Grafana_Network_Weathermap_NG,
   author  = {Suliman, Tamir},
-  title   = {Grafana Network Weathermap NG},
+  title   = {Network Weathermap NG},
   url     = {https://github.com/allamiro/grafana-network-weathermap-ng},
   license = {Apache-2.0}
 }
