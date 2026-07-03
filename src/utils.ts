@@ -700,11 +700,29 @@ export function resolveLinkChain(links: Link[], linkId: string): Set<string> {
     return chain;
   }
 
+  // Index segments by their endpoint node ids once, so each hop of the chain
+  // walk is a map lookup instead of a scan (keeps hover-time resolution
+  // linear on dense maps).
+  const bySourceNode = new Map<string, Link[]>();
+  const byTargetNode = new Map<string, Link[]>();
+  for (const l of links) {
+    if (l.nodes[0]?.id) {
+      const list = bySourceNode.get(l.nodes[0].id) ?? [];
+      list.push(l);
+      bySourceNode.set(l.nodes[0].id, list);
+    }
+    if (l.nodes[1]?.id) {
+      const list = byTargetNode.get(l.nodes[1].id) ?? [];
+      list.push(l);
+      byTargetNode.set(l.nodes[1].id, list);
+    }
+  }
+
   // Walk backward: while the current segment starts at a connection node,
   // include the segment feeding that connection.
   let current: Link | undefined = start;
   for (let guard = 0; guard < links.length && current && current.nodes[0]?.isConnection; guard++) {
-    const prev = links.find((l) => l.id !== current!.id && l.nodes[1]?.id === current!.nodes[0].id);
+    const prev: Link | undefined = (byTargetNode.get(current.nodes[0].id) ?? []).find((l) => l.id !== current!.id);
     if (!prev || chain.has(prev.id)) {
       break;
     }
@@ -716,7 +734,7 @@ export function resolveLinkChain(links: Link[], linkId: string): Set<string> {
   // include the segment leaving that connection.
   current = start;
   for (let guard = 0; guard < links.length && current && current.nodes[1]?.isConnection; guard++) {
-    const next = links.find((l) => l.id !== current!.id && l.nodes[0]?.id === current!.nodes[1].id);
+    const next: Link | undefined = (bySourceNode.get(current.nodes[1].id) ?? []).find((l) => l.id !== current!.id);
     if (!next || chain.has(next.id)) {
       break;
     }

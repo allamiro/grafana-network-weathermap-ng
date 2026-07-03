@@ -14,6 +14,7 @@ import {
 } from '@grafana/ui';
 import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
 import { Weathermap, ValueMappingMode } from 'types';
+import { v4 as uuidv4 } from 'uuid';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
 import { sanitizeUrl } from 'utils';
@@ -601,8 +602,8 @@ export const PanelForm = ({ value, onChange }: Props) => {
                   enabled: e.currentTarget.checked,
                   position: { x: 1, y: 1 },
                   items: [
-                    { color: '#73BF69', label: 'up' },
-                    { color: '#F2495C', label: 'down' },
+                    { color: '#73BF69', label: 'up', id: uuidv4() },
+                    { color: '#F2495C', label: 'down', id: uuidv4() },
                   ],
                 };
               } else {
@@ -641,7 +642,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               />
             </InlineField>
             {value.settings.statusLegend.items.map((item, li) => (
-              <InlineFieldRow key={li} className={styles.inlineRow}>
+              <InlineFieldRow key={item.id ?? li} className={styles.inlineRow}>
                 <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
                   Color:
                   <ColorPicker
@@ -683,7 +684,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               size="sm"
               onClick={() => {
                 let options = value;
-                options.settings.statusLegend!.items.push({ color: '#FF9830', label: 'label' });
+                options.settings.statusLegend!.items.push({ color: '#FF9830', label: 'label', id: uuidv4() });
                 onChange(options);
               }}
             >

@@ -279,7 +279,7 @@ export interface WeathermapSettings {
   statusLegend?: {
     enabled: boolean;
     position: Position;
-    items: Array<{ color: string; label: string }>;
+    items: Array<{ color: string; label: string; id?: string }>;
   };
 }
 
