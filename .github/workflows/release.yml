@@ -34,6 +34,19 @@ jobs:
       - name: Build plugin
         run: npm run build
 
+      - name: Sign plugin
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+        run: npx --yes @grafana/sign-plugin@latest
+
+      - name: Verify signature manifest
+        run: |
+          if [ ! -f dist/MANIFEST.txt ]; then
+            echo "::error::dist/MANIFEST.txt missing — plugin was not signed"
+            exit 1
+          fi
+          grep -q '"signatureType": "community"' dist/MANIFEST.txt
+
       - name: Get plugin metadata
         id: metadata
         run: |
