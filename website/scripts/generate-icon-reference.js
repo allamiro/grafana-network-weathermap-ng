@@ -32,6 +32,17 @@ const RACK_DESCRIPTIONS = {
   'rack-frame': 'Empty rack frame with rail holes',
   ups: 'Rack UPS (battery symbol, vents, fan)',
   'cable-tray': 'Vertical cable management tray',
+  'fiber-port-lc': 'LC duplex fiber port (aqua = OM3/OM4 convention)',
+  'fiber-port-sc': 'SC fiber port (orange = multimode convention)',
+  'fiber-patch-panel-1u': '1U fiber patch panel with 12 LC duplex pairs',
+};
+
+const AEROSPACE_DESCRIPTIONS = {
+  airplane: 'Aircraft (top view) — air routes, in-flight connectivity',
+  helicopter: 'Helicopter (side view)',
+  satellite: 'Satellite with solar wings — space segment / SATCOM',
+  'satellite-dish': 'Ground station dish — earth segment / VSAT',
+  drone: 'Quadcopter drone (top view) — UAV links',
 };
 
 // A representative sample of the 265 flags shown as images; the rest are
@@ -72,11 +83,11 @@ function grid(set, names, { dark = false, iconWidth = 44 } = {}) {
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;" markdown="0">\n${cells}\n</div>`;
 }
 
-function rackTable(names) {
+function descTable(set, names, descriptions) {
   const rows = names
     .map(
       (n) =>
-        `<tr><td style="background:#14161c;text-align:center;padding:10px;"><img src="../img/icons/rack/${n}.svg" alt="${n}" style="max-width:170px;height:auto;"></td><td><code>rack/${n}</code></td><td>${RACK_DESCRIPTIONS[n] || ''}</td></tr>`
+        `<tr><td style="background:#14161c;text-align:center;padding:10px;"><img src="../img/icons/${set}/${n}.svg" alt="${n}" style="max-width:170px;height:auto;"></td><td><code>${set}/${n}</code></td><td>${descriptions[n] || ''}</td></tr>`
     )
     .join('\n');
   return `<table markdown="0">\n<thead><tr><th>Icon</th><th>Id</th><th>Description</th></tr></thead>\n<tbody>\n${rows}\n</tbody>\n</table>`;
@@ -87,10 +98,14 @@ function rackTable(names) {
 const sets = {
   networking: list('networking'),
   rack: list('rack'),
+  aerospace: list('aerospace'),
+  platforms: list('platforms'),
+  languages: list('languages'),
   computers_monitors: list('computers_monitors'),
   databases: list('databases'),
   cisco: list('cisco'),
   flags: list('flags'),
+  flags_square: list('flags_square'),
 };
 for (const s of Object.keys(sets)) {
   copySet(s);
@@ -130,23 +145,59 @@ node icons — faceplates, power components, and port hardware drawn in a consis
 dark style. Combine them with per-port status nodes to build boards like the
 [rack cabling demo](guide/use-cases.md#11-rack-cabling-power-redundancy-multi-device-rear-view).
 
-${rackTable(sets.rack)}
+${descTable('rack', sets.rack, RACK_DESCRIPTIONS)}
 
 ---
 
-## Country Flags (${sets.flags.length})
+## Aerospace (${sets.aerospace.length})
 
-ISO 3166-1 alpha-2 circle-style flags (from the MIT-licensed
-[circle-flags](https://github.com/HatScripts/circle-flags) project) for marking
-PoP/city nodes on [geographic maps](guide/use-cases.md#9-global-backbone-on-a-world-map).
-Use the two-letter country code as the icon name, e.g. \`flags/us\`, \`flags/de\`, \`flags/ae\`.
+Air and space segment symbols — for SATCOM links, ground stations, in-flight or
+UAV connectivity maps.
 
-A sample:
+${descTable('aerospace', sets.aerospace, AEROSPACE_DESCRIPTIONS)}
+
+---
+
+## Platforms & Apps (${sets.platforms.length})
+
+Kubernetes and Apache project logos (from the MIT-licensed
+[devicon](https://github.com/devicons/devicon) project) — for maps where a node
+is a service or platform. More Apache data platforms (Cassandra, Hadoop, HBase,
+CouchDB) live in the Databases set below.
+
+${grid('platforms', sets.platforms)}
+
+---
+
+## Programming Languages (${sets.languages.length})
+
+Language logos (from [devicon](https://github.com/devicons/devicon), MIT) — for
+application/service nodes tagged by their runtime.
+
+${grid('languages', sets.languages)}
+
+---
+
+## Country Flags (${sets.flags.length} circle + ${sets.flags_square.length} square)
+
+ISO 3166-1 alpha-2 flags in two styles for marking PoP/city nodes on
+[geographic maps](guide/use-cases.md#9-global-backbone-on-a-world-map):
+**circle** (\`flags/<code>\`, from [circle-flags](https://github.com/HatScripts/circle-flags), MIT)
+and **square** (\`flags_square/<code>\`, from [flag-icons](https://github.com/lipis/flag-icons), MIT).
+Use the two-letter country code as the icon name, e.g. \`flags/us\` or \`flags_square/us\`.
+
+Circle sample:
 
 ${grid('flags', FLAG_SAMPLE, { iconWidth: 40 })}
 
-??? note "All ${sets.flags.length} available codes"
-    ${sets.flags.map((f) => '`' + f + '`').join(' · ')}
+Square sample:
+
+${grid('flags_square', FLAG_SAMPLE.filter((f) => sets.flags_square.includes(f)), { iconWidth: 40 })}
+
+??? note "All available codes"
+    **Circle (${sets.flags.length}):** ${sets.flags.map((f) => '\`' + f + '\`').join(' · ')}
+
+    **Square (${sets.flags_square.length}):** ${sets.flags_square.map((f) => '\`' + f + '\`').join(' · ')}
 
     (\`eu\` = European Union, \`un\` = United Nations, \`xx\` = placeholder/unknown.)
 

@@ -19,7 +19,18 @@ import {
 import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, NodeStatusValueMapping, NodeTooltipMetric } from 'types';
-import { CiscoIcons, NetworkingIcons, DatabaseIcons, ComputerIcons, FlagIcons, RackIcons } from './iconOptions';
+import {
+  CiscoIcons,
+  NetworkingIcons,
+  DatabaseIcons,
+  ComputerIcons,
+  FlagIcons,
+  FlagSquareIcons,
+  RackIcons,
+  PlatformIcons,
+  LanguageIcons,
+  AerospaceIcons,
+} from './iconOptions';
 import { getDataFrameName, sanitizeUrl } from 'utils';
 
 interface Settings {
@@ -273,6 +284,18 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const rackIconsFormatted = RackIcons.map((t) => {
     return { label: t, value: 'rack/' + t };
   });
+  const flagSquareIconsFormatted = FlagSquareIcons.map((t) => {
+    return { label: t, value: 'flags_square/' + t };
+  });
+  const platformIconsFormatted = PlatformIcons.map((t) => {
+    return { label: t, value: 'platforms/' + t };
+  });
+  const languageIconsFormatted = LanguageIcons.map((t) => {
+    return { label: t, value: 'languages/' + t };
+  });
+  const aerospaceIconsFormatted = AerospaceIcons.map((t) => {
+    return { label: t, value: 'aerospace/' + t };
+  });
 
   let dataWithIds: string[] = [];
   context.data.forEach((d, i) => {
@@ -397,8 +420,12 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       { label: 'Networking Icons', value: 'networking', options: networkingIconsFormatted },
                       { label: 'Database Icons', value: 'databases', options: databaseIconsFormatted },
                       { label: 'Computer Icons', value: 'computers_monitors', options: computerIconsFormatted },
-                      { label: 'Country Flags', value: 'flags', options: flagIconsFormatted },
+                      { label: 'Country Flags (circle)', value: 'flags', options: flagIconsFormatted },
+                      { label: 'Country Flags (square)', value: 'flags_square', options: flagSquareIconsFormatted },
                       { label: 'Rack Parts', value: 'rack', options: rackIconsFormatted },
+                      { label: 'Platforms & Apps', value: 'platforms', options: platformIconsFormatted },
+                      { label: 'Programming Languages', value: 'languages', options: languageIconsFormatted },
+                      { label: 'Aerospace', value: 'aerospace', options: aerospaceIconsFormatted },
                       { label: 'Custom Icon', value: 'custom_icon' },
                     ]}
                     className={styles.nodeSelect}

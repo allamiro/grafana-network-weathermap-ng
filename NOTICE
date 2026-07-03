@@ -11,3 +11,13 @@ Bundled world-map background for the demo dashboards is derived from
 Country flag icons (src/icons/flags) are from the circle-flags project
 (https://github.com/HatScripts/circle-flags), Copyright (c) HatScripts,
 licensed under the MIT License.
+
+Square country flag icons (src/icons/flags_square) are from the flag-icons
+project (https://github.com/lipis/flag-icons), Copyright (c) Panayiotis
+Lipiridis, licensed under the MIT License.
+
+Platform and programming-language logos (src/icons/platforms,
+src/icons/languages) are from the devicon project
+(https://github.com/devicons/devicon), licensed under the MIT License.
+Product names and logos are trademarks of their respective owners and are
+used for identification only.
