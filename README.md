@@ -24,6 +24,23 @@
 
 ---
 
+## Use Cases
+
+The **[step-by-step Use Cases guide](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/)** is the fastest way to get started — eleven ready-made scenarios, each with a live screenshot, a recipe, and a demo dashboard you can run locally (`cd testing && docker compose up --build`):
+
+1. [WAN link utilization](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#1-wan-link-utilization-two-sites) · 2. [Capacity planning (p95)](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#2-capacity-planning-avg-95th-percentile) · 3. [Incident replay (timeline)](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#3-incident-retrospective-timeline-replay) · 4. [Floor plan background](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#4-data-center-floor-plan-background-follows-the-map) · 5. [Multi-hop VIAs](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#5-multi-hop-path-with-vias) · 6. [Device health](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#6-device-health-overview-status-coloring) · 7. [Parallel links / LAG](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#7-parallel-links-between-the-same-nodes) · 8. [Clickable drill-down](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#8-clickable-drill-down-map) · 9. [Global backbone on a world map](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#9-global-backbone-on-a-world-map) · 10. [Rack port status board](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#10-rack-switch-port-status-board) · 11. [Rack cabling & power redundancy](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/#11-rack-cabling-power-redundancy-multi-device-rear-view)
+
+<p align="center">
+  <a href="https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/">
+    <img src="website/docs/img/use-cases/wm-rack-cabling.png" alt="Rack cabling use case" width="410">
+    <img src="website/docs/img/use-cases/wm-global-backbone.png" alt="Global backbone use case" width="410">
+  </a>
+</p>
+
+See also the **[Icon Reference](https://allamiro.github.io/grafana-network-weathermap-ng/icons/)** — nearly 1,000 bundled icons across network devices, rack parts, country flags, platforms, programming languages, and aerospace sets.
+
+---
+
 ## Screenshots
 
 <p align="center">
