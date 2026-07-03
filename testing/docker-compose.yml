@@ -21,3 +21,7 @@ services:
     build:
       context: exporter
       dockerfile: Dockerfile
+    ports:
+      # Published so the browser can load the background images served by the
+      # exporter (floor-plan and world-map demo dashboards).
+      - 8080:8080

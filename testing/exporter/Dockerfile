@@ -6,6 +6,7 @@ COPY go.mod ./
 COPY go.sum ./
 
 COPY *.go ./
+COPY assets ./assets
 
 RUN go mod tidy && go build -o /exporter
 

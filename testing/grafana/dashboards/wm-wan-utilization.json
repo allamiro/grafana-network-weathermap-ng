@@ -20,7 +20,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "WAN Demo — Utilization",
-  "description": "Live WAN utilization: parallel core links, VIA-curved long-haul to SITE-NYC, direction and port labels, percent color scale. Data is simulated by testing/exporter.",
+  "description": "Live WAN utilization: parallel core links, VIA-curved long-haul to SITE-NYC, direction and port labels, percent color scale. Click a SITE node to drill down into its building floor plan. Data is simulated by testing/exporter.",
   "uid": "wm-wan-utilization",
   "version": 1,
   "panels": [
@@ -95,6 +95,16 @@
           "range": true,
           "interval": "",
           "format": "time_series"
+        },
+        {
+          "refId": "G",
+          "expr": "wm_port_status",
+          "legendFormat": "PORT {{port}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
         }
       ],
       "options": {
@@ -145,11 +155,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -216,11 +226,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -287,11 +297,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                "name": "networking/switch",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -358,11 +368,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                "name": "networking/switch",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -429,11 +439,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                "name": "networking/building",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -454,6 +464,8 @@
                   "units": "percent"
                 }
               ],
+              "dashboardLink": "/d/wm-floorplan",
+              "openInSameTab": false,
               "statusQuery": "STATUS SITE-ATL",
               "nodeStatusColorTarget": "both"
             },
@@ -500,11 +512,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                "name": "networking/building",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -525,6 +537,8 @@
                   "units": "percent"
                 }
               ],
+              "dashboardLink": "/d/wm-floorplan",
+              "openInSameTab": false,
               "statusQuery": "STATUS SITE-DFW",
               "nodeStatusColorTarget": "both"
             },
@@ -571,11 +585,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                "name": "networking/building",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -596,6 +610,8 @@
                   "units": "percent"
                 }
               ],
+              "dashboardLink": "/d/wm-floorplan",
+              "openInSameTab": false,
               "statusQuery": "STATUS SITE-NYC",
               "nodeStatusColorTarget": "both"
             },
@@ -642,11 +658,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                "name": "networking/cloud",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -775,11 +791,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -846,11 +862,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -961,11 +977,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1032,11 +1048,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1147,11 +1163,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1218,11 +1234,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1333,11 +1349,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1404,11 +1420,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1519,11 +1535,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1590,11 +1606,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                    "name": "networking/building",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1615,6 +1631,8 @@
                       "units": "percent"
                     }
                   ],
+                  "dashboardLink": "/d/wm-floorplan",
+                  "openInSameTab": false,
                   "statusQuery": "STATUS SITE-ATL",
                   "nodeStatusColorTarget": "both"
                 }
@@ -1705,11 +1723,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1776,11 +1794,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                    "name": "networking/building",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1801,6 +1819,8 @@
                       "units": "percent"
                     }
                   ],
+                  "dashboardLink": "/d/wm-floorplan",
+                  "openInSameTab": false,
                   "statusQuery": "STATUS SITE-DFW",
                   "nodeStatusColorTarget": "both"
                 }
@@ -1891,11 +1911,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -2118,11 +2138,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                    "name": "networking/building",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -2143,6 +2163,8 @@
                       "units": "percent"
                     }
                   ],
+                  "dashboardLink": "/d/wm-floorplan",
+                  "openInSameTab": false,
                   "statusQuery": "STATUS SITE-NYC",
                   "nodeStatusColorTarget": "both"
                 }
@@ -2230,11 +2252,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -2301,11 +2323,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,

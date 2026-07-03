@@ -95,6 +95,16 @@
           "range": true,
           "interval": "",
           "format": "time_series"
+        },
+        {
+          "refId": "G",
+          "expr": "wm_port_status",
+          "legendFormat": "PORT {{port}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
         }
       ],
       "options": {
@@ -145,11 +155,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -216,11 +226,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                "name": "networking/router",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -287,11 +297,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                "name": "networking/switch",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -358,11 +368,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                "name": "networking/switch",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -429,11 +439,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                "name": "networking/building",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -500,11 +510,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                "name": "networking/building",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -571,11 +581,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                "name": "networking/building",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -642,11 +652,11 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "",
-                "name": "",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                "name": "networking/cloud",
                 "size": {
-                  "width": 0,
-                  "height": 0
+                  "width": 32,
+                  "height": 32
                 },
                 "padding": {
                   "vertical": 0,
@@ -775,11 +785,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -846,11 +856,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -959,11 +969,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1030,11 +1040,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1143,11 +1153,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1214,11 +1224,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1327,11 +1337,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1398,11 +1408,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1511,11 +1521,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1582,11 +1592,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                    "name": "networking/building",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1695,11 +1705,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1766,11 +1776,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                    "name": "networking/building",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -1879,11 +1889,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
+                    "name": "networking/switch",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -2105,11 +2115,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
+                    "name": "networking/building",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -2216,11 +2226,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
+                    "name": "networking/router",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,
@@ -2287,11 +2297,11 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "",
-                    "name": "",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
-                      "width": 0,
-                      "height": 0
+                      "width": 32,
+                      "height": 32
                     },
                     "padding": {
                       "vertical": 0,

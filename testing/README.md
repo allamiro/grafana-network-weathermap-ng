@@ -36,17 +36,26 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | Dashboard | What it shows |
 |---|---|
 | **DEV** (`all_dashboards.json`) | Minimal two-node map saved in the **legacy pre-v14 options format** — the regression fixture for the options-schema migration. Do not modernize this file. |
-| **WAN Demo — Utilization** | Live utilization on an 8-device WAN: parallel core links, VIA-curved long-haul to SITE-NYC, direction + port labels, percent color scale. |
+| **WAN Demo — Utilization** | Live utilization on an 8-device WAN: parallel core links, VIA-curved long-haul to SITE-NYC, direction + port labels, percent color scale. SITE nodes drill down to the floor plan. |
 | **WAN Demo — Device Health** | Node status coloring: devices are colored by packet-loss threshold mappings (green <1%, orange 1–50%, red above). Hover nodes for latency/loss tooltips. |
 | **WAN Demo — Capacity Planning (p95)** | Link values show the 95th percentile over the range. The EDGE-1↔SITE-ATL link saturates for ~90 s every 7 min — visible at p95 long after the burst passes. |
 | **WAN Demo — Incident Replay (timeline)** | Timeline slider enabled: scrub the range to replay the SITE-DFW outage (status down + traffic collapse for ~2 min every 10 min). |
+| **WAN Demo — Global Backbone (map background)** | NYC/LON/FRA/DXB backbone over a world-map background (public-domain Wikimedia equirectangular map, served by the exporter at `:8080/worldmap.svg`). NYC drills into the WAN. |
+| **WAN Demo — Building Floor Plan** | Firewall/core/ToR/storage devices with bundled icons over a server-room floor plan (`:8080/floorplan.svg`) that pans/zooms with the map. RACK1-TOR drills into the rack ports board. |
+| **WAN Demo — Rack Port Status** | A switch faceplate (`:8080/rack.svg`) with one status-colored node per port: green up, red down (7/19 hard down, 13 flaps ~5 min), gray admin-disabled (23/24). |
+| **WAN Demo — Multi-hop Path (VIAs)** | One DC interconnect routed through three VIA points, as double-click VIA editing produces. |
+| **WAN Demo — Parallel Links (LAG members)** | Three-member LAG spread with Link Offset, each member with its own query, port label, and utilization %. |
 
-The four WAN dashboards are generated — do not hand-edit them. To change the topology
+The WAN dashboards are generated — do not hand-edit them. To change the topology
 or scenarios, edit and re-run:
 
 ```bash
 node testing/scripts/generate-scenario-dashboards.js
 ```
+
+The world-map background is `BlankMap-World-Equirectangular.svg` from Wikimedia
+Commons (public domain), recolored for dark dashboards and embedded in the
+exporter (`testing/exporter/assets/worldmap.svg`).
 
 ## Test Data
 
@@ -57,3 +66,8 @@ The exporter (`testing/exporter/main.go`) produces:
 - `wm_device_status{device}` — 1 = up, 0 = down. **SITE-DFW flaps**: down for ~2 min out of every 10 (aligned to the Unix epoch), and its link traffic collapses during the outage.
 - `wm_link_errors` / `wm_link_discards{link}` — near zero until a link runs above ~85% utilization. **EDGE-1↔SITE-ATL saturates** to ~97% for ~90 s every 7 min.
 - `wm_latency_ms` / `wm_packet_loss_pct{device}` — node tooltip metrics; loss jumps to 100% while a device is down.
+- `wm_port_status{device, port}` — per-port status for the rack board (0 = down, 1 = up, 2 = admin-disabled).
+- Every link also gets staggered ~45 s micro-bursts every 13 minutes so the maps keep changing like a real enterprise network.
+
+The exporter also serves the demo background images over HTTP (port 8080,
+published by the compose file): `/floorplan.svg`, `/worldmap.svg`, `/rack.svg`.

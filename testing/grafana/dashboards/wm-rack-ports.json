@@ -1,0 +1,2122 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "weathermap-demo"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "WAN Demo — Rack Port Status",
+  "description": "A switch faceplate drawn as the background with each port as a status-colored node: green = up, red = down (ports 7 and 19 are unpatched; port 13 flaps every ~5 minutes), gray = admin-disabled (23/24). T1/T2 are the 10G uplinks.",
+  "uid": "wm-rack-ports",
+  "version": 1,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 22,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "WAN Demo — Rack Port Status",
+      "type": "tamirsuliman-weathermap-panel",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_link_bps",
+          "legendFormat": "{{link}} {{direction}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "expr": "wm_device_status",
+          "legendFormat": "STATUS {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "expr": "wm_latency_ms",
+          "legendFormat": "LAT {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "D",
+          "expr": "wm_packet_loss_pct",
+          "legendFormat": "LOSS {{device}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "E",
+          "expr": "wm_link_errors",
+          "legendFormat": "ERR {{link}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "F",
+          "expr": "wm_link_discards",
+          "legendFormat": "DISC {{link}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        },
+        {
+          "refId": "G",
+          "expr": "wm_port_status",
+          "legendFormat": "PORT {{port}}",
+          "exemplar": false,
+          "instant": false,
+          "range": true,
+          "interval": "",
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "weathermap": {
+          "version": 14,
+          "id": "wm-rack-ports",
+          "nodes": [
+            {
+              "id": "node-p1",
+              "position": [
+                212,
+                225
+              ],
+              "label": "1",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/1",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p2",
+              "position": [
+                252,
+                225
+              ],
+              "label": "2",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/2",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p3",
+              "position": [
+                292,
+                225
+              ],
+              "label": "3",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/3",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p4",
+              "position": [
+                332,
+                225
+              ],
+              "label": "4",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/4",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p5",
+              "position": [
+                372,
+                225
+              ],
+              "label": "5",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/5",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p6",
+              "position": [
+                412,
+                225
+              ],
+              "label": "6",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/6",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p7",
+              "position": [
+                452,
+                225
+              ],
+              "label": "7",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/7",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p8",
+              "position": [
+                492,
+                225
+              ],
+              "label": "8",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/8",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p9",
+              "position": [
+                532,
+                225
+              ],
+              "label": "9",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/9",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p10",
+              "position": [
+                572,
+                225
+              ],
+              "label": "10",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/10",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p11",
+              "position": [
+                612,
+                225
+              ],
+              "label": "11",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/11",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p12",
+              "position": [
+                652,
+                225
+              ],
+              "label": "12",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/12",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p13",
+              "position": [
+                212,
+                270
+              ],
+              "label": "13",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/13",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p14",
+              "position": [
+                252,
+                270
+              ],
+              "label": "14",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/14",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p15",
+              "position": [
+                292,
+                270
+              ],
+              "label": "15",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/15",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p16",
+              "position": [
+                332,
+                270
+              ],
+              "label": "16",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/16",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p17",
+              "position": [
+                372,
+                270
+              ],
+              "label": "17",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/17",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p18",
+              "position": [
+                412,
+                270
+              ],
+              "label": "18",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/18",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p19",
+              "position": [
+                452,
+                270
+              ],
+              "label": "19",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/19",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p20",
+              "position": [
+                492,
+                270
+              ],
+              "label": "20",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/20",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p21",
+              "position": [
+                532,
+                270
+              ],
+              "label": "21",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/21",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p22",
+              "position": [
+                572,
+                270
+              ],
+              "label": "22",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/22",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p23",
+              "position": [
+                612,
+                270
+              ],
+              "label": "23",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/23",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-p24",
+              "position": [
+                652,
+                270
+              ],
+              "label": "24",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Gi1/0/24",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-t1",
+              "position": [
+                700,
+                225
+              ],
+              "label": "T1",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Te1/1/1",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            },
+            {
+              "id": "node-t2",
+              "position": [
+                700,
+                270
+              ],
+              "label": "T2",
+              "showLabel": true,
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "horizontal": 8,
+                "vertical": 5
+              },
+              "colors": {
+                "font": "#ffffff",
+                "background": "#22252b",
+                "border": "#5794F2",
+                "statusDown": "#F2495C"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "PORT Te1/1/2",
+              "nodeStatusColorTarget": "background",
+              "statusValueMappings": [
+                {
+                  "value": 0,
+                  "color": "#F2495C"
+                },
+                {
+                  "value": 1,
+                  "color": "#73BF69"
+                },
+                {
+                  "value": 2,
+                  "color": "#55575c"
+                }
+              ]
+            }
+          ],
+          "links": [],
+          "scale": [
+            {
+              "percent": 0,
+              "color": "#73BF69"
+            },
+            {
+              "percent": 40,
+              "color": "#FADE2A"
+            },
+            {
+              "percent": 60,
+              "color": "#FF9830"
+            },
+            {
+              "percent": 80,
+              "color": "#F2495C"
+            },
+            {
+              "percent": 95,
+              "color": "#C4162A"
+            }
+          ],
+          "settings": {
+            "link": {
+              "spacing": {
+                "horizontal": 10,
+                "vertical": 5
+              },
+              "stroke": {
+                "color": "rgba(204, 204, 220, 0.16)"
+              },
+              "label": {
+                "background": "#181b1f",
+                "border": "rgba(204, 204, 220, 0.25)",
+                "font": "rgb(204, 204, 220)"
+              },
+              "showAllWithPercentage": false,
+              "valueMappingMode": "last",
+              "defaultUnits": "bps",
+              "linkDecimals": 1,
+              "dynamicStroke": {
+                "enabled": false,
+                "minWidth": 1,
+                "maxWidth": 10
+              },
+              "flowAnimation": {
+                "enabled": false,
+                "speed": 2
+              },
+              "gradientColor": false
+            },
+            "fontSizing": {
+              "node": 9,
+              "link": 8
+            },
+            "colorScaleMode": "percent",
+            "panel": {
+              "backgroundColor": "#111217",
+              "showTimestamp": true,
+              "panelSize": {
+                "width": 900,
+                "height": 620
+              },
+              "zoomScale": 0,
+              "offset": {
+                "x": 0,
+                "y": 0
+              },
+              "grid": {
+                "enabled": false,
+                "size": 10,
+                "guidesEnabled": false
+              },
+              "backgroundImage": {
+                "url": "http://localhost:8080/rack.svg",
+                "fit": "contain",
+                "attachToCanvas": true
+              }
+            },
+            "tooltip": {
+              "fontSize": 10,
+              "textColor": "white",
+              "backgroundColor": "black",
+              "inboundColor": "#00cf00",
+              "outboundColor": "#fade2a",
+              "scaleToBandwidth": true
+            },
+            "scale": {
+              "position": {
+                "x": 0,
+                "y": 0
+              },
+              "size": {
+                "width": 0,
+                "height": 0
+              },
+              "title": "Load",
+              "fontSizing": {
+                "title": 14,
+                "threshold": 11
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
