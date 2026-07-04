@@ -572,7 +572,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 effectiveScrub
               )
             : aggregateFieldValues(fieldValues, mode);
-        map.set(getDataFrameName(frame, data.series), resolvedValue);
+        const name = getDataFrameName(frame, data.series);
+        // Duplicate display names (#204): keep the FIRST frame's value. The
+        // query dropdown de-duplicates by first occurrence (buildQueryOptions)
+        // and node status resolution takes the first match, so a last-wins
+        // overwrite here silently resolved a different series than the one
+        // the user picked. TODO: true disambiguation needs a stable
+        // frame/field id in the stored link config, not just a display name.
+        if (!map.has(name)) {
+          map.set(name, resolvedValue);
+        }
       } catch (e) {
         console.warn('Network Weathermap: Error while attempting to access query data.', e);
       }
