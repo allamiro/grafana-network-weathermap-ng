@@ -120,3 +120,20 @@ test('threshold commit delivers new object references (#225)', () => {
   expect(updated.scale[0].percent).toBe(35);
   expect(initial).toEqual(before);
 });
+
+// #226: a blanked threshold draft must render as an empty field, not a NaN
+// value attribute (React logs "Received NaN for the value attribute").
+test('clearing a threshold renders an empty field without React NaN warnings (#226)', () => {
+  const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const initial = getData(theme);
+  initial.scale = [{ percent: 10, color: '#111111' }];
+  render(<Harness initial={initial} onChangeSpy={jest.fn()} />);
+
+  const threshold = screen.getByLabelText('Weathermap Threshold 10') as HTMLInputElement;
+  fireEvent.change(threshold, { target: { value: '' } });
+
+  expect(threshold.value).toBe('');
+  const nanWarnings = errorSpy.mock.calls.filter((c) => String(c[0]).includes('Received NaN'));
+  errorSpy.mockRestore();
+  expect(nanWarnings).toEqual([]);
+});
