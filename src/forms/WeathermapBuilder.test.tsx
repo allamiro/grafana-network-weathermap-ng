@@ -70,6 +70,7 @@ test('renders the editor for a current-version map with missing settings (#224)'
   expect(screen.getByText('Scale Title')).toBeInTheDocument();
   expect(onChange).toHaveBeenCalledTimes(1);
   expect(onChange.mock.calls[0][0].settings.tooltip).toBeDefined();
+  expect(onChange.mock.calls[0][0].settings.scale).toBeDefined();
 });
 
 // #199: migration/defaulting must not mutate props.value and must not fire

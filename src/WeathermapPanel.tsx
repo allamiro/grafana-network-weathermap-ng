@@ -43,7 +43,6 @@ import {
   nearestMultiple,
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
-  CURRENT_VERSION,
   needsMigration,
   handleVersionedStateUpdates,
   resolveLinkChain,

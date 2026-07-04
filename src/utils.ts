@@ -305,26 +305,31 @@ export function needsMigration(wm: Weathermap | undefined | null): boolean {
   if (!wm.version || wm.version !== CURRENT_VERSION) {
     return true;
   }
-  const st = wm.settings as unknown as Record<string, unknown> | undefined;
-  const panel = st?.panel as Record<string, unknown> | undefined;
-  const scale = st?.scale as Record<string, unknown> | undefined;
-  const link = st?.link as Record<string, unknown> | undefined;
+  const num = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
+  const get = (o: unknown, ...keys: string[]): unknown =>
+    keys.reduce((acc: unknown, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined), o);
+  const st = wm.settings as unknown;
+  // Validate the numeric leaves render code dereferences — presence of an
+  // empty object (e.g. panelSize: {}) must also trigger repair.
   return !(
     st &&
-    link &&
-    (link.spacing as unknown) &&
-    (link.stroke as unknown) &&
-    (link.label as unknown) &&
-    (st.fontSizing as unknown) &&
-    panel &&
-    (panel.panelSize as unknown) &&
-    (panel.offset as unknown) &&
-    (panel.grid as unknown) &&
-    (st.tooltip as unknown) &&
-    scale &&
-    (scale.position as unknown) &&
-    (scale.size as unknown) &&
-    (scale.fontSizing as unknown)
+    num(get(st, 'link', 'spacing', 'horizontal')) &&
+    num(get(st, 'link', 'spacing', 'vertical')) &&
+    get(st, 'link', 'stroke') &&
+    get(st, 'link', 'label') &&
+    num(get(st, 'fontSizing', 'node')) &&
+    num(get(st, 'fontSizing', 'link')) &&
+    num(get(st, 'panel', 'panelSize', 'width')) &&
+    num(get(st, 'panel', 'panelSize', 'height')) &&
+    num(get(st, 'panel', 'offset', 'x')) &&
+    num(get(st, 'panel', 'offset', 'y')) &&
+    get(st, 'panel', 'grid') &&
+    get(st, 'tooltip') &&
+    num(get(st, 'scale', 'position', 'x')) &&
+    num(get(st, 'scale', 'position', 'y')) &&
+    num(get(st, 'scale', 'size', 'width')) &&
+    num(get(st, 'scale', 'size', 'height')) &&
+    get(st, 'scale', 'fontSizing')
   );
 }
 

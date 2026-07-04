@@ -117,6 +117,12 @@ describe('needsMigration (#224)', () => {
     expect(needsMigration(wm as never)).toBe(true);
   });
 
+  test('true for malformed nested objects with missing leaves (panelSize: {})', () => {
+    const wm = migrated() as unknown as { settings: { panel: Record<string, unknown> } };
+    wm.settings.panel.panelSize = {};
+    expect(needsMigration(wm as never)).toBe(true);
+  });
+
   test('nullish input does not throw', () => {
     expect(needsMigration(undefined)).toBe(false);
     expect(needsMigration(null)).toBe(false);
