@@ -74,3 +74,21 @@ The exporter (`testing/exporter/main.go`) produces:
 
 The exporter also serves the demo background images over HTTP (port 8080,
 published by the compose file): `/floorplan.svg`, `/worldmap.svg`, `/rack.svg`, `/rack2.svg`.
+
+## E2E tests
+
+Playwright E2E tests (`tests/panel.spec.ts`, via `@grafana/plugin-e2e`) run in CI
+weekly and on demand (Actions → E2E → Run workflow). Locally:
+
+```bash
+npm run build
+docker run -d --name grafana-e2e -p 3000:3000 \
+  -v "$PWD/dist:/var/lib/grafana/plugins/tamirsuliman-weathermap-panel" \
+  -e GF_DEFAULT_APP_MODE=development \
+  -e GF_AUTH_ANONYMOUS_ENABLED=true \
+  -e GF_AUTH_ANONYMOUS_ORG_ROLE=Admin \
+  grafana/grafana:latest
+npx playwright install chromium   # first time only
+npm run e2e
+docker rm -f grafana-e2e
+```
