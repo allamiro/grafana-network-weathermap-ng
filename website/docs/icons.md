@@ -1,6 +1,6 @@
 # Icon Reference
 
-The plugin bundles **1046 icons** across 11 sets, selectable per node in the editor
+The plugin bundles **1064 icons** across 12 sets, selectable per node in the editor
 (**Nodes → Icon**). Every icon has an id of the form `set/name` — that id is what the
 panel stores, and the icon is served from the plugin itself
 (`public/plugins/tamirsuliman-weathermap-panel/icons/<set>/<name>.svg`), so maps need no
@@ -125,6 +125,42 @@ dark style. Combine them with per-port status nodes to build boards like the
 <tr><td style="background:#14161c;text-align:center;padding:10px;"><img src="../img/icons/rack/ups.svg" alt="ups" style="max-width:170px;height:auto;"></td><td><code>rack/ups</code></td><td>Rack UPS (battery symbol, vents, fan)</td></tr>
 </tbody>
 </table>
+
+---
+
+## Cloud (18)
+
+Cloud provider logos and provider-badged devices for hybrid/cloud topologies.
+Plain names (`cloud/aws`) are brand logos (from the CC0-licensed
+[Simple Icons](https://github.com/simple-icons/simple-icons) project, filled
+with the brand color); `cloud/<provider>-<device>` names (`cloud/aws-router`)
+combine a device shape from the Networking set with the provider logo as a
+corner badge. The official AWS/Azure/GCP architecture icon packs are not
+bundled for licensing reasons — `scripts/fetch-cloud-icons.sh` downloads them
+onto your own Grafana instance, where any SVG can be used via a node's Custom
+icon URL. Product names and logos are trademarks of their respective owners,
+used for identification only.
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;" markdown="0">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/aws.svg" alt="aws" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">aws</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/aws-cloud.svg" alt="aws-cloud" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">aws-cloud</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/aws-firewall.svg" alt="aws-firewall" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">aws-firewall</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/aws-router.svg" alt="aws-router" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">aws-router</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/aws-server.svg" alt="aws-server" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">aws-server</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/aws-switch.svg" alt="aws-switch" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">aws-switch</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/azure.svg" alt="azure" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">azure</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/azure-cloud.svg" alt="azure-cloud" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">azure-cloud</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/azure-firewall.svg" alt="azure-firewall" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">azure-firewall</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/azure-router.svg" alt="azure-router" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">azure-router</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/azure-server.svg" alt="azure-server" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">azure-server</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/azure-switch.svg" alt="azure-switch" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">azure-switch</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/gcp.svg" alt="gcp" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">gcp</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/gcp-cloud.svg" alt="gcp-cloud" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">gcp-cloud</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/gcp-firewall.svg" alt="gcp-firewall" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">gcp-firewall</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/gcp-router.svg" alt="gcp-router" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">gcp-router</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/gcp-server.svg" alt="gcp-server" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">gcp-server</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/cloud/gcp-switch.svg" alt="gcp-switch" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">gcp-switch</code></div>
+</div>
 
 ---
 

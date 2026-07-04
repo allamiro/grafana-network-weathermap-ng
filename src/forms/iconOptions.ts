@@ -1089,3 +1089,28 @@ export const VendorIcons = [
   'ubiquiti-switch',
   'ubiquiti-wireless',
 ];
+
+// Cloud provider set (#215): CC0 brand logos from Simple Icons plus
+// composite device icons (our own Networking shapes with a provider corner
+// badge). Official AWS/Azure/GCP architecture icon packs are not bundled for
+// licensing reasons — see scripts/fetch-cloud-icons.sh.
+export const CloudIcons = [
+  'aws',
+  'aws-cloud',
+  'aws-firewall',
+  'aws-router',
+  'aws-server',
+  'aws-switch',
+  'azure',
+  'azure-cloud',
+  'azure-firewall',
+  'azure-router',
+  'azure-server',
+  'azure-switch',
+  'gcp',
+  'gcp-cloud',
+  'gcp-firewall',
+  'gcp-router',
+  'gcp-server',
+  'gcp-switch',
+];
