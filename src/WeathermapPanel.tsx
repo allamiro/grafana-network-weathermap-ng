@@ -833,7 +833,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
     e.preventDefault();
     e.stopPropagation();
-    const updated = addViaToLink(wm, linkId, theme);
+    // addViaToLink mutates its argument by design — hand it a clone so the
+    // rendered wm (and the saved options) stay untouched (#238).
+    const updated = addViaToLink(structuredClone(wm), linkId, theme);
     onOptionsChange({ ...options, weathermap: updated });
   };
 
@@ -843,7 +845,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
     e.preventDefault();
     e.stopPropagation();
-    const updated = removeVia(wm, node.id);
+    // removeVia mutates its argument by design — clone first (#238).
+    const updated = removeVia(structuredClone(wm), node.id);
     onOptionsChange({ ...options, weathermap: updated });
   };
 

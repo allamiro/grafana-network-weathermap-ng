@@ -827,3 +827,31 @@ test('pan persistence delivers a new object without mutating options (#225)', ()
   // The frozen original is untouched.
   expect(weathermap.settings.panel.offset).toEqual({ x: 0, y: 0 });
 });
+
+// #238: VIA insert/remove must not mutate the rendered options — the helpers
+// mutate their argument by design, so the panel must hand them a clone.
+// Deep-freezing makes any residual in-place write throw.
+test('VIA insert and remove leave the rendered options untouched (#238)', () => {
+  const deepFreeze = (o: unknown): unknown => {
+    if (o && typeof o === 'object' && !Object.isFrozen(o)) {
+      Object.values(o as Record<string, unknown>).forEach(deepFreeze);
+      Object.freeze(o);
+    }
+    return o;
+  };
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  deepFreeze(weathermap);
+  const spy = jest.fn();
+  render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: spy }} />);
+
+  // Insert a VIA by double-clicking the link.
+  fireEvent.doubleClick(screen.getByTestId('link'));
+
+  expect(spy).toHaveBeenCalled();
+  const inserted = spy.mock.calls[spy.mock.calls.length - 1][0].weathermap;
+  expect(inserted).not.toBe(weathermap);
+  expect(inserted.nodes.filter((n: { isConnection?: boolean }) => n.isConnection)).toHaveLength(1);
+  // The frozen original never gained the connection node.
+  expect(weathermap.nodes.some((n) => n.isConnection)).toBe(false);
+});
