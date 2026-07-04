@@ -25,3 +25,33 @@ services:
       # Published so the browser can load the background images served by the
       # exporter (floor-plan and world-map demo dashboards).
       - 8080:8080
+  # Multi-datasource demos (#253): the same simulated metrics flow into
+  # InfluxDB and Elasticsearch via the bridge, so the per-datasource
+  # dashboards render the identical map from identical numbers.
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - 8086:8086
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=wm
+      - DOCKER_INFLUXDB_INIT_PASSWORD=wm-password
+      - DOCKER_INFLUXDB_INIT_ORG=wm
+      - DOCKER_INFLUXDB_INIT_BUCKET=wm
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=wm-token
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+  bridge:
+    build:
+      context: bridge
+      dockerfile: Dockerfile
+    depends_on:
+      - exporter
+      - influxdb
+      - elasticsearch

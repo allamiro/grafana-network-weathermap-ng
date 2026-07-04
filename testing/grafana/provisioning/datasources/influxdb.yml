@@ -1,0 +1,13 @@
+apiVersion: 1
+datasources:
+  - name: InfluxDB
+    uid: influxdb-wm
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: wm
+      defaultBucket: wm
+    secureJsonData:
+      token: wm-token
