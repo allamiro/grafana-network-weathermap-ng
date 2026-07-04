@@ -1,10 +1,11 @@
-import { toDataFrame } from '@grafana/data';
+import { FieldType, toDataFrame } from '@grafana/data';
 import { defaultNodes, getData, legacyWeathermap, theme } from 'testData';
 import { DrawnNode, Weathermap } from 'types';
 import {
   addViaToLink,
   buildQueryOptions,
   getDataFrameName,
+  getValueField,
   resolveLinkChain,
   spreadLabels,
   aggregateFieldValues,
@@ -384,6 +385,68 @@ describe('sampleAtTime (raw step-hold, no clamping)', () => {
 
 // #204: duplicate display names must behave deterministically — the dropdown
 // keeps the first occurrence, and the panel's value map does the same.
+// #253: the panel is datasource-agnostic because getValueField resolves the
+// value field by numeric TYPE and getDataFrameName falls back through
+// Grafana's display-name chain. Lock resolution for the frame shapes the
+// major datasources actually emit — no containers needed.
+describe('datasource frame shapes resolve (#253)', () => {
+  test('InfluxDB Flux shape: typed _time/_value fields, name from tag set', () => {
+    // Real Flux frames mark _time as FieldType.time and carry the tag set in
+    // the frame name; the value field is literally named _value.
+    const frame = toDataFrame({
+      name: 'wm_link_bps {device="core-a", direction="tx"}',
+      fields: [
+        { name: '_time', type: FieldType.time, values: [1000, 2000] },
+        { name: '_value', type: FieldType.number, values: [42.5, 43.5], labels: { device: 'core-a', direction: 'tx' } },
+      ],
+    });
+    expect(getValueField(frame).name).toBe('_value');
+    expect(getDataFrameName(frame, [frame])).toContain('core-a');
+  });
+
+  test('InfluxQL shape: Time/mean fields with an alias', () => {
+    // Alias-by lands as the display name on the value field.
+    const frame = toDataFrame({
+      name: 'wm_link_bps.mean',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [1000, 2000] },
+        { name: 'mean', type: FieldType.number, values: [10, 20], config: { displayNameFromDS: 'core-a→core-b tx' } },
+      ],
+    });
+    expect(getValueField(frame).name).toBe('mean');
+    expect(getDataFrameName(frame, [frame])).toBe('core-a→core-b tx');
+  });
+
+  test('Elasticsearch shape: @timestamp + aggregation field with an alias', () => {
+    // The query Alias lands as the display name on the value field.
+    const frame = toDataFrame({
+      fields: [
+        { name: '@timestamp', type: FieldType.time, values: [1000, 2000] },
+        {
+          name: 'Average bps',
+          type: FieldType.number,
+          values: [7, 9],
+          config: { displayNameFromDS: 'core-a→core-b tx' },
+        },
+      ],
+    });
+    expect(getValueField(frame).name).toBe('Average bps');
+    expect(getDataFrameName(frame, [frame])).toBe('core-a→core-b tx');
+  });
+
+  test('Zabbix-like shape: item-named numeric field, no per-field display name', () => {
+    const frame = toDataFrame({
+      name: 'core-a: Interface ge-0/0/1(): Bits sent',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Interface ge-0/0/1(): Bits sent', values: [100, 200] },
+      ],
+    });
+    expect(getValueField(frame).values[1]).toBe(200);
+    expect(getDataFrameName(frame, [frame])).toContain('Bits sent');
+  });
+});
+
 describe('duplicate display names are deterministic (#204)', () => {
   const dupFrame = (refId: string, displayName: string, value: number) =>
     toDataFrame({
