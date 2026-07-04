@@ -44,8 +44,10 @@ export const ExportForm = ({ value, onChange }: Props) => {
       const href =
         icons[i].href?.baseVal || icons[i].getAttribute('href') || icons[i].getAttribute('xlink:href') || '';
       // data: is already self-contained; blob: is session-scoped and cannot
-      // be resolved outside this page — leave both untouched.
-      if (!href || href.startsWith('data:') || href.startsWith('blob:')) {
+      // be resolved outside this page — leave both untouched. URL schemes
+      // are case-insensitive, so normalize before checking.
+      const scheme = href.trim().toLowerCase();
+      if (!href || scheme.startsWith('data:') || scheme.startsWith('blob:')) {
         continue;
       }
       try {

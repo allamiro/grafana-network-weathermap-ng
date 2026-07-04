@@ -84,10 +84,11 @@ describe('SVG export URL handling (#203)', () => {
     expect(fetchMock).toHaveBeenCalledWith('https://icons.example.com/broken.svg');
   });
 
-  test('data: hrefs are not fetched or rewritten', async () => {
+  test('data: hrefs are not fetched or rewritten (any scheme casing)', async () => {
     const value = getData(theme);
-    const dataHref = 'data:image/svg+xml;base64,AAAA';
-    setupSvg(value, [dataHref]);
+    // Mixed case on one of them: URL schemes are case-insensitive, so DATA:
+    // must be recognized the same as data:.
+    setupSvg(value, ['data:image/svg+xml;base64,AAAA', 'DATA:image/svg+xml;base64,BBBB']);
 
     const fetchMock = jest.fn();
     (global as unknown as { fetch: unknown }).fetch = fetchMock;
