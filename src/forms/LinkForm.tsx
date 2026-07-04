@@ -238,6 +238,10 @@ export const LinkForm = (props: Props) => {
                     <FormDivider title={sName + ' Side Options'} />
                     <InlineField grow label={`${sName} Side`} labelWidth={'auto'}>
                       <Select
+                        // Explicit inputId (#167 pattern): stable form ids in
+                        // Grafana 13's options pane, and a stable selector for
+                        // the E2E baseline tests (#38).
+                        inputId={`nwm-link-side-${sName}`}
                         onChange={(v) => {
                           handleNodeChange(v as unknown as Node, sName, i);
                         }}

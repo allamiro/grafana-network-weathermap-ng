@@ -2,8 +2,8 @@ name: E2E
 
 # Playwright end-to-end tests against a real Grafana. Too heavy/flaky to gate
 # every PR, so this runs weekly and on demand (Actions tab -> E2E -> Run
-# workflow). Locally: `npm run build`, start Grafana on :3000 with dist/
-# mounted as the plugin (see the docker run below), then `npm run e2e`.
+# workflow). Locally: `npm run build`, `docker compose up -d` in testing/
+# (Grafana on :3101, anonymous admin), then `npm run e2e:local`.
 on:
   workflow_dispatch:
   schedule:
@@ -57,6 +57,10 @@ jobs:
           exit 1
 
       - name: Run E2E tests
+        env:
+          # The workflow starts its own throwaway Grafana on :3000; the config
+          # defaults to the local testing/ stack on :3101.
+          GRAFANA_URL: http://localhost:3000
         run: npm run e2e
 
       - name: Upload Playwright report
