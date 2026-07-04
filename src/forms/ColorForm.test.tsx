@@ -7,10 +7,21 @@ import { getData, theme } from '../testData';
 
 // Stateful harness: the editor only re-renders when onChange delivers a new
 // options object, which is exactly the behavior under test (#162).
+
+// Deep-freeze the value handed to the form: any residual in-place mutation of
+// props.value throws immediately (#233). Handlers must clone before writing.
+const deepFreeze = <T,>(o: T): T => {
+  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
+    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
+    Object.freeze(o);
+  }
+  return o;
+};
+
 const Harness = ({ initial, onChangeSpy }: { initial: Weathermap; onChangeSpy: jest.Mock }) => {
   const [wm, setWm] = useState(initial);
   const props = {
-    value: wm,
+    value: deepFreeze(wm),
     onChange: (v: Weathermap) => {
       onChangeSpy(v);
       setWm(v);

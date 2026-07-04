@@ -66,25 +66,25 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const handleDashboardLinkChange = (e: React.FormEvent<HTMLInputElement>, i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes[i].dashboardLink = sanitizeUrl(e.currentTarget.value);
     onChange(weathermap);
   };
 
   const handleNodePaddingChange = (num: number, i: number, type: 'vertical' | 'horizontal') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes[i].padding[type] = num;
     onChange(weathermap);
   };
 
   const handleSpacingChange = (e: any, i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes[i].useConstantSpacing = e.currentTarget.checked;
     onChange(weathermap);
   };
 
   const handleCompactChange = (e: any, i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes[i].compactVerticalLinks = e.currentTarget.checked;
     onChange(weathermap);
   };
@@ -118,7 +118,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const handleIconChange = (icon: string | undefined, i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
 
     if (icon === undefined) {
       weathermap.nodes[i].nodeIcon = {
@@ -148,7 +148,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const handleIconSizeChange = (amt: number, i: number, type: 'width' | 'height') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     const icon = weathermap.nodes[i].nodeIcon!;
     amt = finiteOrFallback(amt, type === 'width' ? icon.size.width : icon.size.height);
     if (lockAspectRatio && icon.size.width > 0 && icon.size.height > 0) {
@@ -167,19 +167,19 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const handleIconPaddingChange = (amt: number, i: number, type: 'vertical' | 'horizontal') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes[i].nodeIcon!.padding[type] = amt;
     onChange(weathermap);
   };
 
   const handleIconDrawChange = (checked: boolean, i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes[i].nodeIcon!.drawInside = checked;
     onChange(weathermap);
   };
 
   const addNewNode = () => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     const node: Node = {
       id: uuidv4(),
       position: [
@@ -230,7 +230,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const duplicateNode = (i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     const source = weathermap.nodes[i];
     const copy: Node = {
       ...JSON.parse(JSON.stringify(source)),
@@ -250,7 +250,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const removeNode = (i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.links = weathermap.links.filter((link) => {
       for (const node of link.nodes) {
         if (node.id === weathermap.nodes[i].id) {
@@ -264,7 +264,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const clearNodes = () => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.nodes = [];
     weathermap.links = [];
     onChange(weathermap);
@@ -400,7 +400,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                   <InlineSwitch
                     value={node.openInSameTab === true}
                     onChange={(e) => {
-                      let options = value;
+                      let options = structuredClone(value);
                       options.nodes[i].openInSameTab = e.currentTarget.checked;
                       onChange(options);
                     }}
@@ -410,7 +410,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                   <InlineSwitch
                     value={node.showLabel !== false}
                     onChange={(e) => {
-                      let options = value;
+                      let options = structuredClone(value);
                       options.nodes[i].showLabel = e.currentTarget.checked;
                       onChange(options);
                     }}
@@ -460,7 +460,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                           type={'text'}
                           name={'iconImageURL'}
                           onChange={(e) => {
-                            let options = value;
+                            let options = structuredClone(value);
                             if (options.nodes[i].nodeIcon) {
                               options.nodes[i].nodeIcon!.src = sanitizeUrl(e.currentTarget.value);
                             }
@@ -528,7 +528,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     <InlineSwitch
                       value={node.useIconBoundaryForLinks ?? false}
                       onChange={(e) => {
-                        let weathermap: Weathermap = value;
+                        let weathermap: Weathermap = structuredClone(value);
                         weathermap.nodes[i].useIconBoundaryForLinks = e.currentTarget.checked;
                         onChange(weathermap);
                       }}
@@ -582,7 +582,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     <ColorPicker
                       color={node.colors.statusDown}
                       onChange={(color) => {
-                        let weathermap: Weathermap = value;
+                        let weathermap: Weathermap = structuredClone(value);
                         weathermap.nodes[i].colors.statusDown = color;
                         onChange(weathermap);
                       }}
@@ -622,7 +622,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                           type="number"
                           value={mapping.value}
                           onChange={(e) => {
-                            let weathermap: Weathermap = value;
+                            let weathermap: Weathermap = structuredClone(value);
                             weathermap.nodes[i].statusValueMappings![mi].value = finiteOrFallback(
                               e.currentTarget.valueAsNumber,
                               weathermap.nodes[i].statusValueMappings![mi].value
@@ -637,7 +637,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                         <ColorPicker
                           color={mapping.color}
                           onChange={(color) => {
-                            let weathermap: Weathermap = value;
+                            let weathermap: Weathermap = structuredClone(value);
                             weathermap.nodes[i].statusValueMappings![mi].color = color;
                             onChange(weathermap);
                           }}
@@ -648,7 +648,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                         icon="trash-alt"
                         size="sm"
                         onClick={() => {
-                          let weathermap: Weathermap = value;
+                          let weathermap: Weathermap = structuredClone(value);
                           weathermap.nodes[i].statusValueMappings!.splice(mi, 1);
                           onChange(weathermap);
                         }}
@@ -660,7 +660,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     icon="plus"
                     size="sm"
                     onClick={() => {
-                      let weathermap: Weathermap = value;
+                      let weathermap: Weathermap = structuredClone(value);
                       const newMapping: NodeStatusValueMapping = { value: 0, color: '#ff0000' };
                       weathermap.nodes[i].statusValueMappings = [
                         ...(weathermap.nodes[i].statusValueMappings || []),
@@ -686,7 +686,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                           <Input
                             value={metric.label}
                             onChange={(e) => {
-                              let weathermap: Weathermap = value;
+                              let weathermap: Weathermap = structuredClone(value);
                               weathermap.nodes[i].tooltipMetrics![mi].label = e.currentTarget.value;
                               onChange(weathermap);
                             }}
@@ -698,7 +698,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       <InlineField grow label={`Metric ${mi + 1} Query`} style={{ width: '100%' }}>
                         <Select
                           onChange={(v) => {
-                            let weathermap: Weathermap = value;
+                            let weathermap: Weathermap = structuredClone(value);
                             weathermap.nodes[i].tooltipMetrics![mi].query = v ? v.value : undefined;
                             onChange(weathermap);
                           }}
@@ -712,7 +712,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       <InlineField grow label={`Metric ${mi + 1} Units`} style={{ width: '100%' }}>
                         <UnitPicker
                           onChange={(val) => {
-                            let weathermap: Weathermap = value;
+                            let weathermap: Weathermap = structuredClone(value);
                             weathermap.nodes[i].tooltipMetrics![mi].units = val;
                             onChange(weathermap);
                           }}
@@ -725,7 +725,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                           icon="trash-alt"
                           size="sm"
                           onClick={() => {
-                            let weathermap: Weathermap = value;
+                            let weathermap: Weathermap = structuredClone(value);
                             weathermap.nodes[i].tooltipMetrics!.splice(mi, 1);
                             onChange(weathermap);
                           }}
@@ -741,7 +741,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     icon="plus"
                     size="sm"
                     onClick={() => {
-                      let weathermap: Weathermap = value;
+                      let weathermap: Weathermap = structuredClone(value);
                       weathermap.nodes[i].tooltipMetrics = [
                         ...(weathermap.nodes[i].tooltipMetrics || []),
                         { label: '', query: undefined },
@@ -770,7 +770,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                         type={'number'}
                         min={0}
                         onChange={(e) => {
-                          let weathermap: Weathermap = value;
+                          let weathermap: Weathermap = structuredClone(value);
                           const v = e.currentTarget.valueAsNumber;
                           weathermap.nodes[i].fontSize = v > 0 ? v : undefined;
                           onChange(weathermap);
@@ -781,7 +781,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       <InlineSwitch
                         value={node.fontBold ?? false}
                         onChange={(e) => {
-                          let weathermap: Weathermap = value;
+                          let weathermap: Weathermap = structuredClone(value);
                           weathermap.nodes[i].fontBold = e.currentTarget.checked;
                           onChange(weathermap);
                         }}

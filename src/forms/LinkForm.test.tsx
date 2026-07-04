@@ -26,10 +26,21 @@ const MULTI_SERIES = [
   promFrame('A', 'wm_link_bps{device="rtr-2", direction="tx", interface="ge-0/0/1", job="wm", site="atl"}'),
 ];
 
+
+// Deep-freeze the value handed to the form: any residual in-place mutation of
+// props.value throws immediately (#233). Handlers must clone before writing.
+const deepFreeze = <T,>(o: T): T => {
+  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
+    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
+    Object.freeze(o);
+  }
+  return o;
+};
+
 const Harness = ({ initial, onChangeSpy, frames }: { initial: Weathermap; onChangeSpy: jest.Mock; frames: unknown[] }) => {
   const [wm, setWm] = useState(initial);
   const props = {
-    value: wm,
+    value: deepFreeze(wm),
     onChange: (v: Weathermap) => {
       onChangeSpy(v);
       setWm(v);

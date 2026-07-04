@@ -21,15 +21,19 @@ export const defaultNodes = [
 ];
 
 export const getData = (theme: any): Weathermap => {
+  // Build from clones: defaultNodes is a shared module-level fixture, and
+  // mutating it here leaked state between tests (and broke once a test froze
+  // a previously returned map).
+  const nodes: Node[] = defaultNodes.map((d, i) => {
+    const v: Node = structuredClone(d);
+    v.anchors[i === 0 ? Anchor.Right : Anchor.Left].numLinks = 1;
+    return v;
+  });
   return {
     version: 1,
     id: 'testing',
-    nodes: defaultNodes.map((d, i) => {
-      let v: Node = d;
-      v.anchors[i === 0 ? Anchor.Right : Anchor.Left].numLinks = 1;
-      return v;
-    }),
-    links: [generateBasicLink([defaultNodes[0], defaultNodes[1]])].map((l, i) => {
+    nodes,
+    links: [generateBasicLink([nodes[0], nodes[1]])].map((l, i) => {
       l.id = `nw-link-${i}`;
       l.sides.A.dashboardLink = 'https://example.com/';
       l.sides.Z.dashboardLink = 'https://example.com/';

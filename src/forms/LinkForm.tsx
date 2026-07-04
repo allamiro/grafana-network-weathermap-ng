@@ -41,7 +41,7 @@ export const LinkForm = (props: Props) => {
   };
 
   const handleBandwidthChange = (amt: number, i: number, side: 'A' | 'Z') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     // Blank input reports NaN; keep the previous bandwidth instead of saving it.
     weathermap.links[i].sides[side].bandwidth = finiteOrFallback(amt, weathermap.links[i].sides[side].bandwidth ?? 0);
     weathermap.links[i].sides[side].bandwidthQuery = undefined;
@@ -49,14 +49,14 @@ export const LinkForm = (props: Props) => {
   };
 
   const handleBandwidthQueryChange = (frame: string | undefined, i: number, side: 'A' | 'Z') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.links[i].sides[side].bandwidth = 0;
     weathermap.links[i].sides[side].bandwidthQuery = frame;
     onChange(weathermap);
   };
 
   const handleAnchorChange = (anchor: number, i: number, side: 'A' | 'Z') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     const nodeIndex = findNodeIndex(weathermap.links[i].nodes[side === 'A' ? 0 : 1]);
 
     // remove from old
@@ -68,7 +68,7 @@ export const LinkForm = (props: Props) => {
   };
 
   const handleNodeChange = (node: Node, side: 'A' | 'Z', i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     const nodeIndex = findNodeIndex(node);
 
     weathermap.nodes[nodeIndex].anchors[weathermap.links[i].sides[side].anchor].numLinks++;
@@ -85,19 +85,19 @@ export const LinkForm = (props: Props) => {
   };
 
   const handleDataChange = (side: 'A' | 'Z', i: number, frameName: string | undefined) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.links[i].sides[side].query = frameName;
     onChange(weathermap);
   };
 
   const handleLabelOffsetChange = (val: number, i: number, side: 'A' | 'Z') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.links[i].sides[side].labelOffset = val;
     onChange(weathermap);
   };
 
   const handleDashboardLinkChange = (val: string, i: number, side: 'A' | 'Z') => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.links[i].sides[side].dashboardLink = sanitizeUrl(val);
     onChange(weathermap);
   };
@@ -106,7 +106,7 @@ export const LinkForm = (props: Props) => {
     if (value.nodes.length === 0) {
       throw new Error('There must be >= 1 Nodes to create a link.');
     }
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     const link: Link = {
       id: uuidv4(),
       nodes: [value.nodes[0], value.nodes[0]],
@@ -144,7 +144,7 @@ export const LinkForm = (props: Props) => {
   };
 
   const removeLink = (i: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     let toRemove = weathermap.links[i];
     for (let n = 0; n < weathermap.nodes.length; n++) {
       const node = weathermap.nodes[n];
@@ -166,7 +166,7 @@ export const LinkForm = (props: Props) => {
   };
 
   const clearLinks = () => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.links = [];
     for (let i = 0; i < weathermap.nodes.length; i++) {
       weathermap.nodes[i].anchors = {
@@ -346,7 +346,7 @@ export const LinkForm = (props: Props) => {
                           <Input
                             value={side.portLabel ?? ''}
                             onChange={(e) => {
-                              let weathermap: Weathermap = value;
+                              let weathermap: Weathermap = structuredClone(value);
                               weathermap.links[i].sides[sName].portLabel =
                                 e.currentTarget.value || undefined;
                               onChange(weathermap);
@@ -361,7 +361,7 @@ export const LinkForm = (props: Props) => {
                           <Input
                             value={side.directionLabel ?? ''}
                             onChange={(e) => {
-                              let weathermap: Weathermap = value;
+                              let weathermap: Weathermap = structuredClone(value);
                               weathermap.links[i].sides[sName].directionLabel =
                                 e.currentTarget.value || undefined;
                               onChange(weathermap);
@@ -382,7 +382,7 @@ export const LinkForm = (props: Props) => {
                 <InlineField grow label={`Link Units`} style={{ width: '100%' }}>
                   <UnitPicker
                     onChange={(val) => {
-                      let wm = value;
+                      let wm = structuredClone(value);
                       wm.links[i].units = val;
                       onChange(wm);
                     }}
@@ -394,7 +394,7 @@ export const LinkForm = (props: Props) => {
                 <InlineSwitch
                   value={link.showThroughputPercentage}
                   onChange={(e) => {
-                    let wm = value;
+                    let wm = structuredClone(value);
                     wm.links[i].showThroughputPercentage = e.currentTarget.checked;
                     onChange(wm);
                   }}
@@ -409,7 +409,7 @@ export const LinkForm = (props: Props) => {
                 <Input
                   value={link.linkOffset ?? ''}
                   onChange={(e) => {
-                    let wm = value;
+                    let wm = structuredClone(value);
                     const raw = e.currentTarget.value;
                     wm.links[i].linkOffset = parseOptionalFiniteNumber(raw);
                     onChange(wm);
@@ -431,7 +431,7 @@ export const LinkForm = (props: Props) => {
                 <InlineSwitch
                   value={link.singleDirection ?? false}
                   onChange={(e) => {
-                    let options = value;
+                    let options = structuredClone(value);
                     options.links[i].singleDirection = e.currentTarget.checked;
                     onChange(options);
                   }}
@@ -449,7 +449,7 @@ export const LinkForm = (props: Props) => {
                   step={1}
                   value={link.arrowMeetPercent ?? 50}
                   onChange={(num) => {
-                    let options = value;
+                    let options = structuredClone(value);
                     options.links[i].arrowMeetPercent = num;
                     onChange(options);
                   }}
@@ -463,7 +463,7 @@ export const LinkForm = (props: Props) => {
                     value={link.stroke}
                     step={1}
                     onChange={(num) => {
-                      let options = value;
+                      let options = structuredClone(value);
                       options.links[i].stroke = num;
                       onChange(options);
                     }}
@@ -480,7 +480,7 @@ export const LinkForm = (props: Props) => {
                         value={link.arrows.width}
                         step={1}
                         onChange={(num) => {
-                          let options = value;
+                          let options = structuredClone(value);
                           options.links[i].arrows.width = num;
                           onChange(options);
                         }}
@@ -493,7 +493,7 @@ export const LinkForm = (props: Props) => {
                         value={link.arrows.height}
                         step={1}
                         onChange={(num) => {
-                          let options = value;
+                          let options = structuredClone(value);
                           options.links[i].arrows.height = num;
                           onChange(options);
                         }}
@@ -506,7 +506,7 @@ export const LinkForm = (props: Props) => {
                         value={link.arrows.offset}
                         step={1}
                         onChange={(num) => {
-                          let options = value;
+                          let options = structuredClone(value);
                           options.links[i].arrows.offset = num;
                           onChange(options);
                         }}
@@ -518,7 +518,7 @@ export const LinkForm = (props: Props) => {
                   variant="primary"
                   size="md"
                   onClick={() => {
-                    let weathermap: Weathermap = value;
+                    let weathermap: Weathermap = structuredClone(value);
                     for (let link of weathermap.links) {
                       link.arrows = { ...currentLink.arrows };
                       link.stroke = currentLink.stroke;
@@ -534,7 +534,7 @@ export const LinkForm = (props: Props) => {
               <InlineField grow label="Status Query" style={{ width: '100%' }}>
                 <Select
                   onChange={(v) => {
-                    let weathermap: Weathermap = value;
+                    let weathermap: Weathermap = structuredClone(value);
                     weathermap.links[i].statusQuery = v ? v.value : undefined;
                     onChange(weathermap);
                   }}
@@ -550,7 +550,7 @@ export const LinkForm = (props: Props) => {
                 <ColorPicker
                   color={link.statusDownColor || '#d32f2f'}
                   onChange={(color) => {
-                    let weathermap: Weathermap = value;
+                    let weathermap: Weathermap = structuredClone(value);
                     weathermap.links[i].statusDownColor = color;
                     onChange(weathermap);
                   }}
@@ -560,7 +560,7 @@ export const LinkForm = (props: Props) => {
                 <InlineSwitch
                   value={link.statusBlink ?? false}
                   onChange={(e) => {
-                    let weathermap: Weathermap = value;
+                    let weathermap: Weathermap = structuredClone(value);
                     weathermap.links[i].statusBlink = e.currentTarget.checked;
                     onChange(weathermap);
                   }}
@@ -574,7 +574,7 @@ export const LinkForm = (props: Props) => {
                       <Input
                         value={metric.label}
                         onChange={(e) => {
-                          let wm = value;
+                          let wm = structuredClone(value);
                           wm.links[i].tooltipMetrics![mi].label = e.currentTarget.value;
                           onChange(wm);
                         }}
@@ -587,7 +587,7 @@ export const LinkForm = (props: Props) => {
                   <InlineField grow label={`Metric ${mi + 1} Inbound Query`} style={{ width: '100%' }}>
                     <Select
                       onChange={(v) => {
-                        let wm = value;
+                        let wm = structuredClone(value);
                         wm.links[i].tooltipMetrics![mi].queryA = v ? v.value : undefined;
                         onChange(wm);
                       }}
@@ -601,7 +601,7 @@ export const LinkForm = (props: Props) => {
                   <InlineField grow label={`Metric ${mi + 1} Outbound Query`} style={{ width: '100%' }}>
                     <Select
                       onChange={(v) => {
-                        let wm = value;
+                        let wm = structuredClone(value);
                         wm.links[i].tooltipMetrics![mi].queryZ = v ? v.value : undefined;
                         onChange(wm);
                       }}
@@ -615,7 +615,7 @@ export const LinkForm = (props: Props) => {
                   <InlineField grow label={`Metric ${mi + 1} Units`} style={{ width: '100%' }}>
                     <UnitPicker
                       onChange={(val) => {
-                        let wm = value;
+                        let wm = structuredClone(value);
                         wm.links[i].tooltipMetrics![mi].units = val;
                         onChange(wm);
                       }}
@@ -628,7 +628,7 @@ export const LinkForm = (props: Props) => {
                       icon="trash-alt"
                       size="sm"
                       onClick={() => {
-                        let wm = value;
+                        let wm = structuredClone(value);
                         wm.links[i].tooltipMetrics!.splice(mi, 1);
                         onChange(wm);
                       }}
@@ -644,7 +644,7 @@ export const LinkForm = (props: Props) => {
                 icon="plus"
                 size="sm"
                 onClick={() => {
-                  let wm = value;
+                  let wm = structuredClone(value);
                   if (!wm.links[i].tooltipMetrics) {
                     wm.links[i].tooltipMetrics = [];
                   }
