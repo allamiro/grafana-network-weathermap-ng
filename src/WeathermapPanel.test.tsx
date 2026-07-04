@@ -1,5 +1,5 @@
 import React from 'react';
-import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps } from '@grafana/data';
+import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
@@ -540,5 +540,215 @@ describe('migration persistence is a commit-phase effect (#199)', () => {
     render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap: wm }, onOptionsChange }} />);
 
     expect(onOptionsChange).not.toHaveBeenCalled();
+  });
+});
+
+// #201: timeline and state synchronization.
+describe('timeline and state synchronization (#201)', () => {
+  const timelineProps = () => {
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.settings.link.timeline = { enabled: true };
+    weathermap.links[0].sides.A.query = 'link-series';
+    weathermap.nodes[0].statusQuery = 'status-series';
+    testProps.options = { weathermap };
+    testProps.timeRange = {
+      from: { valueOf: () => 1_000_000 },
+      to: { valueOf: () => 2_000_000, toLocaleString: () => '2M' },
+    } as unknown as PanelProps<SimpleOptions>['timeRange'];
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [
+        toDataFrame({
+          refId: 'A',
+          fields: [
+            { name: 'Time', values: [1_200_000, 2_000_000] },
+            { name: 'Value', values: [42, 87], config: { displayNameFromDS: 'link-series' } },
+          ],
+        }),
+        toDataFrame({
+          refId: 'B',
+          fields: [
+            { name: 'Time', values: [1_200_000, 2_000_000] },
+            { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'status-series' } },
+          ],
+        }),
+      ],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = jest.fn();
+    return testProps;
+  };
+
+  const scrubBack = () => {
+    // One ArrowLeft moves the slider one step below the live position, which
+    // lands between the two samples: step-hold resolves to the first sample.
+    const handle = screen.getByRole('slider');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft', keyCode: 37 });
+  };
+
+  test('timeline scrub updates link label value', () => {
+    const { container } = render(<WeathermapPanel {...timelineProps()} />);
+
+    // Live: the A-side label shows the most recent sample (87).
+    expect(container.textContent).toContain('87');
+    expect(container.textContent).not.toContain('42');
+
+    scrubBack();
+
+    // Scrubbed: the label replays the historical sample (42).
+    expect(container.textContent).toContain('42');
+  });
+
+  test('timeline scrub replays node status', () => {
+    const props = timelineProps();
+    const statusDown = props.options.weathermap.nodes[0].colors.statusDown;
+    render(<WeathermapPanel {...props} />);
+
+    const nodeRect = () =>
+      screen.getByText(props.options.weathermap.nodes[0].label!).closest('g')!.querySelector('rect')!;
+
+    // Live: the last status sample is 0 -> node is down.
+    expect(nodeRect().getAttribute('stroke')).toBe(statusDown);
+
+    scrubBack();
+
+    // Scrubbed into history: the status sample there is 1 -> node was up.
+    expect(nodeRect().getAttribute('stroke')).not.toBe(statusDown);
+  });
+
+  test('pan offset resyncs from changed options', () => {
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = jest.fn();
+
+    const { container, rerender } = render(<WeathermapPanel {...testProps} />);
+    const before = container.querySelector('g')!.getAttribute('transform');
+
+    // An external change to the saved offset (dashboard reload, other session).
+    const changed = JSON.parse(JSON.stringify(weathermap));
+    changed.settings.panel.offset = { x: 120, y: 80 };
+    rerender(<WeathermapPanel {...{ ...testProps, options: { weathermap: changed } }} />);
+
+    const after = container.querySelector('g')!.getAttribute('transform');
+    expect(after).not.toEqual(before);
+    expect(after).toContain('120');
+    expect(after).toContain('80');
+  });
+
+  test('VIA chain labels and hover tooltip resolve chain data without mutation side effects', () => {
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    // Segment 1 (A -> C0) carries the chain's A-side data; segment 2
+    // (C0 -> B) carries the chain's Z-side data.
+    weathermap.links[0].sides.A.query = 'a1-series';
+    weathermap.links[1].sides.Z.query = 'z2-series';
+    testProps.options = { weathermap };
+    const mkFrame = (name: string, v: number) =>
+      toDataFrame({
+        fields: [
+          { name: 'Time', values: [1, 2] },
+          { name: 'Value', values: [v, v], config: { displayNameFromDS: name } },
+        ],
+      });
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [mkFrame('a1-series', 331), mkFrame('z2-series', 222)],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = jest.fn();
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    // The A-side value propagates through the connection: both the origin
+    // segment and the segment leaving the connection label with 331.
+    const count331 = (container.textContent!.match(/331/g) || []).length;
+    expect(count331).toBe(2);
+    const renderedBefore = container.textContent;
+    const optionsBefore = JSON.stringify(testProps.options.weathermap.links);
+
+    // Hover segment 1: its target is the connection, so the tooltip resolves
+    // the forward chain (segment 2's Z data) on the fly.
+    const segment1 = screen.getAllByTestId('link')[0];
+    fireEvent.mouseMove(segment1.firstChild!);
+    const tooltip = Array.from(document.querySelectorAll('div')).map((el) => el.textContent || '');
+    expect(tooltip.some((t) => t.includes('222'))).toBe(true);
+    fireEvent.mouseLeave(segment1.firstChild!);
+
+    // Hovering resolved chain data into the tooltip only: the rendered map
+    // and the saved options are byte-identical afterwards.
+    expect(container.textContent).toBe(renderedBefore);
+    expect(JSON.stringify(testProps.options.weathermap.links)).toBe(optionsBefore);
+  });
+
+  test('multi-VIA chains show the origin data on every downstream segment', () => {
+    // A -> C1 -> C2 -> B: three segments through two consecutive connection
+    // nodes. Every segment's A-side label must resolve back to the origin
+    // link's series, regardless of segment order in the links array.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    const c2 = JSON.parse(JSON.stringify(weathermap.nodes[2]));
+    c2.id = 'conn-2';
+    c2.label = 'C1';
+    c2.position = [350, 350];
+    weathermap.nodes.push(c2);
+    const seg3 = JSON.parse(JSON.stringify(weathermap.links[1]));
+    // Rewire: seg2 now ends at C2; seg3 runs C2 -> B.
+    weathermap.links[1].nodes[1] = c2;
+    seg3.id = 'seg-3';
+    seg3.nodes[0] = c2;
+    weathermap.links.push(seg3);
+    weathermap.links[0].sides.A.query = 'origin-series';
+    testProps.options = { weathermap };
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [
+        toDataFrame({
+          fields: [
+            { name: 'Time', values: [1, 2] },
+            { name: 'Value', values: [777, 777], config: { displayNameFromDS: 'origin-series' } },
+          ],
+        }),
+      ],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = jest.fn();
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    // Three segments, each labeling its A side with the origin value.
+    expect(screen.getAllByTestId('link')).toHaveLength(3);
+    expect((container.textContent!.match(/777/g) || []).length).toBe(3);
+  });
+
+  test('scrubbed node status resolves raw negative values like live mode', () => {
+    const props = timelineProps();
+    const node = props.options.weathermap.nodes[0];
+    // Two thresholds: raw -3 must match the -5 mapping (RED). A clamped
+    // value of 0 would wrongly match the 0 mapping (GREEN) instead.
+    node.statusValueMappings = [
+      { value: -5, color: '#aa0000' },
+      { value: 0, color: '#00aa00' },
+    ];
+    props.data.series[1] = toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1_200_000, 2_000_000] },
+        { name: 'Value', values: [-3, 7], config: { displayNameFromDS: 'status-series' } },
+      ],
+    });
+    render(<WeathermapPanel {...props} />);
+
+    const nodeRect = () => screen.getByText(node.label!).closest('g')!.querySelector('rect')!;
+
+    // Live: last sample is 7 -> highest threshold <= 7 is 0 -> green.
+    expect(nodeRect().getAttribute('stroke')).toBe('#00aa00');
+
+    scrubBack();
+
+    // Scrubbed to the -3 sample: threshold -5 applies -> red, not the
+    // clamped-to-zero green.
+    expect(nodeRect().getAttribute('stroke')).toBe('#aa0000');
   });
 });

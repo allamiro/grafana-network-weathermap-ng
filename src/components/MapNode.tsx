@@ -7,8 +7,10 @@ import {
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
   getDataFrameName,
+  getTimeField,
   getValueField,
   sanitizeUrl,
+  sampleAtTime,
 } from '../utils';
 import { css } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
@@ -28,6 +30,9 @@ interface NodeProps {
   onContextMenu?: React.MouseEventHandler<SVGGElement>;
   disabled: boolean;
   data: PanelData;
+  // Timeline scrub position (ms) or null/undefined for live. When set, node
+  // status replays the value at that time — matching link value behavior (#201).
+  scrubTimeMs?: number | null;
 }
 
 // Calculate the middle of the rectangle for text centering
@@ -52,7 +57,7 @@ function calculateRectY(d: DrawnNode, wm: Weathermap) {
 }
 
 const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
-  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, onMouseMove, onMouseLeave, onContextMenu, disabled, data } =
+  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, onMouseMove, onMouseLeave, onContextMenu, disabled, data, scrubTimeMs } =
     props;
   const styles = useStyles2(getStyles);
 
@@ -81,6 +86,18 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
       })
       .map((frame) => {
         const valueField = getValueField(frame);
+        // Timeline scrubbing (#201): while scrubbing, node status replays the
+        // raw value at the selected time (step-hold like link values, but
+        // without their throughput negative-clamp — negative status values
+        // are legitimate mapping inputs and must resolve like live mode).
+        // Live mode keeps reading the most recent datapoint.
+        if (scrubTimeMs !== null && scrubTimeMs !== undefined) {
+          return sampleAtTime(
+            getTimeField(frame)?.values as Array<number | null | undefined>,
+            valueField.values as Array<number | null | undefined>,
+            scrubTimeMs
+          );
+        }
         return valueField.values[valueField.values.length - 1];
       });
 

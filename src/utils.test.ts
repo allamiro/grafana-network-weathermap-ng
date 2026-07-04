@@ -20,6 +20,7 @@ import {
   parseOptionalFiniteNumber,
   getTimeField,
   removeVia,
+  sampleAtTime,
   sanitizeUrl,
   valueAtTime,
 } from 'utils';
@@ -291,6 +292,28 @@ describe('VIA helpers (addViaToLink / removeVia)', () => {
     expect(wm.links).toHaveLength(1);
     expect(wm.links[0].id).toBe('self');
     expect(wm.nodes.some((n) => n.id === conn.id)).toBe(true);
+  });
+});
+
+// #201 follow-up: node status replays raw values — negatives are legitimate
+// status mapping inputs, and "no usable sample" must not collapse into 0.
+describe('sampleAtTime (raw step-hold, no clamping)', () => {
+  const times = [1000, 2000, 3000];
+
+  test('preserves negative values', () => {
+    expect(sampleAtTime(times, [-3, -7, 5], 2500)).toBe(-7);
+    expect(sampleAtTime(times, [-3, -7, 5], 900)).toBe(-3);
+  });
+
+  test('step-hold matches valueAtTime walk (skips null/NaN backwards)', () => {
+    expect(sampleAtTime(times, [4, null, NaN], 3500)).toBe(4);
+    expect(sampleAtTime(times, [4, 9, 2], 2999)).toBe(9);
+  });
+
+  test('returns undefined when nothing is usable', () => {
+    expect(sampleAtTime([], [], 1000)).toBeUndefined();
+    expect(sampleAtTime(undefined, undefined, 1000)).toBeUndefined();
+    expect(sampleAtTime(times, [null, NaN, null], 2000)).toBeUndefined();
   });
 });
 
