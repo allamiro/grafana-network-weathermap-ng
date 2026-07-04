@@ -1,0 +1,115 @@
+name: 🐛 Bug report
+description: A crash, wrong rendering, editor glitch, or anything else misbehaving
+title: "bug: "
+labels: [bug]
+assignees: [allamiro]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this! A minute of detail here usually saves days of back-and-forth.
+        Before filing, a quick look at the [FAQ](https://allamiro.github.io/grafana-network-weathermap-ng/faq/) and [open issues](https://github.com/allamiro/grafana-network-weathermap-ng/issues) sometimes answers it faster.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem — what you saw, and where (panel view, panel editor, export, ...).
+      placeholder: The panel crashes with "Cannot read properties of undefined" when I open a dashboard saved with an older version...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: Step-by-step. If it depends on a specific map, paste the panel JSON (Panel menu → Inspect → JSON) — it's the single most useful thing you can attach.
+      placeholder: |
+        1. Create a panel with two nodes and one link
+        2. Set the A-side query to ...
+        3. Open the editor and ...
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+      placeholder: The link label should show the value from the selected series.
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Administration → Plugins → Network Weathermap NG
+      placeholder: "1.5.14"
+    validations:
+      required: true
+
+  - type: input
+    id: grafana-version
+    attributes:
+      label: Grafana version
+      placeholder: "12.4.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Grafana deployment
+      options:
+        - OSS self-hosted (Docker)
+        - OSS self-hosted (package/binary)
+        - Grafana Cloud
+        - Grafana Enterprise
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: datasource
+    attributes:
+      label: Data source
+      options:
+        - Prometheus
+        - InfluxDB
+        - Zabbix
+        - Graphite
+        - Elasticsearch
+        - Other / multiple (say which in the description)
+        - No data source (topology-only map)
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: "Chrome 138, Firefox 141, Safari 18 ..."
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser console errors
+      description: Open DevTools (F12) → Console, reproduce the bug, and paste anything red. Automatically formatted as code.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, panel JSON, or anything else
+      description: Drag and drop images/recordings here. Panel JSON exports help enormously with rendering bugs.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Final checks
+      options:
+        - label: I searched the existing issues and this isn't already reported
+          required: true
+        - label: I'm on the latest plugin release (or noted my version above)
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Documentation
+    url: https://allamiro.github.io/grafana-network-weathermap-ng/
+    about: Getting started, use cases, icon reference, and the FAQ — many questions are answered here.
+  - name: 💬 Questions & discussion
+    url: https://github.com/allamiro/grafana-network-weathermap-ng/discussions
+    about: Not sure it's a bug? Ask here first.

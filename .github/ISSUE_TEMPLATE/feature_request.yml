@@ -1,0 +1,59 @@
+name: ✨ Feature request
+description: A new capability, option, icon set, or integration
+title: "feature: "
+labels: [enhancement]
+assignees: [allamiro]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Great ideas built this plugin — the icon library, the timeline replay, and the rack boards all started as requests.
+        A quick check of the [docs](https://allamiro.github.io/grafana-network-weathermap-ng/) and [open enhancement issues](https://github.com/allamiro/grafana-network-weathermap-ng/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) helps avoid duplicates.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation on your map/dashboard where you hit the limit — the "why" matters more than the "how".
+      placeholder: Our NOC map has 40+ links between the same two sites and the labels overlap so much that...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: Your ideal behavior or UI. Sketches and mockups very welcome — drag and drop them here.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the plugin is this about?
+      options:
+        - Map rendering (nodes, links, labels, colors)
+        - Panel editor (forms, pickers, options)
+        - Icons / icon library
+        - Data & queries (mapping, aggregation, thresholds)
+        - Timeline / incident replay
+        - Tooltips & interactions (hover, click, drill-down)
+        - Export (SVG/JSON)
+        - Docs / demos / CI
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workarounds or alternatives you've considered
+      placeholder: Currently we duplicate the panel and filter, but...
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Final check
+      options:
+        - label: I searched the existing issues and this isn't already requested
+          required: true

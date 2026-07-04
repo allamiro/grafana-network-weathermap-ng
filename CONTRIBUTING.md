@@ -91,7 +91,7 @@ scripts/release.sh tag 1.5.3            # or: npm run release -- tag 1.5.3
 
 ## Reporting bugs
 
-Use the [bug report template](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.md).
+Use the [bug report template](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.yml).
 
 ## License
 
