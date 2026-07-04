@@ -6,12 +6,21 @@ Panel-level options apply to the whole weathermap. Open the panel options sideba
 
 ## Background
 
+!!! tip "Where do I host my floor plan / map image?"
+    The **Image** field takes a URL — the plugin does not upload files. Your options:
+
+    1. **Any `https://` URL** your dashboard viewers' browsers can reach (an internal web server, a wiki attachment, an S3/object-storage link, Wikimedia Commons, ...).
+    2. **Grafana's own `public/` folder** — copy the file onto the Grafana server, e.g. `/usr/share/grafana/public/img/floorplan.png`, then use the relative URL `public/img/floorplan.png`. Works fully air-gapped and survives viewer networks that can't reach external hosts.
+    3. **A provisioned sidecar** — the demo dashboards serve their floor-plan and world-map images from the `testing/` stack's exporter container on `:8080`; any tiny static file server works the same way.
+
+    SVG or PNG both work; prefer SVG for crisp zooming with **Move With Map**.
+
+!!! warning "Image URLs are validated"
+    Only relative Grafana paths and `http`/`https` URLs are accepted. `data:`, `file:`, `javascript:` and other schemes are **rejected** by the plugin's URL sanitization — pasting a base64 data URL will not work.
+
 - **Color** — the canvas background color.
 - **Image** — set a background image by URL (floor plan, geographic map, building outline, network zones). Choose an **Image Fit** (contain / cover / auto).
 - **Move With Map** — when enabled, the background image is drawn *inside* the map canvas so it **pans and zooms together** with the nodes and links. When off (default), the image stays fixed like a wallpaper.
-
-!!! warning "Image URLs are validated"
-    Only relative Grafana paths and `http`/`https` URLs are allowed; unsafe schemes are rejected.
 
 ---
 
