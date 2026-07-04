@@ -855,3 +855,37 @@ test('VIA insert and remove leave the rendered options untouched (#238)', () => 
   // The frozen original never gained the connection node.
   expect(weathermap.nodes.some((n) => n.isConnection)).toBe(false);
 });
+
+test('VIA remove leaves the rendered options untouched (#238)', () => {
+  const deepFreeze = (o: unknown): unknown => {
+    if (o && typeof o === 'object' && !Object.isFrozen(o)) {
+      Object.values(o as Record<string, unknown>).forEach(deepFreeze);
+      Object.freeze(o);
+    }
+    return o;
+  };
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  // Start from a map that already has a VIA (connection node between two links).
+  const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+  const viaCount = weathermap.nodes.filter((n) => n.isConnection).length;
+  expect(viaCount).toBe(1);
+  deepFreeze(weathermap);
+  const spy = jest.fn();
+  const { container } = render(
+    <WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: spy }} />
+  );
+
+  // Right-click the connection node to remove the VIA. Connection nodes render
+  // as small transparent rects; find its group via the drawn node transform.
+  const connection = container.querySelector('g[cursor="move"] rect[fill="transparent"]')!.closest('g')!;
+  fireEvent.contextMenu(connection);
+
+  expect(spy).toHaveBeenCalled();
+  const removed = spy.mock.calls[spy.mock.calls.length - 1][0].weathermap;
+  expect(removed).not.toBe(weathermap);
+  expect(removed.nodes.filter((n: { isConnection?: boolean }) => n.isConnection)).toHaveLength(0);
+  expect(removed.links).toHaveLength(1);
+  // The frozen original still holds its VIA — nothing was written in place.
+  expect(weathermap.nodes.filter((n) => n.isConnection)).toHaveLength(1);
+  expect(weathermap.links).toHaveLength(2);
+});
