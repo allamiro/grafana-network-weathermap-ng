@@ -36,7 +36,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
   };
 
   const handleColorChange = (color: string) => {
-    let options = value;
+    let options = structuredClone(value);
     if (!color.startsWith('image') && options.settings.panel.backgroundColor.startsWith('image')) {
       options.settings.panel.backgroundColor =
         'image|' + color + '|' + options.settings.panel.backgroundColor.split('|', 3)[2];
@@ -74,7 +74,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 if (!confirm('Are you sure you want remove the background image?')) {
                   return;
                 }
-                let options = value;
+                let options = structuredClone(value);
                 options.settings.panel.backgroundImage = undefined;
                 onChange(options);
               }}
@@ -83,7 +83,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           ) : (
             <Button
               onClick={() => {
-                let options = value;
+                let options = structuredClone(value);
                 options.settings.panel.backgroundImage = {
                   url: '',
                   fit: 'contain',
@@ -104,7 +104,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 type={'text'}
                 name={'bgImageURL'}
                 onChange={(e) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   if (options.settings.panel.backgroundImage) {
                     options.settings.panel.backgroundImage.url = sanitizeUrl(e.currentTarget.value);
                   }
@@ -115,7 +115,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             <InlineField grow label="Image Fit" className={styles.inlineField} style={{ marginLeft: '24px' }}>
               <Select
                 onChange={(v) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   if (options.settings.panel.backgroundImage) {
                     options.settings.panel.backgroundImage.fit = v.value ? v.value : 'contain';
                   }
@@ -138,7 +138,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               <InlineSwitch
                 value={value.settings.panel.backgroundImage.attachToCanvas ?? false}
                 onChange={(e) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   if (options.settings.panel.backgroundImage) {
                     options.settings.panel.backgroundImage.attachToCanvas = e.currentTarget.checked;
                   }
@@ -228,7 +228,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.panel.showTimestamp}
             onChange={(e) => {
-              let wm = value;
+              let wm = structuredClone(value);
               wm.settings.panel.showTimestamp = e.currentTarget.checked;
               onChange(wm);
             }}
@@ -239,7 +239,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.showAllWithPercentage}
             onChange={(e) => {
-              let wm = value;
+              let wm = structuredClone(value);
               wm.settings.link.showAllWithPercentage = e.currentTarget.checked;
               onChange(wm);
             }}
@@ -260,7 +260,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             ]}
             value={value.settings.link.valueMappingMode ?? 'last'}
             onChange={(selected) => {
-              let wm = value;
+              let wm = structuredClone(value);
               wm.settings.link.valueMappingMode = selected.value as ValueMappingMode;
               onChange(wm);
             }}
@@ -274,7 +274,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.timeline?.enabled ?? false}
             onChange={(e) => {
-              let wm = value;
+              let wm = structuredClone(value);
               wm.settings.link.timeline = { enabled: e.currentTarget.checked };
               onChange(wm);
             }}
@@ -283,7 +283,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
         <InlineField grow label={'Default Link Units'}>
           <UnitPicker
             onChange={(val) => {
-              let wm = value;
+              let wm = structuredClone(value);
               wm.settings.link.defaultUnits = val;
               onChange(wm);
             }}
@@ -298,7 +298,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             placeholder="auto"
             value={value.settings.link.linkDecimals ?? ''}
             onChange={(e) => {
-              let wm = value;
+              let wm = structuredClone(value);
               const v = e.currentTarget.valueAsNumber;
               wm.settings.link.linkDecimals = isNaN(v) ? undefined : Math.max(0, Math.floor(v));
               onChange(wm);
@@ -314,7 +314,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               if (!confirm('Are you sure you want to reset all link units?')) {
                 return;
               }
-              let options = value;
+              let options = structuredClone(value);
               for (let l of options.links) {
                 l.units = undefined;
               }
@@ -329,7 +329,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.link.stroke.color}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.stroke.color = color;
               onChange(options);
             }}
@@ -342,7 +342,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.link.spacing.horizontal}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.spacing.horizontal = num;
               onChange(options);
             }}
@@ -355,7 +355,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.link.spacing.vertical}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.spacing.vertical = num;
               onChange(options);
             }}
@@ -366,7 +366,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.link.label.background}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.label.background = color;
               onChange(options);
             }}
@@ -377,7 +377,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.link.label.border}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.label.border = color;
               onChange(options);
             }}
@@ -388,7 +388,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.link.label.font}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.label.font = color;
               onChange(options);
             }}
@@ -401,7 +401,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.gradientColor ?? false}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.gradientColor = e.currentTarget.checked;
               onChange(options);
             }}
@@ -411,7 +411,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.flowAnimation?.enabled ?? false}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               if (!options.settings.link.flowAnimation) {
                 options.settings.link.flowAnimation = { enabled: false, speed: 2 };
               }
@@ -428,7 +428,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               value={value.settings.link.flowAnimation?.speed ?? 2}
               step={0.5}
               onChange={(num) => {
-                let options = value;
+                let options = structuredClone(value);
                 if (!options.settings.link.flowAnimation) {
                   options.settings.link.flowAnimation = { enabled: true, speed: 2 };
                 }
@@ -442,7 +442,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.dynamicStroke?.enabled ?? false}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               if (!options.settings.link.dynamicStroke) {
                 options.settings.link.dynamicStroke = { enabled: false, minWidth: 1, maxWidth: 10 };
               }
@@ -460,7 +460,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 value={value.settings.link.dynamicStroke?.minWidth ?? 1}
                 step={1}
                 onChange={(num) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   options.settings.link.dynamicStroke!.minWidth = num;
                   onChange(options);
                 }}
@@ -473,7 +473,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 value={value.settings.link.dynamicStroke?.maxWidth ?? 10}
                 step={1}
                 onChange={(num) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   options.settings.link.dynamicStroke!.maxWidth = num;
                   onChange(options);
                 }}
@@ -488,7 +488,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             <InlineSwitch
               value={value.settings.panel.grid.enabled}
               onChange={(e) => {
-                let wm = value;
+                let wm = structuredClone(value);
                 wm.settings.panel.grid.enabled = e.currentTarget.checked;
                 wm.settings.panel.grid.guidesEnabled = false;
                 onChange(wm);
@@ -503,7 +503,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 value={value.settings.panel.grid.size}
                 step={1}
                 onChange={(num) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   options.settings.panel.grid.size = num;
                   onChange(options);
                 }}
@@ -519,7 +519,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               <InlineSwitch
                 value={value.settings.panel.grid.guidesEnabled}
                 onChange={(e) => {
-                  let wm = value;
+                  let wm = structuredClone(value);
                   wm.settings.panel.grid.guidesEnabled = e.currentTarget.checked;
                   onChange(wm);
                 }}
@@ -537,7 +537,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.fontSizing.node}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.fontSizing.node = num;
               onChange(options);
             }}
@@ -550,7 +550,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.fontSizing.link}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.fontSizing.link = num;
               onChange(options);
             }}
@@ -566,7 +566,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.hoverHighlight ?? false}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.hoverHighlight = e.currentTarget.checked;
               onChange(options);
             }}
@@ -581,7 +581,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.link.labelCollision ?? false}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.labelCollision = e.currentTarget.checked;
               onChange(options);
             }}
@@ -601,7 +601,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             step={1}
             value={value.settings.link.labelHideZoom ?? 0}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.link.labelHideZoom = num;
               onChange(options);
             }}
@@ -617,7 +617,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.statusLegend?.enabled ?? false}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               if (!options.settings.statusLegend) {
                 options.settings.statusLegend = {
                   enabled: e.currentTarget.checked,
@@ -643,7 +643,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 step={1}
                 value={value.settings.statusLegend.position.x}
                 onChange={(num) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   options.settings.statusLegend!.position.x = num;
                   onChange(options);
                 }}
@@ -656,7 +656,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 step={1}
                 value={value.settings.statusLegend.position.y}
                 onChange={(num) => {
-                  let options = value;
+                  let options = structuredClone(value);
                   options.settings.statusLegend!.position.y = num;
                   onChange(options);
                 }}
@@ -669,7 +669,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                   <ColorPicker
                     color={item.color}
                     onChange={(color) => {
-                      let options = value;
+                      let options = structuredClone(value);
                       options.settings.statusLegend!.items[li].color = color;
                       onChange(options);
                     }}
@@ -680,7 +680,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                     value={item.label}
                     type={'text'}
                     onChange={(e) => {
-                      let options = value;
+                      let options = structuredClone(value);
                       options.settings.statusLegend!.items[li].label = e.currentTarget.value;
                       onChange(options);
                     }}
@@ -692,7 +692,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
                   size="sm"
                   aria-label="Remove legend item"
                   onClick={() => {
-                    let options = value;
+                    let options = structuredClone(value);
                     options.settings.statusLegend!.items.splice(li, 1);
                     onChange(options);
                   }}
@@ -704,7 +704,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               icon="plus"
               size="sm"
               onClick={() => {
-                let options = value;
+                let options = structuredClone(value);
                 options.settings.statusLegend!.items.push({ color: '#FF9830', label: 'label', id: uuidv4() });
                 onChange(options);
               }}
@@ -721,7 +721,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.tooltip.backgroundColor}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.tooltip.backgroundColor = color;
               onChange(options);
             }}
@@ -732,7 +732,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.tooltip.textColor}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.tooltip.textColor = color;
               onChange(options);
             }}
@@ -745,7 +745,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.tooltip.fontSize}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.tooltip.fontSize = num;
               onChange(options);
             }}
@@ -756,7 +756,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.tooltip.inboundColor}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.tooltip.inboundColor = color;
               onChange(options);
             }}
@@ -767,7 +767,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <ColorPicker
             color={value.settings.tooltip.outboundColor}
             onChange={(color) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.tooltip.outboundColor = color;
               onChange(options);
             }}
@@ -777,7 +777,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           <InlineSwitch
             value={value.settings.tooltip.scaleToBandwidth}
             onChange={(e) => {
-              let wm = value;
+              let wm = structuredClone(value);
               wm.settings.tooltip.scaleToBandwidth = e.currentTarget.checked;
               onChange(wm);
             }}
@@ -791,7 +791,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             type={'text'}
             name={'scaleTitle'}
             onChange={(e) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.title = e.currentTarget.value;
               onChange(options);
             }}
@@ -804,7 +804,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.scale.size.width}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.size.width = num;
               onChange(options);
             }}
@@ -817,7 +817,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.scale.size.height}
             step={10}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.size.height = num;
               onChange(options);
             }}
@@ -830,7 +830,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.scale.position.x}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.position.x = num;
               onChange(options);
             }}
@@ -843,7 +843,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.scale.position.y}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.position.y = num;
               onChange(options);
             }}
@@ -856,7 +856,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.scale.fontSizing.title}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.fontSizing.title = num;
               onChange(options);
             }}
@@ -869,7 +869,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             value={value.settings.scale.fontSizing.threshold}
             step={1}
             onChange={(num) => {
-              let options = value;
+              let options = structuredClone(value);
               options.settings.scale.fontSizing.threshold = num;
               onChange(options);
             }}

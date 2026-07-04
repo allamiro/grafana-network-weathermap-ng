@@ -30,14 +30,14 @@ export const ColorForm = (props: Props) => {
   };
 
   const handleColorChange = (color: any, index: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.scale[index].color = color;
     onChange(weathermap);
     setEditedPercents(weathermap.scale);
   };
 
   const addNewValue = () => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     if (value.scale.length === 0) {
       weathermap.scale.push({
         percent: 0,
@@ -54,14 +54,14 @@ export const ColorForm = (props: Props) => {
   };
 
   const clearValues = () => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.scale = [];
     onChange(weathermap);
     setEditedPercents(weathermap.scale);
   };
 
   const handleDeletePercent = (currentIndex: number) => {
-    let weathermap: Weathermap = value;
+    let weathermap: Weathermap = structuredClone(value);
     weathermap.scale.splice(currentIndex, 1);
     onChange(weathermap);
     setEditedPercents(weathermap.scale);
