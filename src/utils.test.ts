@@ -4,6 +4,7 @@ import { DrawnNode, Weathermap } from 'types';
 import {
   addViaToLink,
   buildQueryOptions,
+  getDataFrameName,
   resolveLinkChain,
   spreadLabels,
   aggregateFieldValues,
@@ -384,7 +385,7 @@ describe('buildQueryOptions (#49, #191)', () => {
     expect(new Set(labels).size).toBe(3);
     expect(labels[0]).toContain('ge-0/0/1');
     // stored values stay the full display names so existing configs match
-    expect(opts.map((o) => o.value)).toEqual(frames.map((f, i) => opts[i].value));
+    expect(opts.map((o) => o.value)).toEqual(frames.map((f) => getDataFrameName(f, frames)));
     opts.forEach((o) => expect(o.value).toContain('wm_link_bps'));
   });
 
