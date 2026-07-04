@@ -126,7 +126,9 @@ export const ColorForm = (props: Props) => {
             const raw = e.currentTarget.valueAsNumber;
             setEditedPercents((prev) => prev.map((t, ti) => (ti === i ? { ...t, percent: raw } : t)));
           }}
-          value={editedPercents[i].percent}
+          // A blanked field stores NaN in the draft; render it as '' so React
+          // does not warn about NaN value attributes (#226).
+          value={Number.isFinite(editedPercents[i].percent) ? editedPercents[i].percent : ''}
           aria-label={`Weathermap Threshold ${threshold.percent}`}
           onBlur={(e) => handleNumberChange(e, i)}
           prefix={
