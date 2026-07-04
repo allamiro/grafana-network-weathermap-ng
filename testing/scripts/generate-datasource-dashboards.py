@@ -17,7 +17,7 @@ SRC = "grafana/dashboards/wm-wan-utilization.json"
 base = json.load(open(SRC))
 
 
-def make(uid: str, title: str, ds_uid: str, targets, transformations=None):
+def make(uid: str, title: str, ds_uid: str, targets, transformations=None, max_data_points=None):
     d = copy.deepcopy(base)
     d["uid"] = uid
     d["title"] = title
@@ -28,6 +28,8 @@ def make(uid: str, title: str, ds_uid: str, targets, transformations=None):
         p["targets"] = targets
         if transformations:
             p["transformations"] = transformations
+        if max_data_points:
+            p["maxDataPoints"] = max_data_points
     return d
 
 
@@ -43,9 +45,9 @@ influx = make(
     "WAN Demo — Utilization (InfluxDB)",
     "influxdb-wm",
     [{"refId": "A", "query": FLUX, "datasource": {"uid": "influxdb-wm"}}],
-    # Influx frames arrive as `value {series="<name>"}` — strip down to the
-    # exact series name so the copied weathermap bindings match.
-    [{"id": "renameByRegex", "options": {"regex": '.*series="([^"]+)".*', "renamePattern": "$1"}}],
+    # With a single label per frame Grafana displays `value <series>` —
+    # strip the field-name prefix so the copied weathermap bindings match.
+    [{"id": "renameByRegex", "options": {"regex": "^value (.*)$", "renamePattern": "$1"}}],
 )
 
 elastic = make(
@@ -70,7 +72,10 @@ elastic = make(
             ],
         }
     ],
-    # ES frames are already named exactly by the series term.
+    # ES frames are already named exactly by the series term. maxDataPoints
+    # is capped: 204 series x N histogram buckets must stay under ES's
+    # 65536-bucket search limit (204 x 251 ~= 51k).
+    max_data_points=250,
 )
 
 zabbix = make(

@@ -2436,7 +2436,7 @@
         {
           "id": "renameByRegex",
           "options": {
-            "regex": ".*series=\"([^\"]+)\".*",
+            "regex": "^value (.*)$",
             "renamePattern": "$1"
           }
         }
