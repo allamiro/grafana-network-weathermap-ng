@@ -23,7 +23,7 @@ const setupPanel = async (
     .then(() => true)
     .catch(() => false);
   if (hasButton) {
-    await changeViz.click();
+    await changeViz.click({ timeout: 5000 });
     await page.getByText('Network Weathermap NG', { exact: true }).first().click();
   } else {
     await panelEditPage.setVisualization('Network Weathermap NG');
