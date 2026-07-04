@@ -363,20 +363,22 @@ export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2
     },
   };
 
-  wm.version = CURRENT_VERSION;
-  wm.nodes = wm.nodes.map((n) => merge(generateBasicNode('Node A', [200, 300], theme), n));
-  wm.links = wm.links.map((l) => merge(generateBasicLink(), l));
-  if (!(wm.scale instanceof Array)) {
-    const oldScale = wm.scale as unknown as Record<string, string>;
-    wm.scale = Object.keys(oldScale).map((key: string) => {
+  // Work on a shallow copy: this runs during render (panel and editor), so
+  // the incoming saved options object must never be mutated.
+  const migrated: Weathermap = { ...wm };
+  migrated.version = CURRENT_VERSION;
+  migrated.nodes = (wm.nodes ?? []).map((n) => merge(generateBasicNode('Node A', [200, 300], theme), n));
+  migrated.links = (wm.links ?? []).map((l) => merge(generateBasicLink(), l));
+  if (!(migrated.scale instanceof Array)) {
+    const oldScale = (migrated.scale ?? {}) as unknown as Record<string, string>;
+    migrated.scale = Object.keys(oldScale).map((key: string) => {
       return {
         percent: Number(key),
         color: oldScale[key],
       };
     });
   }
-  wm = merge(modelWeathermap, wm);
-  return wm;
+  return merge(modelWeathermap, migrated);
 }
 
 /**
