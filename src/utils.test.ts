@@ -411,3 +411,50 @@ describe('buildQueryOptions (#49, #191)', () => {
     expect(opts).toHaveLength(1);
   });
 });
+
+describe('handleVersionedStateUpdates round-trip guarantees', () => {
+  test('migration is idempotent: migrating a migrated map changes nothing', () => {
+    const once = handleVersionedStateUpdates(JSON.parse(JSON.stringify(legacyWeathermap)), theme);
+    const twice = handleVersionedStateUpdates(JSON.parse(JSON.stringify(once)), theme);
+    expect(twice).toEqual(once);
+  });
+
+  test('migration preserves node and link identity and query bindings', () => {
+    const legacy = JSON.parse(JSON.stringify(legacyWeathermap));
+    const migrated = handleVersionedStateUpdates(legacy, theme);
+
+    // Every node keeps its id, label, and position.
+    expect(migrated.nodes.map((n: { id: string }) => n.id)).toEqual(
+      legacyWeathermap.nodes.map((n: { id: string }) => n.id)
+    );
+    for (let i = 0; i < legacyWeathermap.nodes.length; i++) {
+      expect(migrated.nodes[i].label).toBe(legacyWeathermap.nodes[i].label);
+      expect(migrated.nodes[i].position).toEqual(legacyWeathermap.nodes[i].position);
+    }
+    // Every link keeps its endpoints and per-side query/bandwidth bindings.
+    expect(migrated.links).toHaveLength(legacyWeathermap.links.length);
+    for (let i = 0; i < legacyWeathermap.links.length; i++) {
+      const before = legacyWeathermap.links[i] as any;
+      const after = migrated.links[i] as any;
+      expect(after.id).toBe(before.id);
+      for (const side of ['A', 'Z']) {
+        expect(after.sides[side].query).toEqual(before.sides[side].query);
+        expect(after.sides[side].bandwidth).toEqual(before.sides[side].bandwidth);
+      }
+    }
+  });
+
+  test('a current-version map missing newer optional settings gains defaults without losing config', () => {
+    // Simulates a dashboard saved by an older 1.5.x release: schema already
+    // v14, but fields added later (status legend, hover options) absent.
+    const saved = JSON.parse(JSON.stringify(getData(theme)));
+    delete saved.settings.statusLegend;
+    delete saved.settings.link.hoverHighlight;
+    delete saved.settings.link.labelCollision;
+    saved.links[0].sides.A.query = 'MY QUERY';
+
+    const migrated = handleVersionedStateUpdates(JSON.parse(JSON.stringify(saved)), theme);
+    expect(migrated.links[0].sides.A.query).toBe('MY QUERY');
+    expect(migrated.nodes.map((n: { id: string }) => n.id)).toEqual(saved.nodes.map((n: { id: string }) => n.id));
+  });
+});
