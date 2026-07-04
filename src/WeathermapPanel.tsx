@@ -1316,9 +1316,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           }}
           onMouseUp={() => {
             setDragging(false);
-            let panned = wm;
-            panned.settings.panel.offset = offset;
-            onOptionsChange({ weathermap: panned });
+            // Persist through a clone: mutating wm in place hands the same
+            // reference back to Grafana and can skip downstream re-renders (#225).
+            onOptionsChange({
+              weathermap: {
+                ...wm,
+                settings: { ...wm.settings, panel: { ...wm.settings.panel, offset } },
+              },
+            });
           }}
           onDoubleClick={() => {
             setSelectedNodes([]);
@@ -1833,26 +1838,23 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     onStop: (e, position) => {
                       // setDraggedNode(null as unknown as DrawnNode);
                       setDraggedNode(null as unknown as DrawnNode);
-                      let current: Weathermap = wm;
-                      current.nodes[i].position = [
+                      // Build the persisted positions immutably: writing into
+                      // wm.nodes[..] hands Grafana the same references (#225).
+                      const movedIndexes = new Set<number>([i, ...selectedNodes.map((n) => n.index)]);
+                      const snappedPosition = (index: number): [number, number] => [
                         wm.settings.panel.grid.enabled
-                          ? nearestMultiple(nodes[i].x, wm.settings.panel.grid.size)
-                          : nodes[i].x,
+                          ? nearestMultiple(nodes[index].x, wm.settings.panel.grid.size)
+                          : nodes[index].x,
                         wm.settings.panel.grid.enabled
-                          ? nearestMultiple(nodes[i].y, wm.settings.panel.grid.size)
-                          : nodes[i].y,
+                          ? nearestMultiple(nodes[index].y, wm.settings.panel.grid.size)
+                          : nodes[index].y,
                       ];
-
-                      for (let node of selectedNodes) {
-                        current.nodes[node.index].position = [
-                          wm.settings.panel.grid.enabled
-                            ? nearestMultiple(nodes[node.index].x, wm.settings.panel.grid.size)
-                            : nodes[node.index].x,
-                          wm.settings.panel.grid.enabled
-                            ? nearestMultiple(nodes[node.index].y, wm.settings.panel.grid.size)
-                            : nodes[node.index].y,
-                        ];
-                      }
+                      const current: Weathermap = {
+                        ...wm,
+                        nodes: wm.nodes.map((n, ni) =>
+                          movedIndexes.has(ni) ? { ...n, position: snappedPosition(ni) } : n
+                        ),
+                      };
 
                       onOptionsChange({
                         ...options,
@@ -1862,13 +1864,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     onClick: (e) => {
                       if ((e.ctrlKey || e.metaKey) && isEditMode) {
                         setSelectedNodes((v) => {
-                          let cIndex = v.findIndex((n) => n.id === tempNodes[i].id);
-                          if (cIndex > -1) {
-                            v.splice(cIndex, 1);
-                          } else {
-                            v.push(tempNodes[i]);
-                          }
-                          return v;
+                          // Return a NEW array: mutating and returning the same
+                          // reference makes React skip selection re-renders (#225).
+                          const cIndex = v.findIndex((n) => n.id === tempNodes[i].id);
+                          return cIndex > -1 ? v.filter((_, vi) => vi !== cIndex) : [...v, tempNodes[i]];
                         });
                       } else if (!isEditMode && tempNodes[i].dashboardLink) {
                         openDashboardLink(tempNodes[i].dashboardLink, tempNodes[i].openInSameTab);

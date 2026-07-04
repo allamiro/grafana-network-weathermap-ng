@@ -102,3 +102,26 @@ describe('number inputs do not store NaN (#200)', () => {
     expect(lastValue(spy).nodes.find((n) => n.label === 'Node A')!.position[0]).toBe(250);
   });
 });
+
+// #225: form updates must deliver new object references, not mutations of
+// props.value.
+test('position change delivers a new weathermap and node reference (#225)', async () => {
+  const initial = getData(theme);
+  const before = JSON.parse(JSON.stringify(initial));
+  const spy = jest.fn();
+  const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
+  const picker = screen.getAllByRole('combobox')[0];
+  fireEvent.keyDown(picker, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByText('Node A'));
+
+  fireEvent.change(container.querySelector('input[name="X"]')!, { target: { value: '321' } });
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  expect(updated).not.toBe(initial);
+  expect(updated.nodes).not.toBe(initial.nodes);
+  const idx = updated.nodes.findIndex((n: { label?: string }) => n.label === 'Node A');
+  expect(updated.nodes[idx]).not.toBe(initial.nodes[idx]);
+  expect(updated.nodes[idx].position[0]).toBe(321);
+  // The original object is untouched.
+  expect(initial).toEqual(before);
+});

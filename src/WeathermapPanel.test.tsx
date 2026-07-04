@@ -781,3 +781,35 @@ test('duplicate display names resolve deterministically to the first frame (#204
   expect(container.textContent).toContain('53');
   expect(container.textContent).not.toContain('97');
 });
+
+// #225: interaction persistence must not mutate the rendered options object.
+// Deep-freeze makes any in-place write throw, and the persisted payload must
+// be a new object carrying the change.
+test('pan persistence delivers a new object without mutating options (#225)', () => {
+  const deepFreeze = (o: unknown): unknown => {
+    if (o && typeof o === 'object') {
+      Object.values(o as Record<string, unknown>).forEach(deepFreeze);
+      Object.freeze(o);
+    }
+    return o;
+  };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  deepFreeze(weathermap);
+  const spy = jest.fn();
+  const testProps = { ...mPanelProps, options: { weathermap }, onOptionsChange: spy };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+  fireEvent.mouseDown(container.querySelector('#nw-testing')!);
+  fireEvent(
+    container.querySelector('#nw-testing')!,
+    new MouseMoveEvent({ movementX: 25, movementY: 10, buttons: 4, bubbles: true })
+  );
+  fireEvent.mouseUp(container.querySelector('#nw-testing')!);
+
+  expect(spy).toHaveBeenCalled();
+  const persisted = spy.mock.calls[spy.mock.calls.length - 1][0].weathermap;
+  expect(persisted).not.toBe(weathermap);
+  expect(persisted.settings.panel.offset).not.toEqual({ x: 0, y: 0 });
+  // The frozen original is untouched.
+  expect(weathermap.settings.panel.offset).toEqual({ x: 0, y: 0 });
+});

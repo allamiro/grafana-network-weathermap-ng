@@ -52,15 +52,17 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   }
 
   const handleChange = (e: React.FormEvent<HTMLInputElement>, i: number) => {
-    let weathermap: Weathermap = value;
+    // Immutable update (#225): clone the touched node so onChange delivers a
+    // new reference instead of mutating props.value in place.
+    const node = { ...value.nodes[i], position: [...value.nodes[i].position] as [number, number] };
     if (e.currentTarget.name === 'X') {
-      weathermap.nodes[i].position[0] = finiteOrFallback(e.currentTarget.valueAsNumber, weathermap.nodes[i].position[0]);
+      node.position[0] = finiteOrFallback(e.currentTarget.valueAsNumber, node.position[0]);
     } else if (e.currentTarget.name === 'Y') {
-      weathermap.nodes[i].position[1] = finiteOrFallback(e.currentTarget.valueAsNumber, weathermap.nodes[i].position[1]);
+      node.position[1] = finiteOrFallback(e.currentTarget.valueAsNumber, node.position[1]);
     } else if (e.currentTarget.name === 'label') {
-      weathermap.nodes[i].label = e.currentTarget.value;
+      node.label = e.currentTarget.value;
     }
-    onChange(weathermap);
+    onChange({ ...value, nodes: value.nodes.map((n, ni) => (ni === i ? node : n)) });
   };
 
   const handleDashboardLinkChange = (e: React.FormEvent<HTMLInputElement>, i: number) => {

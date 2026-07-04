@@ -17,15 +17,16 @@ export const ColorForm = (props: Props) => {
   const { value, onChange } = props;
 
   const handleNumberChange = (e: any, currentIndex: number) => {
-    let weathermap: Weathermap = value;
-    // Blank input reports NaN; keep the previous threshold instead of saving it.
-    weathermap.scale[currentIndex].percent = finiteOrFallback(
-      e.currentTarget.valueAsNumber,
-      weathermap.scale[currentIndex].percent
+    // Immutable update (#225); blank input reports NaN — keep the previous
+    // threshold instead of saving it (#200).
+    const scale = value.scale.map((t, ti) =>
+      ti === currentIndex
+        ? { ...t, percent: finiteOrFallback(e.currentTarget.valueAsNumber, t.percent) }
+        : t
     );
-    weathermap.scale.sort((a, b) => a.percent - b.percent);
-    onChange(weathermap);
-    setEditedPercents(weathermap.scale);
+    scale.sort((a, b) => a.percent - b.percent);
+    onChange({ ...value, scale });
+    setEditedPercents(scale);
   };
 
   const handleColorChange = (color: any, index: number) => {

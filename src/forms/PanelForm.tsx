@@ -26,6 +26,15 @@ interface Props extends StandardEditorProps<Weathermap, Settings> {}
 export const PanelForm = ({ value, onChange }: Props) => {
   const styles = useStyles2(getStyles);
 
+  // Immutable panel-settings update (#225): clone the settings path so
+  // onChange delivers new references instead of mutating props.value.
+  const updatePanelSettings = (patch: Partial<Weathermap['settings']['panel']>) => {
+    onChange({
+      ...value,
+      settings: { ...value.settings, panel: { ...value.settings.panel, ...patch } },
+    });
+  };
+
   const handleColorChange = (color: string) => {
     let options = value;
     if (!color.startsWith('image') && options.settings.panel.backgroundColor.startsWith('image')) {
@@ -148,12 +157,12 @@ export const PanelForm = ({ value, onChange }: Props) => {
             type={'number'}
             name={'panelWidth'}
             onChange={(e) => {
-              let options = value;
-              options.settings.panel.panelSize.width = finiteOrFallback(
-                e.currentTarget.valueAsNumber,
-                options.settings.panel.panelSize.width
-              );
-              onChange(options);
+              updatePanelSettings({
+                panelSize: {
+                  ...value.settings.panel.panelSize,
+                  width: finiteOrFallback(e.currentTarget.valueAsNumber, value.settings.panel.panelSize.width),
+                },
+              });
             }}
           ></Input>
         </InlineField>
@@ -164,12 +173,12 @@ export const PanelForm = ({ value, onChange }: Props) => {
             type={'number'}
             name={'panelHeight'}
             onChange={(e) => {
-              let options = value;
-              options.settings.panel.panelSize.height = finiteOrFallback(
-                e.currentTarget.valueAsNumber,
-                options.settings.panel.panelSize.height
-              );
-              onChange(options);
+              updatePanelSettings({
+                panelSize: {
+                  ...value.settings.panel.panelSize,
+                  height: finiteOrFallback(e.currentTarget.valueAsNumber, value.settings.panel.panelSize.height),
+                },
+              });
             }}
           ></Input>
         </InlineField>
@@ -179,9 +188,9 @@ export const PanelForm = ({ value, onChange }: Props) => {
             placeholder={'Zoom Scale'}
             type={'number'}
             onChange={(e) => {
-              let options = value;
-              options.settings.panel.zoomScale = finiteOrFallback(e.currentTarget.valueAsNumber, options.settings.panel.zoomScale);
-              onChange(options);
+              updatePanelSettings({
+                zoomScale: finiteOrFallback(e.currentTarget.valueAsNumber, value.settings.panel.zoomScale),
+              });
             }}
           ></Input>
         </InlineField>
@@ -191,9 +200,12 @@ export const PanelForm = ({ value, onChange }: Props) => {
             placeholder={'Offset X'}
             type={'number'}
             onChange={(e) => {
-              let options = value;
-              options.settings.panel.offset.x = finiteOrFallback(e.currentTarget.valueAsNumber, options.settings.panel.offset.x);
-              onChange(options);
+              updatePanelSettings({
+                offset: {
+                  ...value.settings.panel.offset,
+                  x: finiteOrFallback(e.currentTarget.valueAsNumber, value.settings.panel.offset.x),
+                },
+              });
             }}
           ></Input>
         </InlineField>
@@ -203,9 +215,12 @@ export const PanelForm = ({ value, onChange }: Props) => {
             placeholder={'Offset Y'}
             type={'number'}
             onChange={(e) => {
-              let options = value;
-              options.settings.panel.offset.y = finiteOrFallback(e.currentTarget.valueAsNumber, options.settings.panel.offset.y);
-              onChange(options);
+              updatePanelSettings({
+                offset: {
+                  ...value.settings.panel.offset,
+                  y: finiteOrFallback(e.currentTarget.valueAsNumber, value.settings.panel.offset.y),
+                },
+              });
             }}
           ></Input>
         </InlineField>
