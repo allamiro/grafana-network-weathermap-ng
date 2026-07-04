@@ -210,8 +210,8 @@ Issues and PRs are welcome — please open an issue first for significant change
 
 | | |
 |:-:|---|
-| 🐛 | [**Report a bug**](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.md) — crashes, wrong rendering, editor glitches |
-| ✨ | [**Request a feature**](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=feature_request.md) — new icon sets, options, integrations |
+| 🐛 | [**Report a bug**](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.yml) — crashes, wrong rendering, editor glitches |
+| ✨ | [**Request a feature**](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=feature_request.yml) — new icon sets, options, integrations |
 | 🛠️ | [**Development guide**](CONTRIBUTING.md) — local setup, build, and test commands |
 | 💬 | [**Browse open issues**](https://github.com/allamiro/grafana-network-weathermap-ng/issues) — see what's planned or grab something to work on |
 
