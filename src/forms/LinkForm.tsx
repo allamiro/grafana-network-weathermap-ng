@@ -145,11 +145,19 @@ export const LinkForm = (props: Props) => {
   const removeLink = (i: number) => {
     let weathermap: Weathermap = value;
     let toRemove = weathermap.links[i];
-    for (let i = 0; i < weathermap.nodes.length; i++) {
-      if (weathermap.nodes[i].id === toRemove.nodes[0].id) {
-        weathermap.nodes[i].anchors[toRemove.sides.A.anchor].numLinks--;
-      } else if (weathermap.nodes[i].id === toRemove.nodes[1].id) {
-        weathermap.nodes[i].anchors[toRemove.sides.Z.anchor].numLinks--;
+    for (let n = 0; n < weathermap.nodes.length; n++) {
+      const node = weathermap.nodes[n];
+      // Both endpoint decrements must run independently: for a self-link the
+      // A and Z endpoints are the same node (addNewLink incremented its
+      // anchor by 2), so an else-if here would leave the count drifted.
+      // Clamp at 0 so already-drifted saved maps cannot go negative.
+      if (node.id === toRemove.nodes[0].id) {
+        const anchorA = node.anchors[toRemove.sides.A.anchor];
+        anchorA.numLinks = Math.max(0, anchorA.numLinks - 1);
+      }
+      if (node.id === toRemove.nodes[1].id) {
+        const anchorZ = node.anchors[toRemove.sides.Z.anchor];
+        anchorZ.numLinks = Math.max(0, anchorZ.numLinks - 1);
       }
     }
     weathermap.links.splice(i, 1);
