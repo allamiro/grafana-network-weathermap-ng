@@ -43,7 +43,7 @@ import {
   nearestMultiple,
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
-  CURRENT_VERSION,
+  needsMigration,
   handleVersionedStateUpdates,
   resolveLinkChain,
   spreadLabels,
@@ -127,7 +127,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // panel has no saved weathermap yet).
   const wm = useMemo(() => {
     const normalized = normalizeWeathermap(options.weathermap);
-    if (normalized && normalized.version !== CURRENT_VERSION) {
+    if (normalized && needsMigration(normalized)) {
       return handleVersionedStateUpdates(JSON.parse(JSON.stringify(normalized)), theme);
     }
     return normalized;
@@ -139,9 +139,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // component renders). The render above already uses the migrated copy, so
   // nothing is visually stale while the write is pending. Once it lands,
   // options.weathermap.version === CURRENT_VERSION and this effect goes quiet.
-  const needsMigrationPersist = Boolean(
-    options.weathermap && (!options.weathermap.version || options.weathermap.version !== CURRENT_VERSION)
-  );
+  const needsMigrationPersist = Boolean(options.weathermap && needsMigration(options.weathermap));
   useEffect(() => {
     if (needsMigrationPersist) {
       onOptionsChange({ weathermap: wm });

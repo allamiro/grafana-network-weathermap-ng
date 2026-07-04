@@ -512,6 +512,20 @@ describe('renders empty or missing weathermap without throwing (#198)', () => {
     const { container } = renderWith({ id: 'partial', links: [] });
     expect(container).toBeInTheDocument();
   });
+
+  // #224: a CURRENT-version map with missing nested settings must also repair
+  // through migration instead of crashing on direct dereferences.
+  test.each(['panel', 'tooltip', 'scale', 'link'])(
+    'current-version weathermap missing settings.%s renders',
+    (key) => {
+      const wm = handleVersionedStateUpdates(getData(theme), theme) as unknown as {
+        settings: Record<string, unknown>;
+      };
+      delete wm.settings[key];
+      const { container } = renderWith(wm);
+      expect(container.querySelector('#nw-testing')).toBeInTheDocument();
+    }
+  );
 });
 
 // #199: the panel must not call onOptionsChange during the render phase and

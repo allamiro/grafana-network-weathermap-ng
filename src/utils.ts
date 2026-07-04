@@ -291,6 +291,49 @@ export function parseOptionalFiniteNumber(raw: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Whether a saved weathermap needs the defaults deep-merge before render.
+ * True for old/missing schema versions AND for current-version maps whose
+ * nested settings are incomplete (hand-edited or provisioned JSON) — render
+ * code dereferences these shapes directly, so a malformed current-version
+ * map must repair through the same migration path (#224).
+ */
+export function needsMigration(wm: Weathermap | undefined | null): boolean {
+  if (!wm) {
+    return false;
+  }
+  if (!wm.version || wm.version !== CURRENT_VERSION) {
+    return true;
+  }
+  const num = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
+  const get = (o: unknown, ...keys: string[]): unknown =>
+    keys.reduce((acc: unknown, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined), o);
+  const st = wm.settings as unknown;
+  // Validate the numeric leaves render code dereferences — presence of an
+  // empty object (e.g. panelSize: {}) must also trigger repair.
+  return !(
+    st &&
+    num(get(st, 'link', 'spacing', 'horizontal')) &&
+    num(get(st, 'link', 'spacing', 'vertical')) &&
+    get(st, 'link', 'stroke') &&
+    get(st, 'link', 'label') &&
+    num(get(st, 'fontSizing', 'node')) &&
+    num(get(st, 'fontSizing', 'link')) &&
+    num(get(st, 'panel', 'panelSize', 'width')) &&
+    num(get(st, 'panel', 'panelSize', 'height')) &&
+    num(get(st, 'panel', 'offset', 'x')) &&
+    num(get(st, 'panel', 'offset', 'y')) &&
+    get(st, 'panel', 'grid') &&
+    get(st, 'tooltip') &&
+    num(get(st, 'scale', 'position', 'x')) &&
+    num(get(st, 'scale', 'position', 'y')) &&
+    num(get(st, 'scale', 'size', 'width')) &&
+    num(get(st, 'scale', 'size', 'height')) &&
+    num(get(st, 'scale', 'fontSizing', 'title')) &&
+    num(get(st, 'scale', 'fontSizing', 'threshold'))
+  );
+}
+
 export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2): Weathermap {
   const modelWeathermap: Weathermap = {
     version: CURRENT_VERSION,
