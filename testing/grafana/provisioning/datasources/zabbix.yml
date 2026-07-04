@@ -7,6 +7,9 @@ datasources:
     url: http://zabbix-web:8080/api_jsonrpc.php
     jsonData:
       username: Admin
-      trends: false
+      # Long ranges read hourly trend aggregates instead of raw 5s history -
+      # keeps API payloads small when zooming out.
+      trends: true
+      trendsFrom: 4h
     secureJsonData:
       password: zabbix
