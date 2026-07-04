@@ -18,6 +18,9 @@ on:
       - 'playwright.config.ts'
       - '.eslintrc'
       - '.prettierrc.js'
+      # Root configs proxy into .config/ (jest, webpack, tsconfig, eslint) —
+      # changes there alter build/test outcomes too.
+      - '.config/**'
   pull_request:
 
 # CI only reads the repo; least-privilege token per CodeQL
@@ -51,11 +54,14 @@ jobs:
       # Stage the archive exactly like the release workflow does, so zip
       # layout problems surface on PRs instead of at release time.
       - name: Verify plugin archive layout
+        # Read the plugin id from dist/plugin.json (same as the release
+        # workflow) so this check follows any future id change.
         run: |
-          cp -r dist tamirsuliman-weathermap-panel
-          zip -qr plugin-layout-check.zip tamirsuliman-weathermap-panel
-          unzip -l plugin-layout-check.zip | grep -q "tamirsuliman-weathermap-panel/plugin.json" || {
-            echo "::error::archive root layout is wrong (expected tamirsuliman-weathermap-panel/plugin.json)"; exit 1; }
-          unzip -l plugin-layout-check.zip | grep -q "tamirsuliman-weathermap-panel/module.js" || {
+          PLUGIN_ID=$(node -p "require('./dist/plugin.json').id")
+          cp -r dist "$PLUGIN_ID"
+          zip -qr plugin-layout-check.zip "$PLUGIN_ID"
+          unzip -l plugin-layout-check.zip | grep -q "$PLUGIN_ID/plugin.json" || {
+            echo "::error::archive root layout is wrong (expected $PLUGIN_ID/plugin.json)"; exit 1; }
+          unzip -l plugin-layout-check.zip | grep -q "$PLUGIN_ID/module.js" || {
             echo "::error::module.js missing from archive"; exit 1; }
-          rm -rf tamirsuliman-weathermap-panel plugin-layout-check.zip
+          rm -rf "$PLUGIN_ID" plugin-layout-check.zip
