@@ -18,7 +18,7 @@ import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, Link, Anchor, LinkSide, LinkTooltipMetric } from 'types';
 import { FormDivider } from './FormDivider';
-import { buildQueryOptions, sanitizeUrl } from 'utils';
+import { buildQueryOptions, finiteOrFallback, parseOptionalFiniteNumber, sanitizeUrl } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -42,7 +42,8 @@ export const LinkForm = (props: Props) => {
 
   const handleBandwidthChange = (amt: number, i: number, side: 'A' | 'Z') => {
     let weathermap: Weathermap = value;
-    weathermap.links[i].sides[side].bandwidth = amt;
+    // Blank input reports NaN; keep the previous bandwidth instead of saving it.
+    weathermap.links[i].sides[side].bandwidth = finiteOrFallback(amt, weathermap.links[i].sides[side].bandwidth ?? 0);
     weathermap.links[i].sides[side].bandwidthQuery = undefined;
     onChange(weathermap);
   };
@@ -406,7 +407,7 @@ export const LinkForm = (props: Props) => {
                   onChange={(e) => {
                     let wm = value;
                     const raw = e.currentTarget.value;
-                    wm.links[i].linkOffset = raw === '' ? undefined : Number(raw);
+                    wm.links[i].linkOffset = parseOptionalFiniteNumber(raw);
                     onChange(wm);
                   }}
                   placeholder={'0'}

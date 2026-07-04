@@ -162,3 +162,41 @@ describe('link anchor accounting (#202)', () => {
     expect(updated.nodes.find((n) => n.id === idZ)!.anchors[anchorZ].numLinks).toBe(beforeZ - 1);
   });
 });
+
+// #200: clearing the bandwidth input must not write NaN into link options.
+describe('number inputs do not store NaN (#200)', () => {
+  const lastValue = (spy: jest.Mock): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+
+  test('clearing the A-side bandwidth keeps the previous value', async () => {
+    const initial = getData(theme);
+    initial.links[0].sides.A.bandwidth = 1000;
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={initial} onChangeSpy={spy} frames={[]} />);
+    await selectFirstLink();
+
+    const bandwidth = container.querySelector('input[name="Abandwidth"]')!;
+    fireEvent.change(bandwidth, { target: { value: '' } });
+
+    expect(lastValue(spy).links[0].sides.A.bandwidth).toBe(1000);
+
+    fireEvent.change(bandwidth, { target: { value: '0' } });
+    expect(lastValue(spy).links[0].sides.A.bandwidth).toBe(0);
+  });
+
+  test('link offset treats blank and invalid input as unset', async () => {
+    const initial = getData(theme);
+    initial.links[0].linkOffset = 5;
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={initial} onChangeSpy={spy} frames={[]} />);
+    await selectFirstLink();
+
+    const offset = Array.from(container.querySelectorAll('input[type="number"]')).find(
+      (el) => (el as HTMLInputElement).placeholder === '0'
+    )!;
+    fireEvent.change(offset, { target: { value: '' } });
+    expect(lastValue(spy).links[0].linkOffset).toBeUndefined();
+
+    fireEvent.change(offset, { target: { value: '12' } });
+    expect(lastValue(spy).links[0].linkOffset).toBe(12);
+  });
+});

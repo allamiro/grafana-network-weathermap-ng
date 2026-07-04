@@ -11,11 +11,13 @@ import {
   calculateRectangleAutoHeight,
   calculateRectangleAutoWidth,
   CURRENT_VERSION,
+  finiteOrFallback,
   getSolidFromAlphaColor,
   handleVersionedStateUpdates,
   isSafeUrl,
   measureText,
   nearestMultiple,
+  parseOptionalFiniteNumber,
   getTimeField,
   removeVia,
   sanitizeUrl,
@@ -55,6 +57,30 @@ test('node calculations', () => {
 test('versioned state updates', () => {
   let wm: Weathermap = getData(theme);
   expect(handleVersionedStateUpdates(wm, theme)).toHaveProperty('version', CURRENT_VERSION);
+});
+
+// #200: blank numeric inputs report NaN via valueAsNumber; these helpers are
+// what keeps that out of the saved options.
+describe('numeric input helpers (#200)', () => {
+  test('finiteOrFallback keeps finite values, including 0', () => {
+    expect(finiteOrFallback(5, 1)).toBe(5);
+    expect(finiteOrFallback(0, 1)).toBe(0);
+    expect(finiteOrFallback(-3.5, 1)).toBe(-3.5);
+  });
+
+  test('finiteOrFallback replaces NaN and infinities with the fallback', () => {
+    expect(finiteOrFallback(NaN, 1)).toBe(1);
+    expect(finiteOrFallback(Infinity, 2)).toBe(2);
+    expect(finiteOrFallback(-Infinity, 0)).toBe(0);
+  });
+
+  test('parseOptionalFiniteNumber maps blank/invalid to undefined, keeps 0', () => {
+    expect(parseOptionalFiniteNumber('')).toBeUndefined();
+    expect(parseOptionalFiniteNumber('   ')).toBeUndefined();
+    expect(parseOptionalFiniteNumber('abc')).toBeUndefined();
+    expect(parseOptionalFiniteNumber('0')).toBe(0);
+    expect(parseOptionalFiniteNumber('-3.5')).toBe(-3.5);
+  });
 });
 
 test('versioned state updates backfill settings missing from pre-v14 options (#162)', () => {
