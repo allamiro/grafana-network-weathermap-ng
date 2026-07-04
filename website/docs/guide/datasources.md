@@ -15,7 +15,13 @@ Whatever the datasource, building a weathermap dashboard is the same five steps:
 4. **Bind the series**: in the panel editor open **Links**, select a link, and pick the series in the **A Side Query** and **Z Side Query** dropdowns.
 5. **Set bandwidth and thresholds** so the color scale means something.
 
-The demo stack (`cd testing && docker compose up --build`) runs the same simulated WAN metrics through **Prometheus, InfluxDB, and Elasticsearch simultaneously**, so you can compare the three bindings side by side in the *Datasource Compatibility* dashboard.
+The demo stack (`cd testing && docker compose up --build`) runs the same simulated WAN metrics through **Prometheus, InfluxDB, and Elasticsearch simultaneously** — a bridge forwards the exporter's values to all three, tagged with identical series names. Three provisioned dashboards render the **same map from the same numbers**:
+
+- *WAN Demo — Utilization* (Prometheus)
+- *WAN Demo — Utilization (InfluxDB)* — one Flux query + a rename-by-regex transformation
+- *WAN Demo — Utilization (Elasticsearch)* — one terms + date-histogram query, no transformation needed
+
+Open them side by side to see that the weathermap options are byte-identical — only the queries differ. `testing/scripts/generate-datasource-dashboards.py` regenerates the two variants from the Prometheus original.
 
 ---
 
