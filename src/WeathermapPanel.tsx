@@ -647,6 +647,20 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const [offset, setOffset] = useState(wm ? wm.settings.panel.offset : { x: 0, y: 0 });
 
+  // Resync the pan offset when the saved options change externally (dashboard
+  // reload, editor edit, another session saving). Without this the local state
+  // keeps the offset from mount forever. Skipped mid-drag so an incoming
+  // update cannot yank the map out from under the user; the drag's own
+  // mouse-up persists the final offset back into the options.
+  const savedOffsetX = wm ? wm.settings.panel.offset.x : 0;
+  const savedOffsetY = wm ? wm.settings.panel.offset.y : 0;
+  useEffect(() => {
+    if (!isDragging) {
+      setOffset((prev) => (prev.x === savedOffsetX && prev.y === savedOffsetY ? prev : { x: savedOffsetX, y: savedOffsetY }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedOffsetX, savedOffsetY]);
+
   const drag = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     if (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey) {
       e.nativeEvent.preventDefault();
@@ -663,6 +677,22 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [hoveredLink, setHoveredLink] = useState(null as unknown as HoveredLink);
+
+  // VIA-chain data resolution: return a copy of `link` whose given side
+  // carries `src`'s data (everything except the per-segment labelOffset and
+  // anchor). The rendered DrawnLink state objects must never be mutated —
+  // hover and render both resolve chain data on the fly, and an in-place
+  // write here would permanently rewrite the segment's own side data (#201).
+  const withSideData = (link: DrawnLink, side: 'A' | 'Z', src: LinkSide): DrawnLink => {
+    const merged = { ...link.sides[side] } as unknown as Record<string, unknown>;
+    const source = src as unknown as Record<string, unknown>;
+    for (let key in source) {
+      if (key !== 'labelOffset' && key !== 'anchor') {
+        merged[key] = source[key];
+      }
+    }
+    return { ...link, sides: { ...link.sides, [side]: merged as unknown as LinkSide } };
+  };
 
   const handleLinkHover = (d: DrawnLink, side: 'A' | 'Z', e: React.MouseEvent<SVGElement>) => {
     if (e.shiftKey) {
@@ -683,11 +713,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
       // Check there is only one connection (otherwise this doesn't work)
       if (prevLinks.length === 1) {
-        for (let key in prevLinks[0].sides.A) {
-          if (key !== 'labelOffset' && key !== 'anchor') {
-            (d.sides.A as unknown as Record<string, unknown>)[key] = (prevLinks[0].sides.A as unknown as Record<string, unknown>)[key];
-          }
-        }
+        d = withSideData(d, 'A', prevLinks[0].sides.A);
       } else {
         console.warn(`Connection node "${d.source.label}" missing input connection.`);
       }
@@ -707,11 +733,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
       // Check there is only one connection (otherwise this doesn't work)
       if (forwardLinks.length === 1) {
-        for (let key in forwardLinks[0].sides.Z) {
-          if (key !== 'labelOffset' && key !== 'anchor') {
-            (d.sides.Z as unknown as Record<string, unknown>)[key] = (forwardLinks[0].sides.Z as unknown as Record<string, unknown>)[key];
-          }
-        }
+        d = withSideData(d, 'Z', forwardLinks[0].sides.Z);
       } else {
         console.warn(`Connection node "${d.target.label}" missing output connection.`);
       }
@@ -745,13 +767,27 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   const labelHideZoom = wm?.settings?.link?.labelHideZoom ?? 0;
   const hideValueLabels = labelHideZoom > 0 && (wm?.settings?.panel?.zoomScale ?? 0) >= labelHideZoom;
 
+  // VIA-chain data collection for rendering (#201): a segment leaving a
+  // connection node displays the incoming link's A-side data. Resolved once
+  // per render into copies — the drawn-links state itself is never mutated.
+  const resolvedLinks = links.map((d) => {
+    if (tempNodes[d.source.index]?.isConnection) {
+      const prevLinks = links.filter((l) => l.target.id === d.source.id);
+      if (prevLinks.length === 1) {
+        return withSideData(d, 'A', prevLinks[0].sides.A);
+      }
+      console.warn(`Connection node "${d.source.label}" missing input connection.`);
+    }
+    return d;
+  });
+
   // Label collision avoidance (#179): opt-in greedy pass that nudges value
   // labels along their own link until they stop overlapping each other.
   let collisionOffsets: Map<string, number> | null = null;
   if (wm?.settings?.link?.labelCollision && !hideValueLabels) {
     const placements: LabelPlacement[] = [];
     const fs = wm.settings.fontSizing.link;
-    for (const d of links) {
+    for (const d of resolvedLinks) {
       if (d.nodes[0].id === d.nodes[1].id) {
         continue;
       }
@@ -1307,7 +1343,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               `}</style>
             )}
             {wm.settings.link.gradientColor &&
-              links.map((d) => (
+              resolvedLinks.map((d) => (
                 <React.Fragment key={d.id}>
                   <linearGradient
                     id={`grad-a-${d.id}`}
@@ -1406,26 +1442,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             })`}
           >
             <g>
-              {links.map((d, i) => {
+              {resolvedLinks.map((d, i) => {
                 if (d.nodes[0].id === d.nodes[1].id) {
                   return;
                 }
+                // Incoming link at a VIA junction: only needed for the
+                // junction circle radius; the side data is already resolved.
                 let prevLinks: DrawnLink[] = [];
-                // Automatic data collection through connection links
                 if (tempNodes[d.source.index].isConnection) {
-                  // If this link is coming from a connection, we want to take the link to that connection's data
-                  // Find the link with that data
                   prevLinks = links.filter((l) => l.target.id === d.source.id);
-                  // Check there is only one connection (otherwise this doesn't work)
-                  if (prevLinks.length === 1) {
-                    for (let key in d.sides.A) {
-                      if (key !== 'labelOffset' && key !== 'anchor') {
-                        (d.sides.A as unknown as Record<string, unknown>)[key] = (prevLinks[0].sides.A as unknown as Record<string, unknown>)[key];
-                      }
-                    }
-                  } else {
-                    console.warn(`Connection node "${d.source.label}" missing input connection.`);
-                  }
                 }
                 return (
                   <g
@@ -1577,7 +1602,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               })}
             </g>
             <g>
-              {links.map((d, i) => {
+              {resolvedLinks.map((d, i) => {
                 if (d.nodes[0].id === d.nodes[1].id || hideValueLabels) {
                   return;
                 }
@@ -1631,7 +1656,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               })}
             </g>
             <g>
-              {links.map((d, i) => {
+              {resolvedLinks.map((d, i) => {
                 if (
                   d.nodes[0].id === d.nodes[1].id ||
                   tempNodes[d.target.index].isConnection ||
@@ -1688,7 +1713,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               })}
             </g>
             <g>
-              {links.map((d, i) => {
+              {resolvedLinks.map((d, i) => {
                 if (d.nodes[0].id === d.nodes[1].id) {
                   return;
                 }
@@ -1760,6 +1785,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     draggedNode: draggedNode,
                     selectedNodes: selectedNodes,
                     wm: wm,
+                    scrubTimeMs: useTimeline ? effectiveScrub : null,
                     onDrag: (e, position) => {
                       // Return early if we actually want to just pan the whole weathermap.
                       if (e.ctrlKey || e.metaKey) {
