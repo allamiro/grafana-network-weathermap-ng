@@ -125,3 +125,27 @@ test('position change delivers a new weathermap and node reference (#225)', asyn
   // The original object is untouched.
   expect(initial).toEqual(before);
 });
+
+// #225 follow-up (review): color/status/connection handlers must also deliver
+// new references.
+test('node color change delivers new node and colors references (#225)', async () => {
+  const initial = getData(theme);
+  const before = JSON.parse(JSON.stringify(initial));
+  const spy = jest.fn();
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+  const picker = screen.getAllByRole('combobox')[0];
+  fireEvent.keyDown(picker, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByText('Node A'));
+
+  // The apply-to-all button (inside the Colors collapse) exercises the bulk
+  // path without opening color pickers.
+  fireEvent.click(screen.getByText('Colors'));
+  fireEvent.click(screen.getByText(/Apply to All/i));
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  expect(updated).not.toBe(initial);
+  expect(updated.nodes).not.toBe(initial.nodes);
+  expect(updated.nodes[0]).not.toBe(initial.nodes[0]);
+  expect(updated.nodes[0].colors).not.toBe(initial.nodes[0].colors);
+  expect(initial).toEqual(before);
+});

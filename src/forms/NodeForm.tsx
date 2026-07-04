@@ -89,31 +89,32 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
     onChange(weathermap);
   };
 
+  // Immutable single-node update (#225): clone the touched node so onChange
+  // delivers new references instead of mutating props.value in place.
+  const updateNode = (i: number, patch: Partial<Node>) => {
+    onChange({
+      ...value,
+      nodes: value.nodes.map((n, ni) => (ni === i ? { ...n, ...patch } : n)),
+    });
+  };
+
   const handleConnectionChange = (e: React.FormEvent<HTMLInputElement>, i: number): void => {
-    let weathermap: Weathermap = value;
-    weathermap.nodes[i].isConnection = e.currentTarget.checked;
-    weathermap.nodes[i].label = 'C' + connectionCounter;
-    onChange(weathermap);
+    updateNode(i, { isConnection: e.currentTarget.checked, label: 'C' + connectionCounter });
   };
 
   const handleStatusQueryChange = (query: string | undefined, i: number) => {
-    let weathermap: Weathermap = value;
-    weathermap.nodes[i].statusQuery = query;
-    onChange(weathermap);
+    updateNode(i, { statusQuery: query });
   };
 
   const handleColorChange = (color: string, i: number, type: string) => {
-    let weathermap: Weathermap = value;
-    weathermap.nodes[i].colors[type as 'font' | 'background' | 'border'] = color;
-    onChange(weathermap);
+    updateNode(i, { colors: { ...value.nodes[i].colors, [type as 'font' | 'background' | 'border']: color } });
   };
 
   const applyNodeColorToAll = () => {
-    let weathermap: Weathermap = value;
-    for (let node of weathermap.nodes) {
-      node.colors = { ...currentNode.colors };
-    }
-    onChange(weathermap);
+    onChange({
+      ...value,
+      nodes: value.nodes.map((n) => ({ ...n, colors: { ...currentNode.colors } })),
+    });
   };
 
   const handleIconChange = (icon: string | undefined, i: number) => {
