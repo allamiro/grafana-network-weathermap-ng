@@ -306,6 +306,7 @@ export function needsMigration(wm: Weathermap | undefined | null): boolean {
     return true;
   }
   const num = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
+  const str = (v: unknown) => typeof v === 'string';
   const get = (o: unknown, ...keys: string[]): unknown =>
     keys.reduce((acc: unknown, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined), o);
   const st = wm.settings as unknown;
@@ -315,16 +316,20 @@ export function needsMigration(wm: Weathermap | undefined | null): boolean {
     st &&
     num(get(st, 'link', 'spacing', 'horizontal')) &&
     num(get(st, 'link', 'spacing', 'vertical')) &&
-    get(st, 'link', 'stroke') &&
-    get(st, 'link', 'label') &&
+    str(get(st, 'link', 'stroke', 'color')) &&
+    str(get(st, 'link', 'label', 'background')) &&
+    str(get(st, 'link', 'label', 'border')) &&
+    str(get(st, 'link', 'label', 'font')) &&
     num(get(st, 'fontSizing', 'node')) &&
     num(get(st, 'fontSizing', 'link')) &&
     num(get(st, 'panel', 'panelSize', 'width')) &&
     num(get(st, 'panel', 'panelSize', 'height')) &&
     num(get(st, 'panel', 'offset', 'x')) &&
     num(get(st, 'panel', 'offset', 'y')) &&
+    num(get(st, 'panel', 'zoomScale')) &&
+    str(get(st, 'panel', 'backgroundColor')) &&
     get(st, 'panel', 'grid') &&
-    get(st, 'tooltip') &&
+    num(get(st, 'tooltip', 'fontSize')) &&
     num(get(st, 'scale', 'position', 'x')) &&
     num(get(st, 'scale', 'position', 'y')) &&
     num(get(st, 'scale', 'size', 'width')) &&

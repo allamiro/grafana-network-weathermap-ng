@@ -123,6 +123,17 @@ describe('needsMigration (#224)', () => {
     expect(needsMigration(wm as never)).toBe(true);
   });
 
+  test.each([
+    ['panel.backgroundColor', (st: Record<string, Record<string, unknown>>) => delete st.panel.backgroundColor],
+    ['panel.zoomScale', (st: Record<string, Record<string, unknown>>) => delete st.panel.zoomScale],
+    ['link.stroke.color', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.stroke.color],
+    ['tooltip.fontSize', (st: Record<string, Record<string, unknown>>) => delete st.tooltip.fontSize],
+  ])('true for a current-version map missing renderer leaf %s (#232)', (_name, mutate) => {
+    const wm = migrated() as unknown as { settings: never };
+    mutate(wm.settings);
+    expect(needsMigration(wm as never)).toBe(true);
+  });
+
   test('true for malformed scale fontSizing ({} passes object checks)', () => {
     const wm = migrated() as unknown as { settings: { scale: Record<string, unknown> } };
     wm.settings.scale.fontSizing = {};
