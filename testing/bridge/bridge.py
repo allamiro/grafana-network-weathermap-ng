@@ -71,9 +71,18 @@ def main():
     while True:
         try:
             samples = scrape()
-            ts_ns = time.time_ns()
-            now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        except Exception as e:  # exporter not up yet — nothing to forward
+            print(f"scrape error (will retry): {e}", flush=True)
+            time.sleep(INTERVAL)
+            continue
 
+        ts_ns = time.time_ns()
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        ok = []
+
+        # Independent error boundaries per sink: one backend being down must
+        # not create a data gap in the other.
+        try:
             lines = "\n".join(
                 f"wm,series={esc_tag(s)} value={v} {ts_ns}" for s, v in samples
             )
@@ -82,16 +91,22 @@ def main():
                 lines.encode(),
                 {"Authorization": f"Token {INFLUX_TOKEN}"},
             )
+            ok.append("influx")
+        except Exception as e:
+            print(f"influx write error (will retry): {e}", flush=True)
 
+        try:
             bulk = "".join(
                 json.dumps({"index": {"_index": "wm-metrics"}}) + "\n"
                 + json.dumps({"@timestamp": now_iso, "series": s, "value": v}) + "\n"
                 for s, v in samples
             )
             post(f"{ES}/_bulk", bulk.encode(), {"Content-Type": "application/x-ndjson"})
-            print(f"forwarded {len(samples)} samples", flush=True)
-        except Exception as e:  # keep forwarding through transient startup errors
-            print(f"bridge error (will retry): {e}", flush=True)
+            ok.append("es")
+        except Exception as e:
+            print(f"elasticsearch write error (will retry): {e}", flush=True)
+
+        print(f"forwarded {len(samples)} samples -> {'+'.join(ok) or 'none'}", flush=True)
         time.sleep(INTERVAL)
 
 
