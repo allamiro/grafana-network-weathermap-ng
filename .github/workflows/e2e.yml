@@ -1,0 +1,72 @@
+name: E2E
+
+# Playwright end-to-end tests against a real Grafana. Too heavy/flaky to gate
+# every PR, so this runs weekly and on demand (Actions tab -> E2E -> Run
+# workflow). Locally: `npm run build`, start Grafana on :3000 with dist/
+# mounted as the plugin (see the docker run below), then `npm run e2e`.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  e2e:
+    name: E2E (Grafana ${{ matrix.grafana-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        grafana-version: ['11.0.0', 'latest']
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Grafana with the built plugin
+        run: |
+          docker run -d --name grafana -p 3000:3000 \
+            -v "$PWD/dist:/var/lib/grafana/plugins/tamirsuliman-weathermap-panel" \
+            -e GF_DEFAULT_APP_MODE=development \
+            -e GF_AUTH_ANONYMOUS_ENABLED=true \
+            -e GF_AUTH_ANONYMOUS_ORG_ROLE=Admin \
+            grafana/grafana:${{ matrix.grafana-version }}
+          for i in $(seq 1 45); do
+            curl -fs http://localhost:3000/api/health > /dev/null && exit 0
+            sleep 2
+          done
+          echo "Grafana did not become healthy in time" >&2
+          docker logs grafana >&2
+          exit 1
+
+      - name: Run E2E tests
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-grafana-${{ matrix.grafana-version }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Stop Grafana
+        if: always()
+        run: docker rm -f grafana

@@ -2,9 +2,22 @@ name: Test
 
 on:
   push:
+    # Everything that can change build/test outcomes must trigger CI on push
+    # (pull_request below has no filter and always runs).
     paths:
       - 'src/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+      - 'package.json'
       - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'jest.config.js'
+      - 'jest-setup.js'
+      - 'jest-polyfills.js'
+      - 'playwright.config.ts'
+      - '.eslintrc'
+      - '.prettierrc.js'
   pull_request:
 
 # CI only reads the repo; least-privilege token per CodeQL
@@ -25,10 +38,24 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm ci --legacy-peer-deps
+      # Plain npm ci, matching the release workflow — the lockfile resolves
+      # cleanly without --legacy-peer-deps (only the compatibility workflow's
+      # mixed-version SDK overlay still needs that flag).
+      - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:ci
       - run: npm run build
       - name: Verify dist packaging
         run: node scripts/verify-dist.js
+      # Stage the archive exactly like the release workflow does, so zip
+      # layout problems surface on PRs instead of at release time.
+      - name: Verify plugin archive layout
+        run: |
+          cp -r dist tamirsuliman-weathermap-panel
+          zip -qr plugin-layout-check.zip tamirsuliman-weathermap-panel
+          unzip -l plugin-layout-check.zip | grep -q "tamirsuliman-weathermap-panel/plugin.json" || {
+            echo "::error::archive root layout is wrong (expected tamirsuliman-weathermap-panel/plugin.json)"; exit 1; }
+          unzip -l plugin-layout-check.zip | grep -q "tamirsuliman-weathermap-panel/module.js" || {
+            echo "::error::module.js missing from archive"; exit 1; }
+          rm -rf tamirsuliman-weathermap-panel plugin-layout-check.zip
