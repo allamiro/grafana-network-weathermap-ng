@@ -513,3 +513,32 @@ describe('renders empty or missing weathermap without throwing (#198)', () => {
     expect(container).toBeInTheDocument();
   });
 });
+
+// #199: the panel must not call onOptionsChange during the render phase and
+// must not mutate the saved options object; migrated options are persisted
+// from an effect after commit.
+describe('migration persistence is a commit-phase effect (#199)', () => {
+  test('old-version options persist migrated weathermap without mutating input', () => {
+    const legacy = JSON.parse(JSON.stringify(getData(theme)));
+    delete legacy.version;
+    const snapshot = JSON.parse(JSON.stringify(legacy));
+    const onOptionsChange = jest.fn();
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap: legacy }, onOptionsChange }} />);
+
+    expect(legacy).toEqual(snapshot);
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const persisted = onOptionsChange.mock.calls[0][0].weathermap;
+    expect(persisted.version).toBeDefined();
+    expect(persisted).not.toBe(legacy);
+  });
+
+  test('current-version options trigger no option writes', () => {
+    const wm = handleVersionedStateUpdates(getData(theme), theme);
+    const onOptionsChange = jest.fn();
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap: wm }, onOptionsChange }} />);
+
+    expect(onOptionsChange).not.toHaveBeenCalled();
+  });
+});

@@ -83,6 +83,23 @@ describe('numeric input helpers (#200)', () => {
   });
 });
 
+// #199: the migration runs during render (panel and editor), so it must be a
+// pure function of its input — mutating the saved options object in place made
+// React re-render behavior fragile and corrupted the "before" state.
+test('versioned state updates do not mutate the input object (#199)', () => {
+  const input = JSON.parse(JSON.stringify(legacyWeathermap));
+  const snapshot = JSON.parse(JSON.stringify(input));
+
+  const migrated = handleVersionedStateUpdates(input, theme);
+
+  expect(input).toEqual(snapshot);
+  expect(migrated).not.toBe(input);
+  expect(migrated.version).toBe(CURRENT_VERSION);
+});
+
+// Idempotency is covered by 'handleVersionedStateUpdates round-trip
+// guarantees' further down — no separate #199 copy needed.
+
 test('versioned state updates backfill settings missing from pre-v14 options (#162)', () => {
   const migrated = handleVersionedStateUpdates(JSON.parse(JSON.stringify(legacyWeathermap)), theme);
 

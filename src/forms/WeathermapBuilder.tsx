@@ -100,15 +100,31 @@ export const WeathermapBuilder = (props: Props) => {
   // onChange does not update props.value within this render pass, so the child
   // forms must also receive the migrated options directly — otherwise they
   // crash on settings (e.g. tooltip, scale) that older saved dashboards lack (#162).
-  let wm = props.value;
-  if (!wm) {
-    wm = defaultValue;
-    props.onChange(wm);
-  } else if (!wm.version || wm.version !== CURRENT_VERSION) {
-    // State versioning and merging to deal with missing properties.
-    wm = handleVersionedStateUpdates(wm, theme);
-    props.onChange(wm);
-  }
+  // The migrated/default value is computed for render here and persisted in the
+  // effect below: calling onChange during render is illegal in React and the
+  // old code also let the migration mutate props.value in place (#199).
+  const value = props.value;
+  const wm = React.useMemo(() => {
+    if (!value) {
+      return defaultValue;
+    }
+    if (!value.version || value.version !== CURRENT_VERSION) {
+      return handleVersionedStateUpdates(value, theme);
+    }
+    return value;
+    // defaultValue is a per-render literal; memoizing on value/theme keeps the
+    // computed default referentially stable so the persist effect fires once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, theme]);
+
+  React.useEffect(() => {
+    // Only persist when render had to substitute a default or migrated copy.
+    // Once the write lands, wm === value and this effect goes quiet.
+    if (wm !== value) {
+      props.onChange(wm);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wm, value]);
 
   return (
     <React.Fragment>

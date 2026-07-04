@@ -134,9 +134,20 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.weathermap, theme]) as Weathermap;
 
-  if (options.weathermap && (!options.weathermap.version || options.weathermap.version !== CURRENT_VERSION)) {
-    onOptionsChange({ weathermap: wm });
-  }
+  // Persist the migrated options only after commit: calling onOptionsChange
+  // during render is illegal in React (it updates the panel wrapper while this
+  // component renders). The render above already uses the migrated copy, so
+  // nothing is visually stale while the write is pending. Once it lands,
+  // options.weathermap.version === CURRENT_VERSION and this effect goes quiet.
+  const needsMigrationPersist = Boolean(
+    options.weathermap && (!options.weathermap.version || options.weathermap.version !== CURRENT_VERSION)
+  );
+  useEffect(() => {
+    if (needsMigrationPersist) {
+      onOptionsChange({ weathermap: wm });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsMigrationPersist, wm]);
 
   // Check for editing-related feature set
   const isEditMode = locationService.getSearch().has('editPanel');

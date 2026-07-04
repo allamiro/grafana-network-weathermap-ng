@@ -57,6 +57,49 @@ test('initializes and renders the default weathermap when no value is saved', ()
   expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
 });
 
+// #199: migration/defaulting must not mutate props.value and must not fire
+// onChange during the render phase — only from an effect after commit.
+describe('render purity (#199)', () => {
+  test('migration does not mutate props.value', () => {
+    const value = JSON.parse(JSON.stringify(legacyWeathermap));
+    const snapshot = JSON.parse(JSON.stringify(value));
+
+    const onChange = renderBuilder(value);
+
+    expect(value).toEqual(snapshot);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0]).not.toBe(value);
+  });
+
+  test('migration persists via an effect, not during render', () => {
+    // A parent that stores the value in state: onChange fired during the
+    // render phase would make React log "Cannot update a component while
+    // rendering a different component", and an unguarded effect would loop
+    // into "Maximum update depth exceeded".
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const Parent = () => {
+      const [wm, setWm] = React.useState<Weathermap>(() => JSON.parse(JSON.stringify(legacyWeathermap)));
+      const props = {
+        value: wm,
+        onChange: setWm,
+        context: { data: [] },
+        item: { settings: { placeholder: '' } },
+      } as unknown as StandardEditorProps<Weathermap, { placeholder: string }>;
+      return <WeathermapBuilder {...props} />;
+    };
+
+    render(<Parent />);
+
+    const renderPhaseErrors = errorSpy.mock.calls.filter(
+      (c) => String(c[0]).includes('Cannot update a component') || String(c[0]).includes('Maximum update depth')
+    );
+    errorSpy.mockRestore();
+    expect(renderPhaseErrors).toEqual([]);
+    // The editor settles on the migrated value.
+    expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
+  });
+});
+
 // The Grafana 13 "Status Color Target radio loses selection" bug was caused
 // by duplicate element ids across the options pane (#167). Guard the whole
 // editor: no two rendered elements may share an id, and radio inputs must
