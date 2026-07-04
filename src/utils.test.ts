@@ -97,11 +97,8 @@ test('versioned state updates do not mutate the input object (#199)', () => {
   expect(migrated.version).toBe(CURRENT_VERSION);
 });
 
-test('versioned state updates are idempotent (#199)', () => {
-  const once = handleVersionedStateUpdates(JSON.parse(JSON.stringify(legacyWeathermap)), theme);
-  const twice = handleVersionedStateUpdates(JSON.parse(JSON.stringify(once)), theme);
-  expect(twice).toEqual(once);
-});
+// Idempotency is covered by 'handleVersionedStateUpdates round-trip
+// guarantees' further down — no separate #199 copy needed.
 
 test('versioned state updates backfill settings missing from pre-v14 options (#162)', () => {
   const migrated = handleVersionedStateUpdates(JSON.parse(JSON.stringify(legacyWeathermap)), theme);
