@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Chores (not part of the plugin archive)
 
+* **E2E baseline tests** ([#38](https://github.com/allamiro/grafana-network-weathermap-ng/issues/38), PR [#216](https://github.com/allamiro/grafana-network-weathermap-ng/pull/216)): Playwright/@grafana/plugin-e2e coverage for the core editor workflow — panel renders, add node, add link between two nodes, threshold change updates the color-scale legend — verified in CI against Grafana 11.0.0 and latest; version-tolerant visualization-picker driving, `GRAFANA_URL`/`PW_CHANNEL` targeting, and `npm run e2e:local` for the anonymous-admin testing stack. Includes stable `inputId`s on the link editor side selects (#167 pattern)
 * CI hardening — dedicated E2E workflow (weekly + manual) against Grafana 11 and latest, broader push path filters (including `.config/**`), consistent dependency installs between test and release, and a PR-time plugin archive layout check that reads the plugin id from `dist/plugin.json` ([#205](https://github.com/allamiro/grafana-network-weathermap-ng/issues/205), PR [#208](https://github.com/allamiro/grafana-network-weathermap-ng/pull/208))
 
 ## [1.5.13](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.13) (2026-07-04)
