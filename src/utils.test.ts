@@ -444,17 +444,18 @@ describe('handleVersionedStateUpdates round-trip guarantees', () => {
     }
   });
 
-  test('a current-version map missing newer optional settings gains defaults without losing config', () => {
-    // Simulates a dashboard saved by an older 1.5.x release: schema already
-    // v14, but fields added later (status legend, hover options) absent.
+  test('a current-version map passes through migration with all config intact', () => {
+    // Simulates a dashboard saved by an older 1.5.x release at the current
+    // schema version: newer optional fields (statusLegend, hoverHighlight,
+    // labelCollision) are absent — they are handled by runtime defaults, so
+    // migration must neither invent them nor disturb anything else.
     const saved = JSON.parse(JSON.stringify(getData(theme)));
-    delete saved.settings.statusLegend;
-    delete saved.settings.link.hoverHighlight;
-    delete saved.settings.link.labelCollision;
     saved.links[0].sides.A.query = 'MY QUERY';
 
     const migrated = handleVersionedStateUpdates(JSON.parse(JSON.stringify(saved)), theme);
     expect(migrated.links[0].sides.A.query).toBe('MY QUERY');
+    expect(migrated.version).toBe(CURRENT_VERSION);
     expect(migrated.nodes.map((n: { id: string }) => n.id)).toEqual(saved.nodes.map((n: { id: string }) => n.id));
+    expect(migrated.settings.statusLegend).toBeUndefined();
   });
 });

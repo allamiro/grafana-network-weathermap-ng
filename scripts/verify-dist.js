@@ -49,17 +49,26 @@ try {
   failures.push(`could not compare versions: ${e.message}`);
 }
 
-// 3. Every icon set in src/icons must reach dist/icons with the same file
-// count (guards the webpack CopyPlugin config).
+// 3. Every icon set in src/icons must reach dist/icons with exactly the same
+// files — filename comparison, not just counts, so a swapped or missing icon
+// is caught too (guards the webpack CopyPlugin config).
+const svgsIn = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.svg')).sort() : []);
 const srcIcons = path.join(ROOT, 'src', 'icons');
 const distIcons = path.join(DIST, 'icons');
 check(fs.existsSync(distIcons), 'dist/icons is missing entirely');
 if (fs.existsSync(srcIcons) && fs.existsSync(distIcons)) {
   for (const set of fs.readdirSync(srcIcons).filter((d) => fs.statSync(path.join(srcIcons, d)).isDirectory())) {
-    const srcCount = fs.readdirSync(path.join(srcIcons, set)).filter((f) => f.endsWith('.svg')).length;
-    const distSet = path.join(distIcons, set);
-    const distCount = fs.existsSync(distSet) ? fs.readdirSync(distSet).filter((f) => f.endsWith('.svg')).length : 0;
-    check(distCount === srcCount, `icon set "${set}": src has ${srcCount} svg(s), dist has ${distCount}`);
+    const srcFiles = svgsIn(path.join(srcIcons, set));
+    const distFiles = new Set(svgsIn(path.join(distIcons, set)));
+    const missing = srcFiles.filter((f) => !distFiles.has(f));
+    check(
+      missing.length === 0,
+      `icon set "${set}": ${missing.length} svg(s) missing from dist (${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ', …' : ''})`
+    );
+    check(
+      distFiles.size === srcFiles.length,
+      `icon set "${set}": dist has ${distFiles.size} svg(s), src has ${srcFiles.length}`
+    );
   }
 }
 
