@@ -8,6 +8,13 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 1'
+  # Weekly/manual by design — too heavy to gate every PR. But PRs that touch
+  # the E2E surface itself must get a browser pass before merge (#227).
+  pull_request:
+    paths:
+      - 'tests/**'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e.yml'
 
 permissions:
   contents: read
