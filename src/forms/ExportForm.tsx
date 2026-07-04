@@ -34,15 +34,35 @@ export const ExportForm = ({ value, onChange }: Props) => {
     let data = svg.outerHTML || '';
     const preface = '<?xml version="1.0" standalone="no"?>\r\n';
 
+    // Inline each icon as a data URL so the exported SVG is self-contained.
+    // A failed fetch (offline icon host, CORS) keeps the original href and
+    // must not abort the whole export.
     const icons = svg.getElementsByTagName('image');
-    //TODO: fix exporting
     for (let i = 0; i < icons.length; i++) {
-      const iconURL = document.location.origin + '/' + icons[i].href.baseVal;
-      const iconData = await fetch(iconURL);
-      const iconString = await iconData.text();
-      const base64String = 'data:image/svg+xml;base64,' + window.btoa(iconString);
-
-      data = data.replace(icons[i].href.baseVal, base64String);
+      // href may live on the SVG animated property or a plain (xlink:)href
+      // attribute depending on how the image was authored.
+      const href =
+        icons[i].href?.baseVal || icons[i].getAttribute('href') || icons[i].getAttribute('xlink:href') || '';
+      // data: is already self-contained; blob: is session-scoped and cannot
+      // be resolved outside this page — leave both untouched.
+      if (!href || href.startsWith('data:') || href.startsWith('blob:')) {
+        continue;
+      }
+      try {
+        // Resolves relative, root-relative, and absolute URLs correctly
+        // (the old origin + '/' + href concatenation broke absolute URLs).
+        const iconURL = new URL(href, document.location.origin);
+        const iconData = await fetch(iconURL.toString());
+        if (!iconData.ok) {
+          continue;
+        }
+        const iconString = await iconData.text();
+        const base64String = 'data:image/svg+xml;base64,' + window.btoa(iconString);
+        data = data.replace(href, base64String);
+      } catch (e) {
+        // Keep the original href for this icon and continue with the rest.
+        continue;
+      }
     }
 
     const svgBlob = new Blob([preface, data], { type: 'image/svg+xml;charset=utf-8' });
