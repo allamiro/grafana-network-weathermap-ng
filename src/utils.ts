@@ -329,7 +329,8 @@ export function needsMigration(wm: Weathermap | undefined | null): boolean {
     num(get(st, 'scale', 'position', 'y')) &&
     num(get(st, 'scale', 'size', 'width')) &&
     num(get(st, 'scale', 'size', 'height')) &&
-    get(st, 'scale', 'fontSizing')
+    num(get(st, 'scale', 'fontSizing', 'title')) &&
+    num(get(st, 'scale', 'fontSizing', 'threshold'))
   );
 }
 

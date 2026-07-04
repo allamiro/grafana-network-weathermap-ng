@@ -123,6 +123,12 @@ describe('needsMigration (#224)', () => {
     expect(needsMigration(wm as never)).toBe(true);
   });
 
+  test('true for malformed scale fontSizing ({} passes object checks)', () => {
+    const wm = migrated() as unknown as { settings: { scale: Record<string, unknown> } };
+    wm.settings.scale.fontSizing = {};
+    expect(needsMigration(wm as never)).toBe(true);
+  });
+
   test('nullish input does not throw', () => {
     expect(needsMigration(undefined)).toBe(false);
     expect(needsMigration(null)).toBe(false);
