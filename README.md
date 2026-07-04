@@ -181,7 +181,7 @@ GRAFANA_VERSION=11.0.0 docker compose up --build   # pin any Grafana version
 |  | Requirement | Version |
 |:-:|---|---|
 | 📊 | **Grafana** | **11.0.0+** — tested through 13.x |
-| ⚙️ | **Node.js** *(development only)* | 20+ |
+| ⚙️ | **Node.js** *(development only)* | 20 – 24 (`.nvmrc` pins 24) |
 
 ## 🛡️ Built to not break
 
