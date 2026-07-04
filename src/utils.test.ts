@@ -397,7 +397,7 @@ describe('datasource frame shapes resolve (#253)', () => {
       name: 'wm_link_bps {device="core-a", direction="tx"}',
       fields: [
         { name: '_time', type: FieldType.time, values: [1000, 2000] },
-        { name: '_value', type: FieldType.number, values: [42.5, 43.5] },
+        { name: '_value', type: FieldType.number, values: [42.5, 43.5], labels: { device: 'core-a', direction: 'tx' } },
       ],
     });
     expect(getValueField(frame).name).toBe('_value');
@@ -417,16 +417,21 @@ describe('datasource frame shapes resolve (#253)', () => {
     expect(getDataFrameName(frame, [frame])).toBe('core-a→core-b tx');
   });
 
-  test('Elasticsearch shape: @timestamp + aggregation-named value field', () => {
+  test('Elasticsearch shape: @timestamp + aggregation field with an alias', () => {
+    // The query Alias lands as the display name on the value field.
     const frame = toDataFrame({
-      name: 'core-a→core-b tx',
       fields: [
         { name: '@timestamp', type: FieldType.time, values: [1000, 2000] },
-        { name: 'Average bps', type: FieldType.number, values: [7, 9] },
+        {
+          name: 'Average bps',
+          type: FieldType.number,
+          values: [7, 9],
+          config: { displayNameFromDS: 'core-a→core-b tx' },
+        },
       ],
     });
     expect(getValueField(frame).name).toBe('Average bps');
-    expect(getDataFrameName(frame, [frame])).toContain('core-a→core-b tx');
+    expect(getDataFrameName(frame, [frame])).toBe('core-a→core-b tx');
   });
 
   test('Zabbix-like shape: item-named numeric field, no per-field display name', () => {
