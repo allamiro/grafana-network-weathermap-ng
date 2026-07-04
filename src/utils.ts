@@ -439,6 +439,66 @@ export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): stri
   return getFieldDisplayName(getValueField(frame), frame, allFrames);
 };
 
+/** A select option for picking one of the panel's query result frames. */
+export interface QueryOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * Display names at or below this length are shown in dropdowns verbatim —
+ * longer Grafana disambiguation strings fall back to a concise form (#49).
+ */
+const QUERY_LABEL_MAX_VERBATIM = 60;
+
+/**
+ * Build the options for the query-picker dropdowns.
+ *
+ * The stored value is always the frame's full display name (what the panel
+ * matches series by), so existing configs keep working. The visible label
+ * balances two failure modes:
+ *  - Long disambiguation strings made dropdowns unreadable (#49), so long
+ *    names are shortened to "refId: fieldName" — but only while that stays
+ *    unique.
+ *  - One query returning many series gave every frame the same "A: Value"
+ *    concise label (#191), so when concise labels collide the full display
+ *    name (with its distinguishing label set) is used instead.
+ */
+export const buildQueryOptions = (frames: DataFrame[]): QueryOption[] => {
+  const seenNames = new Set<string>();
+  const entries: Array<{ value: string; concise: string }> = [];
+  for (const d of frames) {
+    if (d.fields.length < 2) {
+      continue;
+    }
+    try {
+      const name = getDataFrameName(d, frames);
+      if (seenNames.has(name)) {
+        continue;
+      }
+      seenNames.add(name);
+      const fieldName = getValueField(d).name || name;
+      const concise = d.refId ? `${d.refId}: ${fieldName}` : fieldName;
+      entries.push({ value: name, concise });
+    } catch (e) {
+      console.warn('Network Weathermap: Error while attempting to access query data.', e);
+    }
+  }
+
+  const conciseCounts = new Map<string, number>();
+  for (const e of entries) {
+    conciseCounts.set(e.concise, (conciseCounts.get(e.concise) ?? 0) + 1);
+  }
+
+  return entries.map((e) => {
+    if (e.value.length <= QUERY_LABEL_MAX_VERBATIM) {
+      return { value: e.value, label: e.value };
+    }
+    const conciseIsUnique = conciseCounts.get(e.concise) === 1;
+    return { value: e.value, label: conciseIsUnique ? e.concise : e.value };
+  });
+};
+
 /**
  * Schemes that are explicitly unsafe for navigation or resource loading.
  * Any absolute URL must use http:// or https:// — everything else is rejected.

@@ -1,7 +1,10 @@
+import { toDataFrame } from '@grafana/data';
 import { defaultNodes, getData, legacyWeathermap, theme } from 'testData';
 import { DrawnNode, Weathermap } from 'types';
 import {
   addViaToLink,
+  buildQueryOptions,
+  getDataFrameName,
   resolveLinkChain,
   spreadLabels,
   aggregateFieldValues,
@@ -354,5 +357,57 @@ describe('spreadLabels (#179)', () => {
       expect(pct).toBeGreaterThanOrEqual(10);
       expect(pct).toBeLessThanOrEqual(90);
     }
+  });
+});
+
+describe('buildQueryOptions (#49, #191)', () => {
+  const frame = (refId: string, displayName: string, valueFieldName = 'Value') =>
+    toDataFrame({
+      refId,
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: valueFieldName, values: [10, 20], config: { displayNameFromDS: displayName } },
+      ],
+    });
+
+  test('one query returning many series keeps every label distinguishable (#191)', () => {
+    // Simulates a single Prometheus rate() query: same refId, same "Value"
+    // field, distinct label sets in the display name.
+    const frames = [
+      frame('A', 'wm_link_bps{device="rtr-1",interface="ge-0/0/1",direction="tx",job="wm",site="dfw"}'),
+      frame('A', 'wm_link_bps{device="rtr-1",interface="ge-0/0/2",direction="tx",job="wm",site="dfw"}'),
+      frame('A', 'wm_link_bps{device="rtr-2",interface="ge-0/0/1",direction="tx",job="wm",site="atl"}'),
+    ];
+    const opts = buildQueryOptions(frames);
+    expect(opts).toHaveLength(3);
+    // pre-#191-fix behavior collapsed all labels to "A: Value"
+    const labels = opts.map((o) => o.label);
+    expect(new Set(labels).size).toBe(3);
+    expect(labels[0]).toContain('ge-0/0/1');
+    // stored values stay the full display names so existing configs match
+    expect(opts.map((o) => o.value)).toEqual(frames.map((f) => getDataFrameName(f, frames)));
+    opts.forEach((o) => expect(o.value).toContain('wm_link_bps'));
+  });
+
+  test('long unique disambiguation strings stay concise (#49)', () => {
+    const frames = [
+      frame('A', 'node_cpu_seconds_total{mode="idle",instance="host-1:9100",job="node"}', 'node_cpu_seconds_total'),
+      frame('B', 'node_network_transmit_bytes_total{device="eth0",instance="host-1:9100"}', 'node_network_transmit_bytes_total'),
+    ];
+    const opts = buildQueryOptions(frames);
+    expect(opts.map((o) => o.label)).toEqual(['A: node_cpu_seconds_total', 'B: node_network_transmit_bytes_total']);
+  });
+
+  test('short display names (custom legends) are shown verbatim', () => {
+    const frames = [frame('A', 'SW-CORE to BKB-CARPINA'), frame('B', 'BKB-CARPINA to SW-CORE')];
+    const opts = buildQueryOptions(frames);
+    expect(opts.map((o) => o.label)).toEqual(['SW-CORE to BKB-CARPINA', 'BKB-CARPINA to SW-CORE']);
+  });
+
+  test('frames without a value field or with duplicate names are skipped', () => {
+    const empty = toDataFrame({ fields: [] });
+    const dupe = frame('A', 'SAME NAME');
+    const opts = buildQueryOptions([empty, dupe, frame('A', 'SAME NAME')]);
+    expect(opts).toHaveLength(1);
   });
 });

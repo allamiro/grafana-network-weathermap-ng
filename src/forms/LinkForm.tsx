@@ -18,7 +18,7 @@ import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, Link, Anchor, LinkSide, LinkTooltipMetric } from 'types';
 import { FormDivider } from './FormDivider';
-import { getDataFrameName, getValueField, sanitizeUrl } from 'utils';
+import { buildQueryOptions, sanitizeUrl } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -188,26 +188,7 @@ export const LinkForm = (props: Props) => {
   let usedConnectionNodes = usedConnectionSourceNodes.filter((n) => usedConnectionTargetNodes.includes(n));
   let availableNodes = value.nodes.filter((n) => !usedConnectionNodes.includes(n.id));
 
-  const seenNames = new Set<string>();
-  let dataWithIds: Array<{ value: string; label: string }> = [];
-  context.data.forEach((d) => {
-    if (d.fields.length < 2) {
-      return;
-    }
-    try {
-      const name = getDataFrameName(d, context.data);
-      if (!seenNames.has(name)) {
-        seenNames.add(name);
-        // Build a concise label: "refId: fieldName" so the dropdown stays
-        // readable even when Grafana appends full label sets to the display name.
-        const fieldName = getValueField(d).name || name;
-        const label = d.refId ? `${d.refId}: ${fieldName}` : fieldName;
-        dataWithIds.push({ value: name, label });
-      }
-    } catch (e) {
-      console.warn('Network Weathermap: Error while attempting to access query data.', e);
-    }
-  });
+  const dataWithIds = buildQueryOptions(context.data);
 
   return (
     <React.Fragment>
