@@ -10,7 +10,7 @@ import {
   getTimeField,
   getValueField,
   sanitizeUrl,
-  valueAtTime,
+  sampleAtTime,
 } from '../utils';
 import { css } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
@@ -87,10 +87,12 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
       .map((frame) => {
         const valueField = getValueField(frame);
         // Timeline scrubbing (#201): while scrubbing, node status replays the
-        // value at the selected time (same step-hold semantics as link
-        // values); live mode keeps reading the most recent datapoint.
+        // raw value at the selected time (step-hold like link values, but
+        // without their throughput negative-clamp — negative status values
+        // are legitimate mapping inputs and must resolve like live mode).
+        // Live mode keeps reading the most recent datapoint.
         if (scrubTimeMs !== null && scrubTimeMs !== undefined) {
-          return valueAtTime(
+          return sampleAtTime(
             getTimeField(frame)?.values as Array<number | null | undefined>,
             valueField.values as Array<number | null | undefined>,
             scrubTimeMs

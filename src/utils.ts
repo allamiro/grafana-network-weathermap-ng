@@ -425,8 +425,24 @@ export function valueAtTime(
   values: Array<number | null | undefined> | null | undefined,
   timeMs: number
 ): number {
+  const raw = sampleAtTime(times, values, timeMs);
+  return raw === undefined ? 0 : Math.max(0, raw);
+}
+
+/**
+ * Raw step-hold sample at a point in time: same walk as valueAtTime (most
+ * recent valid sample at or before timeMs, null/NaN skipped backwards) but
+ * without the throughput-specific negative clamp and 0 default. Used for
+ * node status (#201), where negative values are legitimate mapping inputs
+ * and "no usable sample" must stay distinguishable from a real 0.
+ */
+export function sampleAtTime(
+  times: Array<number | null | undefined> | null | undefined,
+  values: Array<number | null | undefined> | null | undefined,
+  timeMs: number
+): number | undefined {
   if (!times || !values || times.length === 0) {
-    return 0;
+    return undefined;
   }
 
   // Index of the most recent sample at or before timeMs.
@@ -450,10 +466,10 @@ export function valueAtTime(
   for (let i = idx; i >= 0; i--) {
     const v = values[i];
     if (v !== null && v !== undefined && !isNaN(v)) {
-      return Math.max(0, v);
+      return v;
     }
   }
-  return 0;
+  return undefined;
 }
 
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {

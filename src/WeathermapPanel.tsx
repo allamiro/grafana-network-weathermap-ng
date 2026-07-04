@@ -772,7 +772,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // per render into copies — the drawn-links state itself is never mutated.
   const resolvedLinks = links.map((d) => {
     if (tempNodes[d.source.index]?.isConnection) {
-      const prevLinks = links.filter((l) => l.target.id === d.source.id);
+      // Walk back through consecutive connection nodes (same traversal as
+      // hover) so multi-VIA chains show the origin link's data on every
+      // segment regardless of segment order in the links array.
+      let prevLinks = links.filter((l) => l.target.id === d.source.id);
+      while (prevLinks.length === 1 && tempNodes[prevLinks[0].source.index]?.isConnection) {
+        prevLinks = links.filter((l) => l.target.id === prevLinks[0].source.id);
+      }
       if (prevLinks.length === 1) {
         return withSideData(d, 'A', prevLinks[0].sides.A);
       }

@@ -681,4 +681,74 @@ describe('timeline and state synchronization (#201)', () => {
     expect(container.textContent).toBe(renderedBefore);
     expect(JSON.stringify(testProps.options.weathermap.links)).toBe(optionsBefore);
   });
+
+  test('multi-VIA chains show the origin data on every downstream segment', () => {
+    // A -> C1 -> C2 -> B: three segments through two consecutive connection
+    // nodes. Every segment's A-side label must resolve back to the origin
+    // link's series, regardless of segment order in the links array.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    const c2 = JSON.parse(JSON.stringify(weathermap.nodes[2]));
+    c2.id = 'conn-2';
+    c2.label = 'C1';
+    c2.position = [350, 350];
+    weathermap.nodes.push(c2);
+    const seg3 = JSON.parse(JSON.stringify(weathermap.links[1]));
+    // Rewire: seg2 now ends at C2; seg3 runs C2 -> B.
+    weathermap.links[1].nodes[1] = c2;
+    seg3.id = 'seg-3';
+    seg3.nodes[0] = c2;
+    weathermap.links.push(seg3);
+    weathermap.links[0].sides.A.query = 'origin-series';
+    testProps.options = { weathermap };
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [
+        toDataFrame({
+          fields: [
+            { name: 'Time', values: [1, 2] },
+            { name: 'Value', values: [777, 777], config: { displayNameFromDS: 'origin-series' } },
+          ],
+        }),
+      ],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = jest.fn();
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    // Three segments, each labeling its A side with the origin value.
+    expect(screen.getAllByTestId('link')).toHaveLength(3);
+    expect((container.textContent!.match(/777/g) || []).length).toBe(3);
+  });
+
+  test('scrubbed node status resolves raw negative values like live mode', () => {
+    const props = timelineProps();
+    const node = props.options.weathermap.nodes[0];
+    // Two thresholds: raw -3 must match the -5 mapping (RED). A clamped
+    // value of 0 would wrongly match the 0 mapping (GREEN) instead.
+    node.statusValueMappings = [
+      { value: -5, color: '#aa0000' },
+      { value: 0, color: '#00aa00' },
+    ];
+    props.data.series[1] = toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1_200_000, 2_000_000] },
+        { name: 'Value', values: [-3, 7], config: { displayNameFromDS: 'status-series' } },
+      ],
+    });
+    render(<WeathermapPanel {...props} />);
+
+    const nodeRect = () => screen.getByText(node.label!).closest('g')!.querySelector('rect')!;
+
+    // Live: last sample is 7 -> highest threshold <= 7 is 0 -> green.
+    expect(nodeRect().getAttribute('stroke')).toBe('#00aa00');
+
+    scrubBack();
+
+    // Scrubbed to the -3 sample: threshold -5 applies -> red, not the
+    // clamped-to-zero green.
+    expect(nodeRect().getAttribute('stroke')).toBe('#aa0000');
+  });
 });
