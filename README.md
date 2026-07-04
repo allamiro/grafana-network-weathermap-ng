@@ -151,9 +151,9 @@ Need the official AWS/Azure/GCP architecture packs? <code>scripts/fetch-cloud-ic
 
 ## 🚀 Quick start
 
-**Install from the [Grafana plugin catalog](https://grafana.com/grafana/plugins/all-plugins/):**
+**Install (from within Grafana):**
 
-1. In Grafana, go to <kbd>Administration</kbd> → <kbd>Plugins and data</kbd> → <kbd>Plugins</kbd>
+1. Go to <kbd>Administration</kbd> → <kbd>Plugins and data</kbd> → <kbd>Plugins</kbd>
 2. Search for **Network Weathermap NG** and click <kbd>Install</kbd>
 
 **Build your first map:**
