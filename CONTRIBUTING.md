@@ -4,7 +4,7 @@ Thank you for your interest in contributing to the Network Weathermap plugin.
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 20 – 24 (`.nvmrc` pins 24; the E2E toolchain caps at 24)
 - npm 9+
 - Docker (for the local Grafana environment)
 

@@ -74,7 +74,7 @@
     "webpack-livereload-plugin": "^3.0.2"
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=20 <=24",
     "npm": ">=9"
   },
   "dependencies": {
