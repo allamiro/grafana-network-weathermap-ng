@@ -291,6 +291,43 @@ export function parseOptionalFiniteNumber(raw: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Whether a saved weathermap needs the defaults deep-merge before render.
+ * True for old/missing schema versions AND for current-version maps whose
+ * nested settings are incomplete (hand-edited or provisioned JSON) — render
+ * code dereferences these shapes directly, so a malformed current-version
+ * map must repair through the same migration path (#224).
+ */
+export function needsMigration(wm: Weathermap | undefined | null): boolean {
+  if (!wm) {
+    return false;
+  }
+  if (!wm.version || wm.version !== CURRENT_VERSION) {
+    return true;
+  }
+  const st = wm.settings as unknown as Record<string, unknown> | undefined;
+  const panel = st?.panel as Record<string, unknown> | undefined;
+  const scale = st?.scale as Record<string, unknown> | undefined;
+  const link = st?.link as Record<string, unknown> | undefined;
+  return !(
+    st &&
+    link &&
+    (link.spacing as unknown) &&
+    (link.stroke as unknown) &&
+    (link.label as unknown) &&
+    (st.fontSizing as unknown) &&
+    panel &&
+    (panel.panelSize as unknown) &&
+    (panel.offset as unknown) &&
+    (panel.grid as unknown) &&
+    (st.tooltip as unknown) &&
+    scale &&
+    (scale.position as unknown) &&
+    (scale.size as unknown) &&
+    (scale.fontSizing as unknown)
+  );
+}
+
 export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2): Weathermap {
   const modelWeathermap: Weathermap = {
     version: CURRENT_VERSION,

@@ -57,6 +57,21 @@ test('initializes and renders the default weathermap when no value is saved', ()
   expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
 });
 
+// #224: the editor must also repair current-version maps with missing nested
+// settings — child forms read settings.tooltip/settings.scale directly.
+test('renders the editor for a current-version map with missing settings (#224)', () => {
+  const wm = JSON.parse(JSON.stringify(legacyWeathermap));
+  wm.version = CURRENT_VERSION;
+  delete wm.settings.tooltip;
+  delete wm.settings.scale;
+  const onChange = renderBuilder(wm);
+
+  expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
+  expect(screen.getByText('Scale Title')).toBeInTheDocument();
+  expect(onChange).toHaveBeenCalledTimes(1);
+  expect(onChange.mock.calls[0][0].settings.tooltip).toBeDefined();
+});
+
 // #199: migration/defaulting must not mutate props.value and must not fire
 // onChange during the render phase — only from an effect after commit.
 describe('render purity (#199)', () => {

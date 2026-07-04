@@ -17,6 +17,7 @@ import {
   isSafeUrl,
   measureText,
   nearestMultiple,
+  needsMigration,
   parseOptionalFiniteNumber,
   getTimeField,
   removeVia,
@@ -81,6 +82,44 @@ describe('numeric input helpers (#200)', () => {
     expect(parseOptionalFiniteNumber('abc')).toBeUndefined();
     expect(parseOptionalFiniteNumber('0')).toBe(0);
     expect(parseOptionalFiniteNumber('-3.5')).toBe(-3.5);
+  });
+});
+
+// #224: a current-version map with incomplete nested settings must repair
+// through the migration path — render code dereferences these shapes directly.
+describe('needsMigration (#224)', () => {
+  const migrated = () => handleVersionedStateUpdates(JSON.parse(JSON.stringify(legacyWeathermap)), theme);
+
+  test('false for a fully migrated map', () => {
+    expect(needsMigration(migrated())).toBe(false);
+  });
+
+  test('true for missing or old versions', () => {
+    const wm = migrated() as unknown as Record<string, unknown>;
+    delete wm.version;
+    expect(needsMigration(wm as never)).toBe(true);
+    wm.version = 3;
+    expect(needsMigration(wm as never)).toBe(true);
+  });
+
+  test.each(['panel', 'tooltip', 'scale', 'link', 'fontSizing'])(
+    'true for a current-version map missing settings.%s',
+    (key) => {
+      const wm = migrated() as unknown as { settings: Record<string, unknown> };
+      delete wm.settings[key];
+      expect(needsMigration(wm as never)).toBe(true);
+    }
+  );
+
+  test('true for a current-version map missing a nested shape (panel.panelSize)', () => {
+    const wm = migrated() as unknown as { settings: { panel: Record<string, unknown> } };
+    delete wm.settings.panel.panelSize;
+    expect(needsMigration(wm as never)).toBe(true);
+  });
+
+  test('nullish input does not throw', () => {
+    expect(needsMigration(undefined)).toBe(false);
+    expect(needsMigration(null)).toBe(false);
   });
 });
 

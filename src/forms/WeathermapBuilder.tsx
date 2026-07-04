@@ -7,7 +7,7 @@ import { ColorForm } from './ColorForm';
 import { PanelForm } from './PanelForm';
 import { v4 as uuidv4 } from 'uuid';
 import { useTheme2 } from '@grafana/ui';
-import { generateBasicNode, CURRENT_VERSION, generateBasicLink, handleVersionedStateUpdates } from 'utils';
+import { generateBasicNode, CURRENT_VERSION, generateBasicLink, handleVersionedStateUpdates, needsMigration } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -108,7 +108,7 @@ export const WeathermapBuilder = (props: Props) => {
     if (!value) {
       return defaultValue;
     }
-    if (!value.version || value.version !== CURRENT_VERSION) {
+    if (needsMigration(value)) {
       return handleVersionedStateUpdates(value, theme);
     }
     return value;
