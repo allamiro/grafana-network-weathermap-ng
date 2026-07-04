@@ -34,6 +34,9 @@ jobs:
       - name: Build plugin
         run: npm run build
 
+      - name: Verify dist packaging
+        run: node scripts/verify-dist.js
+
       - name: Sign plugin
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}

@@ -1,10 +1,10 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { StandardEditorProps } from '@grafana/data';
 import { WeathermapBuilder } from './WeathermapBuilder';
 import { Weathermap } from 'types';
 import { CURRENT_VERSION } from 'utils';
-import { legacyWeathermap } from 'testData';
+import { getData, legacyWeathermap, theme } from 'testData';
 
 const renderBuilder = (value: Weathermap | undefined) => {
   const onChange = jest.fn();
@@ -55,4 +55,29 @@ test('initializes and renders the default weathermap when no value is saved', ()
   // Previously the builder rendered nothing on the first pass; now the forms
   // render immediately with the initialized value.
   expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
+});
+
+// The Grafana 13 "Status Color Target radio loses selection" bug was caused
+// by duplicate element ids across the options pane (#167). Guard the whole
+// editor: no two rendered elements may share an id, and radio inputs must
+// all carry one.
+test('editor renders no duplicate element ids (#167)', async () => {
+  renderBuilder(getData(theme));
+
+  // Expand the sections that mount id-carrying controls lazily.
+  const picker = screen.getAllByRole('combobox')[0];
+  fireEvent.keyDown(picker, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByText('Node A'));
+  fireEvent.click(screen.getByText('Status'));
+  fireEvent.click(screen.getByText('Advanced'));
+
+  const ids = Array.from(document.querySelectorAll('[id]'))
+    .map((el) => el.id)
+    .filter((id) => id.length > 0);
+  const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+  expect(duplicates).toEqual([]);
+
+  for (const radio of screen.getAllByRole('radio')) {
+    expect(radio.id).not.toBe('');
+  }
 });
