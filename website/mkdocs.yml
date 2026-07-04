@@ -40,6 +40,7 @@ nav:
       - Panel Options: guide/panel-options.md
       - Interactions & Editing: guide/interactions.md
       - Use Cases: guide/use-cases.md
+      - Data Sources: guide/datasources.md
   - Customization: customization.md
   - Icon Reference: icons.md
   - Reference: reference.md
