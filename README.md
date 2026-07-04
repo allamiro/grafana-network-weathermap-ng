@@ -132,9 +132,17 @@ Twelve icon sets served by the plugin itself — no external image hosting, air-
 
 **1064 icons · 12 sets** — every one served by the plugin itself
 
-| Networking | Cisco | Vendors | Cloud | Rack | Flags | Databases | Languages | Platforms | Computers | Aerospace |
-|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 72 | 289 | 49 | 18 | 18 | 522 | 48 | 22 | 9 | 12 | 5 |
+![Cisco](https://img.shields.io/badge/Cisco-289-1BA0D7?style=flat-square)
+![Flags](https://img.shields.io/badge/Country_Flags-522-4E9F3D?style=flat-square)
+![Networking](https://img.shields.io/badge/Networking-72-5C7CFA?style=flat-square)
+![Vendors](https://img.shields.io/badge/Vendors-49-E8590C?style=flat-square)
+![Databases](https://img.shields.io/badge/Databases-48-B197FC?style=flat-square)
+![Languages](https://img.shields.io/badge/Languages-22-F59F00?style=flat-square)
+![Cloud](https://img.shields.io/badge/Cloud-18-FF9900?style=flat-square)
+![Rack](https://img.shields.io/badge/Rack_Parts-18-868E96?style=flat-square)
+![Computers](https://img.shields.io/badge/Computers-12-63E6BE?style=flat-square)
+![Platforms](https://img.shields.io/badge/Platforms-9-326CE5?style=flat-square)
+![Aerospace](https://img.shields.io/badge/Aerospace-5-D6336C?style=flat-square)
 
 <sub>Browse them all in the <a href="https://allamiro.github.io/grafana-network-weathermap-ng/icons/"><b>Icon Reference</b></a>.
 Need the official AWS/Azure/GCP architecture packs? <code>scripts/fetch-cloud-icons.sh</code> installs them onto your own Grafana.</sub>
@@ -176,10 +184,10 @@ GRAFANA_VERSION=11.0.0 docker compose up --build   # pin any Grafana version
 
 </details>
 
-| Requirement | Version |
-|---|---|
-| Grafana | **11.0.0+** (tested through 13.x) |
-| Node.js (development only) | 20+ |
+|  | Requirement | Version |
+|:-:|---|---|
+| 📊 | **Grafana** | **11.0.0+** — tested through 13.x |
+| ⚙️ | **Node.js** *(development only)* | 20+ |
 
 ## 🛡️ Built to not break
 
@@ -209,9 +217,12 @@ This fork treats reliability as a feature. Beyond unit coverage, the suite is bu
 
 Issues and PRs are welcome — please open an issue first for significant changes.
 
-[Report a bug](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.md) ·
-[Request a feature](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=feature_request.md) ·
-[Development guide](CONTRIBUTING.md)
+| | |
+|:-:|---|
+| 🐛 | [**Report a bug**](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=bug_report.md) — crashes, wrong rendering, editor glitches |
+| ✨ | [**Request a feature**](https://github.com/allamiro/grafana-network-weathermap-ng/issues/new?template=feature_request.md) — new icon sets, options, integrations |
+| 🛠️ | [**Development guide**](CONTRIBUTING.md) — local setup, build, and test commands |
+| 💬 | [**Browse open issues**](https://github.com/allamiro/grafana-network-weathermap-ng/issues) — see what's planned or grab something to work on |
 
 ## 🧾 Credits & license
 
@@ -222,10 +233,9 @@ Icon sets bundled under their respective licenses (Simple Icons CC0, devicon MIT
 
 **Apache-2.0** — see [LICENSE](LICENSE). Redistributions must retain the [NOTICE](NOTICE) attribution per Apache-2.0 §4(d).
 
-<details>
-<summary><b>Citing this project</b></summary>
+## 📖 Citing
 
-GitHub's **"Cite this repository"** button (powered by [CITATION.cff](CITATION.cff)) provides APA and BibTeX entries:
+If you use this project in research or publications, please cite it — GitHub's **"Cite this repository"** button (powered by [CITATION.cff](CITATION.cff)) provides APA and BibTeX entries:
 
 ```bibtex
 @software{Suliman_Network_Weathermap_NG,
@@ -235,8 +245,6 @@ GitHub's **"Cite this repository"** button (powered by [CITATION.cff](CITATION.c
   license = {Apache-2.0}
 }
 ```
-
-</details>
 
 <div align="center">
 <sub>⭐ If this plugin lights up your NOC wall, a star helps others find it.</sub>
