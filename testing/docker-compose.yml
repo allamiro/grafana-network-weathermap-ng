@@ -83,6 +83,10 @@ services:
       - POSTGRES_DB=zabbix
       - ZBX_SERVER_HOST=zabbix-server
       - PHP_TZ=UTC
+      # 204 items x 1h of 5s history through the JSON-RPC API blows the
+      # default 128M PHP memory_limit (API returns 500). The web image wires
+      # ZBX_MEMORYLIMIT into php-fpm's memory_limit.
+      - ZBX_MEMORYLIMIT=1024M
   bridge:
     build:
       context: bridge

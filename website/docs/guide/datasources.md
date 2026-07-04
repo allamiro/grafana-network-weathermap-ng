@@ -50,6 +50,10 @@ rate(ifHCOutOctets{ifName="ge-0/0/1"}[5m]) * 8
 
 **Binding:** the legend text is exactly what appears in the A/B Side Query dropdowns.
 
+**Deviations:** none — Prometheus is the baseline; legends map 1:1 to display names.
+
+![WAN Utilization demo on Prometheus](../img/datasources/wm-prometheus.png)
+
 ---
 
 ## InfluxDB
@@ -84,6 +88,11 @@ Use **Alias by** to fix the display name: `core-a→core-b tx`.
 
 **Frame shape note:** Influx value fields arrive named `_value` (Flux) or `mean` (InfluxQL) rather than `Value` — the panel resolves the value field by *numeric type*, not by name, so both bind cleanly. This behavior is locked by unit tests.
 
+!!! warning "Deviation: single-label Flux frames display as `value <series>`"
+    When a Flux query returns frames with one label, Grafana computes the display name as `value <label value>` — **not** the bare series name. Add a **Rename by regex** transformation (`^value (.*)$` → `$1`) so the display names match your bindings. The demo dashboard ships exactly this transformation.
+
+![WAN Utilization demo on InfluxDB](../img/datasources/wm-influxdb.png)
+
 ---
 
 ## Elasticsearch
@@ -101,6 +110,11 @@ For metrics stored as documents (e.g. from Beats/Logstash or the demo bridge wri
 
 **Frame shape note:** ES frames often carry names like `Average bps` combined with the term value; whatever ends up as the display name in Grafana's legend is what the link editor's dropdown shows — pick from the dropdown and it binds.
 
+!!! warning "Deviation: cap the panel's Max data points"
+    A terms × date-histogram query multiplies buckets: many series at panel-width resolution exceeds Elasticsearch's **65,536-bucket** search limit and the whole query errors. Set the panel's **Max data points** (Query options) so `series × points` stays under the limit — the demo dashboard uses 250 for its 204 series.
+
+![WAN Utilization demo on Elasticsearch](../img/datasources/wm-elasticsearch.png)
+
 ---
 
 ## Zabbix
@@ -114,8 +128,16 @@ The [Zabbix datasource plugin](https://grafana.com/grafana/plugins/alexanderzobn
 3. Zabbix's item name becomes the series display name — item names are stable by nature, which suits the binding rule well.
 4. Use *Functions → Alias* (`setAlias`) in the Zabbix query editor if you want shorter dropdown names.
 
+!!! warning "Deviation: disable Data alignment"
+    The Zabbix datasource's **Data alignment** option (on by default) merges all returned series into a single *wide* frame — and the panel currently binds only a wide frame's first value field, so every other link shows `n/a` (tracked in [#260](https://github.com/allamiro/grafana-network-weathermap-ng/issues/260)). Set **Disable data alignment** in the query options; the demo dashboard ships with it disabled.
+
+!!! warning "Deviation: API payload size on dense history"
+    Pulling many items at fine granularity through the Zabbix JSON-RPC API can exhaust the web frontend's PHP `memory_limit` (default 128M → HTTP 500). For dense setups raise it (the demo compose sets `ZBX_MEMORYLIMIT=1024M` on the web container) and enable **trends** in the datasource (the demo uses `trendsFrom: 4h`) so long ranges read hourly aggregates instead of raw history.
+
 !!! note "Counters vs gauges"
     Zabbix network items are usually already rate-calculated (`Bits sent/received` deltas). If yours are raw counters, add the `delta`/`rate` processing on the Zabbix side or via the query editor functions, the same way you'd `rate()` in Prometheus.
+
+![WAN Utilization demo on Zabbix](../img/datasources/wm-zabbix.png)
 
 ---
 
