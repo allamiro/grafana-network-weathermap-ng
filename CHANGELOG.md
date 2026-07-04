@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 
+* **cloud provider icon set — 18 bundled icons** ([#215](https://github.com/allamiro/grafana-network-weathermap-ng/issues/215), PR [#219](https://github.com/allamiro/grafana-network-weathermap-ng/pull/219)): AWS, Azure, and GCP brand logos (Simple Icons, CC0) plus provider-badged device composites (`cloud/aws-router`, `cloud/azure-firewall`, ...) in a new **Cloud** picker group. The official architecture icon packs are not bundled for licensing reasons — `scripts/fetch-cloud-icons.sh` installs them onto your own Grafana, usable via a node's Custom icon URL
 * **vendor icon set — 49 bundled icons** (PR [#190](https://github.com/allamiro/grafana-network-weathermap-ng/pull/190)): 19 brand logos from the Simple Icons project (CC0) — Juniper, F5, Fortinet, Palo Alto Networks, MikroTik, Ubiquiti, Netgear, TP-Link, Huawei, SonicWall, Nokia, Ericsson, OPNsense, pfSense, OpenWrt, Dell, HP, Lenovo, Supermicro — plus 30 composite device icons (e.g. `vendors/juniper-router`, `vendors/f5-load-balancer`) combining Networking shapes with vendor corner badges. New **Vendors** group in the node icon picker; Icon Reference regenerated (1046 icons, 11 sets)
 
 ### Bug Fixes
