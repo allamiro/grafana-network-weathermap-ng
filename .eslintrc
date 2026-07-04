@@ -8,6 +8,7 @@
     "playwright.config.ts",
     "tests/",
     "testing/scripts/",
-    "website/scripts/"
+    "website/scripts/",
+    "website/site/"
   ]
 }
