@@ -74,8 +74,9 @@ describe('number inputs do not store NaN (#200)', () => {
     const spy = jest.fn();
     const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
 
-    // The zoom/offset inputs carry no name attribute; identify them by their
-    // current values within the panel-options section.
+    // The zoom/offset inputs carry no name attribute, so clear every number
+    // input in the form — any unguarded handler then surfaces NaN in the
+    // containsNaN sweep below.
     const numberInputs = Array.from(container.querySelectorAll('input[type="number"]'));
     for (const input of numberInputs) {
       fireEvent.change(input, { target: { value: '' } });
