@@ -31,6 +31,7 @@ import {
   LanguageIcons,
   AerospaceIcons,
   VendorIcons,
+  CloudIcons,
 } from './iconOptions';
 import { finiteOrFallback, getDataFrameName, sanitizeUrl } from 'utils';
 
@@ -301,6 +302,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const vendorIconsFormatted = VendorIcons.map((t) => {
     return { label: t, value: 'vendors/' + t };
   });
+  const cloudIconsFormatted = CloudIcons.map((t) => {
+    return { label: t, value: 'cloud/' + t };
+  });
 
   let dataWithIds: string[] = [];
   context.data.forEach((d, i) => {
@@ -432,6 +436,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                       { label: 'Programming Languages', value: 'languages', options: languageIconsFormatted },
                       { label: 'Aerospace', value: 'aerospace', options: aerospaceIconsFormatted },
                       { label: 'Vendors', value: 'vendors', options: vendorIconsFormatted },
+                      { label: 'Cloud', value: 'cloud', options: cloudIconsFormatted },
                       { label: 'Custom Icon', value: 'custom_icon' },
                     ]}
                     className={styles.nodeSelect}
