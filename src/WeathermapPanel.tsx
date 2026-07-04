@@ -104,16 +104,38 @@ const getlinkGraphFormatter =
   };
 
 /**
+ * Saved dashboards can carry missing or partial weathermap options
+ * (hand-edited JSON, provisioning, interrupted saves). Normalize the shape so
+ * render code never dereferences a missing array; a missing weathermap stays
+ * undefined and renders the empty state.
+ */
+const normalizeWeathermap = (raw: Weathermap | undefined | null): Weathermap | undefined =>
+  raw ? { ...raw, nodes: raw.nodes ?? [], links: raw.links ?? [], scale: raw.scale ?? [] } : undefined;
+
+/**
  * Weathermap panel component.
  */
 export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: PanelProps<SimpleOptions>) => {
   const { options, data, width: width2, height: height2, onOptionsChange, timeRange } = props;
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
-  const wm = options.weathermap;
+  // Render from a normalized — and, when the saved schema is older or the map
+  // is partial, locally migrated — copy, so the first render is already safe
+  // even before the migrated options are persisted below.
+  // Typed as the original `options.weathermap` was: non-null for the type
+  // system, guarded by truthiness checks at runtime (it is undefined when the
+  // panel has no saved weathermap yet).
+  const wm = useMemo(() => {
+    const normalized = normalizeWeathermap(options.weathermap);
+    if (normalized && normalized.version !== CURRENT_VERSION) {
+      return handleVersionedStateUpdates(JSON.parse(JSON.stringify(normalized)), theme);
+    }
+    return normalized;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.weathermap, theme]) as Weathermap;
 
-  if (wm && (!wm.version || wm.version !== CURRENT_VERSION)) {
-    onOptionsChange({ weathermap: handleVersionedStateUpdates(wm, theme) });
+  if (options.weathermap && (!options.weathermap.version || options.weathermap.version !== CURRENT_VERSION)) {
+    onOptionsChange({ weathermap: wm });
   }
 
   // Check for editing-related feature set
@@ -193,8 +215,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     let w = width / 2;
     let vec1 = { x: _p2.x - _p1.x, y: _p2.y - _p1.y };
     let length = Math.sqrt(vec1.x * vec1.x + vec1.y * vec1.y);
-    vec1.x = vec1.x / length;
-    vec1.y = vec1.y / length;
+    if (!isFinite(length) || length === 0) {
+      // Overlapping endpoints have no direction; fall back to a fixed unit
+      // vector so the SVG never receives NaN coordinates.
+      vec1 = { x: 1, y: 0 };
+    } else {
+      vec1.x = vec1.x / length;
+      vec1.y = vec1.y / length;
+    }
     let vec2 = { x: -vec1.y, y: vec1.x };
     let v1 = { x: _p2.x - h * vec1.x + w * vec2.x, y: _p2.y - h * vec1.y + w * vec2.y };
     let v2 = { x: _p2.x - h * vec1.x - w * vec2.x, y: _p2.y - h * vec1.y - w * vec2.y };
@@ -202,21 +230,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }
 
   const [nodes, setNodes] = useState(
-    wm.nodes.map((d, i) => {
-      return generateDrawnNode(d, i, wm);
-    })
+    wm
+      ? wm.nodes.map((d, i) => {
+          return generateDrawnNode(d, i, wm);
+        })
+      : []
   );
 
   // To be used to calculate how many links we've drawn
   let tempNodes = nodes.slice();
 
-  const [links, setLinks] = useState(
-    wm
-      ? wm.links.map((d, i) => {
-          return generateDrawnLink(d, i, new Map());
-        })
-      : []
-  );
+  const [links, setLinks] = useState(wm ? generateDrawnLinks(wm.links, new Map()) : []);
 
   // Calculate aspect-ratio corrected drag positions
   function getScaledMousePos(pos: { x: number; y: number }): { x: number; y: number } {
@@ -327,7 +351,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }
 
   // Calculate link positions / text / colors / etc.
-  function generateDrawnLink(d: Link, i: number, frameMap: Map<string, number>): DrawnLink {
+  // Build the drawable links, skipping any whose endpoint nodes are missing.
+  function generateDrawnLinks(linkList: Link[], frameMap: Map<string, number>): DrawnLink[] {
+    return linkList.flatMap((d, i) => {
+      const drawn = generateDrawnLink(d, i, frameMap);
+      return drawn ? [drawn] : [];
+    });
+  }
+
+  function generateDrawnLink(d: Link, i: number, frameMap: Map<string, number>): DrawnLink | null {
     let toReturn: DrawnLink = { ...d, sides: { A: { ...d.sides.A }, Z: { ...d.sides.Z } } } as DrawnLink;
     toReturn.index = i;
 
@@ -353,9 +385,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     );
     const linkDecimals = wm.settings.link.linkDecimals;
 
-    // Set the link's source and target node
-    toReturn.source = nodes.filter((n) => n.id === toReturn.nodes[0].id)[0];
-    toReturn.target = nodes.filter((n) => n.id === toReturn.nodes[1].id)[0];
+    // Set the link's source and target node. A link referencing a node that no
+    // longer exists (hand-edited JSON, partial provisioning) is skipped by the
+    // callers rather than crashing the panel on the dereferences below.
+    toReturn.source = nodes.filter((n) => n.id === toReturn.nodes[0]?.id)[0];
+    toReturn.target = nodes.filter((n) => n.id === toReturn.nodes[1]?.id)[0];
+    if (!toReturn.source || !toReturn.target) {
+      return null;
+    }
 
     // For each of our A/Z sides
     for (let s = 0; s < 2; s++) {
@@ -508,7 +545,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Build the data-frame value map once per data/mode change instead of once per link.
   // Key: display name (from getDataFrameName). Value: resolved numeric value.
   const dataFrameMap = useMemo(() => {
-    const mode = wm.settings.link.valueMappingMode;
+    const mode = wm?.settings?.link?.valueMappingMode;
     const map = new Map<string, number>();
     data.series.forEach((frame) => {
       if (frame.fields.length < 2) {
@@ -531,7 +568,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     });
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, wm.settings.link.valueMappingMode, useTimeline, effectiveScrub]);
+  }, [data, wm?.settings?.link?.valueMappingMode, useTimeline, effectiveScrub]);
 
   // Minimize uneeded state changes
   const mounted = useRef(false);
@@ -540,10 +577,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
-    } else {
+    } else if (wm) {
       setNodes(
-        options.weathermap.nodes.map((d, i) => {
-          return generateDrawnNode(d, i, options.weathermap);
+        wm.nodes.map((d, i) => {
+          return generateDrawnNode(d, i, wm);
         })
       );
     }
@@ -554,11 +591,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   // Update links on props/data change
   useEffect(() => {
-    setLinks(
-      options.weathermap.links.map((d, i) => {
-        return generateDrawnLink(d, i, dataFrameMap);
-      })
-    );
+    if (wm) {
+      setLinks(generateDrawnLinks(wm.links, dataFrameMap));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options, data, nodes, dataFrameMap]);
 
@@ -589,17 +624,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const [isDragging, setDragging] = useState(false);
 
-  let aspectX = wm.settings.panel.panelSize.width / width2;
-  let aspectY = wm.settings.panel.panelSize.height / height2;
+  let aspectX = wm ? wm.settings.panel.panelSize.width / width2 : 1;
+  let aspectY = wm ? wm.settings.panel.panelSize.height / height2 : 1;
   let aspectMultiplier = Math.max(aspectX, aspectY);
 
   const updateAspects = () => {
-    aspectX = wm.settings.panel.panelSize.width / width2;
-    aspectY = wm.settings.panel.panelSize.height / height2;
+    aspectX = wm ? wm.settings.panel.panelSize.width / width2 : 1;
+    aspectY = wm ? wm.settings.panel.panelSize.height / height2 : 1;
     aspectMultiplier = Math.max(aspectX, aspectY);
   };
 
-  const [offset, setOffset] = useState(wm.settings.panel.offset);
+  const [offset, setOffset] = useState(wm ? wm.settings.panel.offset : { x: 0, y: 0 });
 
   const drag = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     if (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey) {
@@ -691,18 +726,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Hover highlight (#179): when enabled, hovering a link keeps its whole VIA
   // chain at full opacity and fades every other link and value label.
   const hoverChain =
-    wm.settings.link.hoverHighlight && hoveredLink ? resolveLinkChain(wm.links, hoveredLink.link.id) : null;
+    wm?.settings.link.hoverHighlight && hoveredLink ? resolveLinkChain(wm.links, hoveredLink.link.id) : null;
   const linkOpacity = (id: string) => (hoverChain && !hoverChain.has(id) ? 0.12 : 1);
 
   // Zoom-dependent labels (#179): hide value labels once zoomed out past the
   // configured number of wheel steps.
-  const labelHideZoom = wm.settings.link.labelHideZoom ?? 0;
+  const labelHideZoom = wm?.settings.link.labelHideZoom ?? 0;
   const hideValueLabels = labelHideZoom > 0 && wm.settings.panel.zoomScale >= labelHideZoom;
 
   // Label collision avoidance (#179): opt-in greedy pass that nudges value
   // labels along their own link until they stop overlapping each other.
   let collisionOffsets: Map<string, number> | null = null;
-  if (wm.settings.link.labelCollision && !hideValueLabels) {
+  if (wm?.settings.link.labelCollision && !hideValueLabels) {
     const placements: LabelPlacement[] = [];
     const fs = wm.settings.fontSizing.link;
     for (const d of links) {
@@ -1741,11 +1776,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         })
                       );
                       tempNodes = nodes.slice();
-                      setLinks(
-                        wm.links.map((d, i) => {
-                          return generateDrawnLink(d, i, dataFrameMap);
-                        })
-                      );
+                      setLinks(generateDrawnLinks(wm.links, dataFrameMap));
                     },
                     onStop: (e, position) => {
                       // setDraggedNode(null as unknown as DrawnNode);

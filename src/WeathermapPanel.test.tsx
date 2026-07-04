@@ -475,3 +475,41 @@ test('Check edit mode display', () => {
   fireEvent.wheel(container.querySelector('#nw-testing')!, { deltaY: -1 });
   expect(testProps.options.weathermap.settings.panel.zoomScale).toEqual(0);
 });
+
+describe('renders empty or missing weathermap without throwing (#198)', () => {
+  const renderWith = (weathermap: unknown) => {
+    const props = {
+      ...mPanelProps,
+      options: { weathermap: weathermap as SimpleOptions['weathermap'] },
+      onOptionsChange: jest.fn(),
+    };
+    return render(<WeathermapPanel {...props} />);
+  };
+
+  test('missing weathermap renders the empty state', () => {
+    const { container } = renderWith(undefined);
+    expect(container).toBeInTheDocument();
+    expect(screen.queryAllByTestId('link')).toHaveLength(0);
+  });
+
+  test('weathermap with missing nodes array renders', () => {
+    const wm = handleVersionedStateUpdates(getData(theme), theme) as unknown as Record<string, unknown>;
+    delete wm.nodes;
+    wm.links = [];
+    const { container } = renderWith(wm);
+    expect(container).toBeInTheDocument();
+  });
+
+  test('weathermap with missing links array renders its nodes', () => {
+    const wm = handleVersionedStateUpdates(getData(theme), theme) as unknown as Record<string, unknown>;
+    delete wm.links;
+    const { container } = renderWith(wm);
+    expect(container.querySelector('#nw-testing')).toBeInTheDocument();
+  });
+
+  test('partially initialized unversioned weathermap is migrated for render', () => {
+    // Only an id and one empty array: no version, no settings, no nodes.
+    const { container } = renderWith({ id: 'partial', links: [] });
+    expect(container).toBeInTheDocument();
+  });
+});
