@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.14](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.14) (2026-07-04)
+
+### Features
+
+* **vendor icon set — 49 bundled icons** (PR [#190](https://github.com/allamiro/grafana-network-weathermap-ng/pull/190)): 19 brand logos from the Simple Icons project (CC0) — Juniper, F5, Fortinet, Palo Alto Networks, MikroTik, Ubiquiti, Netgear, TP-Link, Huawei, SonicWall, Nokia, Ericsson, OPNsense, pfSense, OpenWrt, Dell, HP, Lenovo, Supermicro — plus 30 composite device icons (e.g. `vendors/juniper-router`, `vendors/f5-load-balancer`) combining Networking shapes with vendor corner badges. New **Vendors** group in the node icon picker; Icon Reference regenerated (1046 icons, 11 sets)
+
+### Bug Fixes
+
+* **panel crash resilience for malformed or partial weathermap options** — missing/partial `options.weathermap`, links referencing deleted nodes, and overlapping nodes (zero-length arrow vectors) no longer crash the panel; options are normalized before any dereference, malformed links are skipped, and SVG geometry can no longer contain `NaN` ([#198](https://github.com/allamiro/grafana-network-weathermap-ng/issues/198), PR [#206](https://github.com/allamiro/grafana-network-weathermap-ng/pull/206))
+* **render purity** — the options-schema migration no longer mutates the incoming saved options object, and neither the panel nor the editor calls `onOptionsChange`/`onChange` during render; migrated options are persisted from guarded effects after commit ([#199](https://github.com/allamiro/grafana-network-weathermap-ng/issues/199), PR [#210](https://github.com/allamiro/grafana-network-weathermap-ng/pull/210))
+* **numeric inputs never store `NaN`** — blank or mid-edit numeric fields (positions, panel size, zoom, offsets, icon sizes, thresholds, bandwidth) keep the previous valid value instead of writing `NaN` into saved options; `0` remains valid; the color-scale editor no longer leaks `NaN` into options through shared local edit state ([#200](https://github.com/allamiro/grafana-network-weathermap-ng/issues/200), PR [#211](https://github.com/allamiro/grafana-network-weathermap-ng/pull/211))
+* **timeline and state synchronization** — the pan offset resyncs when saved options change externally (dashboard reload, another session); VIA-chain data resolution no longer mutates rendered link state (multi-VIA chains included); node status now replays the timeline scrub position with raw step-hold sampling, matching link values during incident replay ([#201](https://github.com/allamiro/grafana-network-weathermap-ng/issues/201), PR [#212](https://github.com/allamiro/grafana-network-weathermap-ng/pull/212))
+* **self-link anchor accounting** — removing a self-link now decrements its shared anchor by 2 (mirroring add) and clamps at 0, so link spacing no longer drifts on affected nodes ([#202](https://github.com/allamiro/grafana-network-weathermap-ng/issues/202), PR [#209](https://github.com/allamiro/grafana-network-weathermap-ng/pull/209))
+* **SVG export hardening** — relative, root-relative, and absolute icon URLs resolve correctly; `data:`/`blob:` hrefs (any scheme casing) are left untouched; a failed or CORS-blocked icon fetch keeps the original href instead of aborting the whole export ([#203](https://github.com/allamiro/grafana-network-weathermap-ng/issues/203), PR [#207](https://github.com/allamiro/grafana-network-weathermap-ng/pull/207))
+* **deterministic mapping for duplicate display names** — when two series share a display name, link values now resolve from the first frame, consistently with the query dropdown and node status, instead of silently taking whichever duplicate arrived last ([#204](https://github.com/allamiro/grafana-network-weathermap-ng/issues/204), PR [#213](https://github.com/allamiro/grafana-network-weathermap-ng/pull/213))
+
+### Chores (not part of the plugin archive)
+
+* CI hardening — dedicated E2E workflow (weekly + manual) against Grafana 11 and latest, broader push path filters (including `.config/**`), consistent dependency installs between test and release, and a PR-time plugin archive layout check that reads the plugin id from `dist/plugin.json` ([#205](https://github.com/allamiro/grafana-network-weathermap-ng/issues/205), PR [#208](https://github.com/allamiro/grafana-network-weathermap-ng/pull/208))
+
 ## [1.5.13](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.13) (2026-07-04)
 
 ### Bug Fixes
