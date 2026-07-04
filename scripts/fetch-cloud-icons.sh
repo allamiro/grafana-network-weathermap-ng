@@ -26,10 +26,11 @@ fetch_azure() {
   mkdir -p "$dest"
   local url="https://arch-center.azureedge.net/icons/Azure_Public_Service_Icons_V21.zip"
   echo "Azure: fetching official icon pack..."
-  if curl -fsSL "$url" -o /tmp/azure-icons.zip; then
-    unzip -qo /tmp/azure-icons.zip -d "$dest" && rm -f /tmp/azure-icons.zip
+  if curl -fsSL "$url" -o /tmp/azure-icons.zip && unzip -qo /tmp/azure-icons.zip -d "$dest"; then
+    rm -f /tmp/azure-icons.zip
     echo "Azure icons -> $dest"
   else
+    rm -f /tmp/azure-icons.zip
     fail_hint "https://learn.microsoft.com/azure/architecture/icons/"
   fi
 }
