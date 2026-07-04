@@ -4,6 +4,8 @@ services:
       context: grafana
       args:
         GRAFANA_VERSION: ${GRAFANA_VERSION:-12.4.0}
+        # Zabbix datasource app for the multi-datasource demo (#256).
+        GF_INSTALL_PLUGINS: alexanderzobnin-zabbix-app
     ports:
       - 3101:3000
     volumes:
@@ -47,6 +49,40 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+  # Zabbix (#256): full server so the Zabbix datasource can be demoed live.
+  # The bridge seeds a host with one trapper item per series and pushes
+  # values with the zabbix_sender protocol.
+  zabbix-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - POSTGRES_DB=zabbix
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    depends_on:
+      - zabbix-db
+    ports:
+      - 10051:10051
+    environment:
+      - DB_SERVER_HOST=zabbix-db
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - POSTGRES_DB=zabbix
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    depends_on:
+      - zabbix-server
+    ports:
+      # 8080 belongs to the exporter; Zabbix UI/API on 8081.
+      - 8081:8080
+    environment:
+      - DB_SERVER_HOST=zabbix-db
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - POSTGRES_DB=zabbix
+      - ZBX_SERVER_HOST=zabbix-server
+      - PHP_TZ=UTC
   bridge:
     build:
       context: bridge
@@ -55,3 +91,5 @@ services:
       - exporter
       - influxdb
       - elasticsearch
+      - zabbix-server
+      - zabbix-web

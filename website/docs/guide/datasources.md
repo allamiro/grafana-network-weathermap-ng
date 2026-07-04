@@ -20,6 +20,7 @@ The demo stack (`cd testing && docker compose up --build`) runs the same simulat
 - *WAN Demo — Utilization* (Prometheus)
 - *WAN Demo — Utilization (InfluxDB)* — one Flux query + a rename-by-regex transformation
 - *WAN Demo — Utilization (Elasticsearch)* — one terms + date-histogram query, no transformation needed
+- *WAN Demo — Utilization (Zabbix)* — one group/host/item wildcard query; item names are the series names, no transformation needed
 
 Open them side by side to see that the weathermap options are byte-identical — only the queries differ. `testing/scripts/generate-datasource-dashboards.py` regenerates the two variants from the Prometheus original.
 
@@ -104,9 +105,9 @@ For metrics stored as documents (e.g. from Beats/Logstash or the demo bridge wri
 
 ## Zabbix
 
-The [Zabbix datasource plugin](https://grafana.com/grafana/plugins/alexanderzobnin-zabbix-datasource/) works with the weathermap, but it's **not part of the demo stack** (a full Zabbix server + agents is too heavy for a test compose). The pattern:
+The [Zabbix datasource plugin](https://grafana.com/grafana/plugins/alexanderzobnin-zabbix-datasource/) works with the weathermap — and the demo stack runs a **full Zabbix 7.0 server** (UI/API on `:8081`, Admin / zabbix) whose `wm-sim` host receives every simulated series as a trapper item, pushed by the bridge with the zabbix_sender protocol. The pattern:
 
-1. Install and configure the Zabbix plugin datasource.
+1. Install and configure the Zabbix plugin datasource (the demo Grafana ships it pre-installed and provisioned).
 2. Query per link side using the Group/Host/Item selectors, e.g.:
    - **Group:** `Routers` · **Host:** `core-a` · **Item:** `Interface ge-0/0/1(): Bits sent`
    - Z side: the matching `Bits received` item on the peer, or the same host's receive item — match your monitoring convention.

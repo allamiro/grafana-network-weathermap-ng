@@ -73,6 +73,32 @@ elastic = make(
     # ES frames are already named exactly by the series term.
 )
 
-for name, d in (("wm-wan-influx.json", influx), ("wm-wan-elastic.json", elastic)):
+zabbix = make(
+    "wm-wan-zabbix",
+    "WAN Demo — Utilization (Zabbix)",
+    "zabbix-wm",
+    [
+        {
+            "refId": "A",
+            "datasource": {"uid": "zabbix-wm"},
+            "queryType": "0",
+            "group": {"filter": "WM"},
+            "host": {"filter": "wm-sim"},
+            "application": {"filter": ""},
+            "itemTag": {"filter": ""},
+            "item": {"filter": "/.*/"},
+            "functions": [],
+            "options": {
+                "showDisabledItems": False,
+                "skipEmptyValues": False,
+                "disableDataAlignment": False,
+                "useZabbixValueMapping": False,
+            },
+        }
+    ],
+    # Zabbix item names ARE the series display names — no transformation.
+)
+
+for name, d in (("wm-wan-influx.json", influx), ("wm-wan-elastic.json", elastic), ("wm-wan-zabbix.json", zabbix)):
     json.dump(d, open(f"grafana/dashboards/{name}", "w"), indent=2)
     print("wrote", name)
