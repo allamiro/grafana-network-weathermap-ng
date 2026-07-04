@@ -89,3 +89,19 @@ describe('number inputs do not store NaN (#200)', () => {
     expect(containsNaN(updated)).toBe(false);
   });
 });
+
+// #225: panel-settings updates must deliver new object references.
+test('viewbox width change delivers a new weathermap object (#225)', () => {
+  const initial = getData(theme);
+  const before = JSON.parse(JSON.stringify(initial));
+  const spy = jest.fn();
+  const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.change(container.querySelector('input[name="panelWidth"]')!, { target: { value: '850' } });
+
+  const updated = lastValue(spy);
+  expect(updated).not.toBe(initial);
+  expect(updated.settings.panel).not.toBe(initial.settings.panel);
+  expect(updated.settings.panel.panelSize.width).toBe(850);
+  expect(initial).toEqual(before);
+});

@@ -101,3 +101,22 @@ describe('number inputs do not store NaN (#200)', () => {
     expect(updated.scale[0].percent).toBe(0);
   });
 });
+
+// #225: the threshold commit must deliver a new weathermap/scale reference.
+test('threshold commit delivers new object references (#225)', () => {
+  const initial = getData(theme);
+  initial.scale = [{ percent: 10, color: '#111111' }];
+  const before = JSON.parse(JSON.stringify(initial));
+  const spy = jest.fn();
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  const threshold = screen.getByLabelText('Weathermap Threshold 10');
+  fireEvent.change(threshold, { target: { value: '35' } });
+  fireEvent.blur(threshold);
+
+  const updated: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+  expect(updated).not.toBe(initial);
+  expect(updated.scale).not.toBe(initial.scale);
+  expect(updated.scale[0].percent).toBe(35);
+  expect(initial).toEqual(before);
+});
