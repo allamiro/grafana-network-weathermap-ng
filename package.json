@@ -95,7 +95,7 @@
   "packageManager": "npm@9.6.6",
   "overrides": {
     "serialize-javascript": "7.0.5",
-    "dompurify": "3.4.8",
+    "dompurify": "^3.4.11",
     "js-cookie": "3.0.8",
     "form-data": "4.0.6",
     "@grafana/ui": {
