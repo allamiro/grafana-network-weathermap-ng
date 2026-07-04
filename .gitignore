@@ -37,3 +37,9 @@ testing/exporter/wm-prometheus
 
 # Release
 grafana-weathermap-*.zip
+
+# Playwright runtime output — .auth holds login session state (cookies);
+# reports/traces contain UI screenshots. Never commit these.
+playwright/.auth/
+playwright-report/
+test-results/
