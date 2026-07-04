@@ -155,8 +155,7 @@ Need the official AWS/Azure/GCP architecture packs? <code>scripts/fetch-cloud-ic
 
 Then: <kbd>Add panel</kbd> → pick **Network Weathermap NG** → open the **Map Editor** → add nodes, draw links, bind queries, set thresholds. Done.
 
-<details>
-<summary><b>Manual install (signed release zip)</b></summary>
+### 📦 Manual install (signed release zip)
 
 Grab the versioned zip from the [latest release](https://github.com/allamiro/grafana-network-weathermap-ng/releases/latest), then:
 
@@ -167,10 +166,7 @@ systemctl restart grafana-server
 
 Every release ships a `.zip.md5` checksum, a community signature (`MANIFEST.txt`), and a GitHub build-provenance attestation.
 
-</details>
-
-<details>
-<summary><b>Try the full demo playground (Docker)</b></summary>
+### 🐳 Try the full demo playground (Docker)
 
 ```bash
 cd testing && docker compose up --build
@@ -181,8 +177,6 @@ Grafana starts at **http://localhost:3101** (anonymous admin) with the plugin pr
 ```bash
 GRAFANA_VERSION=11.0.0 docker compose up --build   # pin any Grafana version
 ```
-
-</details>
 
 |  | Requirement | Version |
 |:-:|---|---|
@@ -198,20 +192,17 @@ This fork treats reliability as a feature. Beyond unit coverage, the suite is bu
 - **Playwright E2E** on real Grafana (declared minimum *and* latest) — weekly, on demand, and on every PR that touches the E2E surface.
 - **Release discipline** — packaging layout checks on PRs, API-compatibility gates for Grafana 11→13, signed artifacts with checksums and provenance attestation.
 
-<details>
-<summary><b>What was modernized from the original</b></summary>
+### 🔄 What was modernized from the original
 
-| Area | Change |
-|---|---|
-| Grafana SDK | `@grafana/data` / `runtime` / `ui` updated to 11.x, verified against 13.x |
-| React | 17 → **18** (React 19 / `findDOMNode` crash fixed) |
-| TypeScript | **5.4+**, all `@ts-ignore` overrides removed |
-| Styling | `stylesFactory` → `useStyles2` + `@emotion/css` |
-| Security | URL sanitization for dashboard links, icons, and background images |
-| E2E | deprecated `@grafana/e2e` → `@grafana/plugin-e2e` (Playwright) |
-| CI/CD | signed releases, provenance attestation, docs site, API-compat matrix, packaging checks |
-
-</details>
+| Area | | Change |
+|---|:-:|---|
+| **Grafana SDK** | ![](https://img.shields.io/badge/11.x_→_13.x-F46800?style=flat-square) | `@grafana/data` / `runtime` / `ui` updated and verified against Grafana 13 |
+| **React** | ![](https://img.shields.io/badge/17_→_18-61DAFB?style=flat-square) | React 19 / `findDOMNode` crash fixed |
+| **TypeScript** | ![](https://img.shields.io/badge/5.4+-3178C6?style=flat-square) | all `@ts-ignore` overrides removed |
+| **Styling** | ![](https://img.shields.io/badge/useStyles2-DB7093?style=flat-square) | `stylesFactory` → `useStyles2` + `@emotion/css` |
+| **Security** | ![](https://img.shields.io/badge/sanitized-2ea44f?style=flat-square) | URL sanitization for dashboard links, icons, and background images |
+| **E2E** | ![](https://img.shields.io/badge/Playwright-45BA4B?style=flat-square) | deprecated `@grafana/e2e` → `@grafana/plugin-e2e` |
+| **CI/CD** | ![](https://img.shields.io/badge/signed_+_attested-2ea44f?style=flat-square) | signed releases, provenance attestation, docs site, API-compat matrix, packaging checks |
 
 ## 🤝 Contributing
 
