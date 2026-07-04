@@ -73,6 +73,9 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ![Building floor plan demo](../img/use-cases/wm-floorplan.png)
 
+!!! tip "Background image hosting"
+    The background is a **URL** — use any `https://` link, or drop the file in Grafana's `public/` folder and reference it as `public/img/<name>` (air-gap friendly). `data:` URLs are rejected. Details: [Panel Options → Background](panel-options.md#background).
+
 1. **Panel Options → Background → Image**: paste the floor-plan image URL; set **Image Fit** to `contain`.
 2. Enable **Move With Map** so the image scales and pans with the nodes.
 3. Place nodes on top of the plan at their physical locations; use the **Grid** for alignment.
@@ -143,6 +146,9 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ![Global backbone demo](../img/use-cases/wm-global-backbone.png)
 
+!!! tip "Background image hosting"
+    The background is a **URL** — use any `https://` link, or drop the file in Grafana's `public/` folder and reference it as `public/img/<name>` (air-gap friendly). `data:` URLs are rejected. Details: [Panel Options → Background](panel-options.md#background).
+
 1. Use a world-map image as the **Background** (public-domain equirectangular SVGs are available on [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:SVG_blank_maps_of_the_world)); set **Image Fit** to `contain` and enable **Move With Map**.
 2. Place a node per PoP/city at its location on the map; the bundled **Country Flags** icon set (ISO two-letter codes) marks each PoP's country.
 3. Add the submarine/backbone links between them with per-direction queries and capacities; use **Port Labels** for the cable/system names.
@@ -157,6 +163,9 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ![Rack port status demo](../img/use-cases/wm-rack-ports.png)
 
+!!! tip "Background image hosting"
+    The background is a **URL** — use any `https://` link, or drop the file in Grafana's `public/` folder and reference it as `public/img/<name>` (air-gap friendly). `data:` URLs are rejected. Details: [Panel Options → Background](panel-options.md#background).
+
 1. Use a rack/faceplate drawing as the **Background** image.
 2. Add one small node per port (label = port number) positioned over the faceplate; no links needed.
 3. Set each node's **Status Query** to that port's status series and add **Threshold Mappings** — e.g. `0 → red` (down), `1 → green` (up), `2 → gray` (admin-disabled) — with **Color Target = Background**.
@@ -170,6 +179,9 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 **Goal:** one rack's rear elevation — router, firewall, switches, servers — with the actual cable runs between ports **and** the A/B power feeds, so a failed feed or unpatched port is visible at a glance.
 
 ![Rack cabling demo](../img/use-cases/wm-rack-cabling.png)
+
+!!! tip "Background image hosting"
+    The background is a **URL** — use any `https://` link, or drop the file in Grafana's `public/` folder and reference it as `public/img/<name>` (air-gap friendly). `data:` URLs are rejected. Details: [Panel Options → Background](panel-options.md#background).
 
 1. Draw the rack rear elevation (device faceplates, cable channels, PDU strips) as the **Background** image with **Move With Map** enabled.
 2. Add one small node per port/NIC/PSU-inlet/PDU-outlet, placed over the drawn openings, each with a **Status Query** and threshold mappings (`0 → red`, `1 → green`, `2 → gray`).
