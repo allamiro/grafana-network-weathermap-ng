@@ -122,9 +122,11 @@ describe('malformed links and geometry (#198)', () => {
         id,
         nodes: [a, z],
       });
-      wm.links.push(mkLink(ghost, wm.nodes[1], 'missing-source'));
-      wm.links.push(mkLink(wm.nodes[0], ghost, 'missing-target'));
-      wm.links.push(mkLink(ghost, ghost, 'missing-both'));
+      // Malformed links FIRST, proving they are skipped rather than aborting
+      // processing before the valid link is reached.
+      wm.links.unshift(mkLink(ghost, wm.nodes[1], 'missing-source'));
+      wm.links.unshift(mkLink(wm.nodes[0], ghost, 'missing-target'));
+      wm.links.unshift(mkLink(ghost, ghost, 'missing-both'));
     });
     // Only the one valid link renders; the three malformed ones are skipped.
     expect(screen.getAllByTestId('link')).toHaveLength(1);

@@ -726,18 +726,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Hover highlight (#179): when enabled, hovering a link keeps its whole VIA
   // chain at full opacity and fades every other link and value label.
   const hoverChain =
-    wm?.settings.link.hoverHighlight && hoveredLink ? resolveLinkChain(wm.links, hoveredLink.link.id) : null;
+    wm?.settings?.link?.hoverHighlight && hoveredLink ? resolveLinkChain(wm.links, hoveredLink.link.id) : null;
   const linkOpacity = (id: string) => (hoverChain && !hoverChain.has(id) ? 0.12 : 1);
 
   // Zoom-dependent labels (#179): hide value labels once zoomed out past the
   // configured number of wheel steps.
-  const labelHideZoom = wm?.settings.link.labelHideZoom ?? 0;
-  const hideValueLabels = labelHideZoom > 0 && wm.settings.panel.zoomScale >= labelHideZoom;
+  const labelHideZoom = wm?.settings?.link?.labelHideZoom ?? 0;
+  const hideValueLabels = labelHideZoom > 0 && (wm?.settings?.panel?.zoomScale ?? 0) >= labelHideZoom;
 
   // Label collision avoidance (#179): opt-in greedy pass that nudges value
   // labels along their own link until they stop overlapping each other.
   let collisionOffsets: Map<string, number> | null = null;
-  if (wm?.settings.link.labelCollision && !hideValueLabels) {
+  if (wm?.settings?.link?.labelCollision && !hideValueLabels) {
     const placements: LabelPlacement[] = [];
     const fs = wm.settings.fontSizing.link;
     for (const d of links) {
