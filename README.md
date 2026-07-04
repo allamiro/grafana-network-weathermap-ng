@@ -151,9 +151,17 @@ Need the official AWS/Azure/GCP architecture packs? <code>scripts/fetch-cloud-ic
 
 ## 🚀 Quick start
 
-**From the Grafana catalog** — <kbd>Administration</kbd> → <kbd>Plugins</kbd> → search **Network Weathermap NG** → <kbd>Install</kbd>
+**Install from the [Grafana plugin catalog](https://grafana.com/grafana/plugins/all-plugins/):**
 
-Then: <kbd>Add panel</kbd> → pick **Network Weathermap NG** → open the **Map Editor** → add nodes, draw links, bind queries, set thresholds. Done.
+1. In Grafana, go to <kbd>Administration</kbd> → <kbd>Plugins and data</kbd> → <kbd>Plugins</kbd>
+2. Search for **Network Weathermap NG** and click <kbd>Install</kbd>
+
+**Build your first map:**
+
+1. <kbd>Add panel</kbd> → pick **Network Weathermap NG** as the visualization
+2. Open the **Map Editor** in the panel options
+3. Add nodes, draw links between them, bind each link side to a query
+4. Set your color-scale thresholds — the map starts breathing 🌡️
 
 ### 📦 Manual install (signed release zip)
 
