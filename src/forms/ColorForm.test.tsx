@@ -65,3 +65,39 @@ test('threshold inputs have explicit unique ids (#167)', () => {
   expect(document.getElementById('nwm-scale-threshold-0')).toBeInTheDocument();
   expect(document.getElementById('nwm-scale-threshold-1')).toBeInTheDocument();
 });
+
+// #200: clearing a threshold input and blurring must not save NaN into the
+// scale; the previous threshold value is kept instead.
+describe('number inputs do not store NaN (#200)', () => {
+  test('clearing a threshold keeps the previous percent on blur', () => {
+    const initial = getData(theme);
+    initial.scale = [
+      { percent: 10, color: '#111111' },
+      { percent: 50, color: '#222222' },
+    ];
+    const spy = jest.fn();
+    render(<Harness initial={initial} onChangeSpy={spy} />);
+
+    const threshold = screen.getByLabelText('Weathermap Threshold 10');
+    fireEvent.change(threshold, { target: { value: '' } });
+    fireEvent.blur(threshold);
+
+    const updated: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    expect(updated.scale.map((s) => s.percent)).toEqual([10, 50]);
+    expect(updated.scale.some((s) => Number.isNaN(s.percent))).toBe(false);
+  });
+
+  test('0 is a valid threshold value', () => {
+    const initial = getData(theme);
+    initial.scale = [{ percent: 10, color: '#111111' }];
+    const spy = jest.fn();
+    render(<Harness initial={initial} onChangeSpy={spy} />);
+
+    const threshold = screen.getByLabelText('Weathermap Threshold 10');
+    fireEvent.change(threshold, { target: { value: '0' } });
+    fireEvent.blur(threshold);
+
+    const updated: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    expect(updated.scale[0].percent).toBe(0);
+  });
+});

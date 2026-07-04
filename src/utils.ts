@@ -272,6 +272,25 @@ export function handleFileUploadErrors(files: FileList | null): void {
   }
 }
 
+/**
+ * Numeric <input> handlers receive NaN from valueAsNumber when the field is
+ * blank or mid-edit (e.g. "-"). NaN must never reach the saved options — it
+ * propagates into SVG geometry and the viewBox. Required numeric fields keep
+ * their previous valid value instead; 0 is a valid value.
+ */
+export function finiteOrFallback(value: number, fallback: number): number {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+/** Optional numeric fields: blank or unparsable input becomes undefined. */
+export function parseOptionalFiniteNumber(raw: string): number | undefined {
+  if (raw.trim() === '') {
+    return undefined;
+  }
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2): Weathermap {
   const modelWeathermap: Weathermap = {
     version: CURRENT_VERSION,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { css } from '@emotion/css';
 import { Button, Input, ColorPicker, Icon, useStyles2, RadioButtonGroup } from '@grafana/ui';
 import { GrafanaTheme2, SelectableValue, StandardEditorProps } from '@grafana/data';
+import { finiteOrFallback } from 'utils';
 import { Weathermap } from 'types';
 
 interface Settings {
@@ -17,7 +18,11 @@ export const ColorForm = (props: Props) => {
 
   const handleNumberChange = (e: any, currentIndex: number) => {
     let weathermap: Weathermap = value;
-    weathermap.scale[currentIndex].percent = e.currentTarget.valueAsNumber;
+    // Blank input reports NaN; keep the previous threshold instead of saving it.
+    weathermap.scale[currentIndex].percent = finiteOrFallback(
+      e.currentTarget.valueAsNumber,
+      weathermap.scale[currentIndex].percent
+    );
     weathermap.scale.sort((a, b) => a.percent - b.percent);
     onChange(weathermap);
     setEditedPercents(weathermap.scale);
@@ -112,12 +117,13 @@ export const ColorForm = (props: Props) => {
           step="0.0001"
           key={i}
           onChange={(e) => {
-            setEditedPercents((prev) => {
-              let t = prev;
-              t[i].percent = e.currentTarget.valueAsNumber;
-              return t;
-            });
-            onChange(value);
+            // Clone the edited entry: editedPercents shares object references
+            // with value.scale, so an in-place write here would push NaN (from
+            // a blanked input) straight into the saved options and corrupt the
+            // "previous value" fallback used on blur (#200). NaN in the local
+            // copy is fine — it just renders the field empty while typing.
+            const raw = e.currentTarget.valueAsNumber;
+            setEditedPercents((prev) => prev.map((t, ti) => (ti === i ? { ...t, percent: raw } : t)));
           }}
           value={editedPercents[i].percent}
           aria-label={`Weathermap Threshold ${threshold.percent}`}

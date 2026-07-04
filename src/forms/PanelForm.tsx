@@ -17,7 +17,7 @@ import { Weathermap, ValueMappingMode } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
-import { sanitizeUrl } from 'utils';
+import { finiteOrFallback, sanitizeUrl } from 'utils';
 
 interface Settings {}
 
@@ -149,7 +149,10 @@ export const PanelForm = ({ value, onChange }: Props) => {
             name={'panelWidth'}
             onChange={(e) => {
               let options = value;
-              options.settings.panel.panelSize.width = e.currentTarget.valueAsNumber;
+              options.settings.panel.panelSize.width = finiteOrFallback(
+                e.currentTarget.valueAsNumber,
+                options.settings.panel.panelSize.width
+              );
               onChange(options);
             }}
           ></Input>
@@ -162,7 +165,10 @@ export const PanelForm = ({ value, onChange }: Props) => {
             name={'panelHeight'}
             onChange={(e) => {
               let options = value;
-              options.settings.panel.panelSize.height = e.currentTarget.valueAsNumber;
+              options.settings.panel.panelSize.height = finiteOrFallback(
+                e.currentTarget.valueAsNumber,
+                options.settings.panel.panelSize.height
+              );
               onChange(options);
             }}
           ></Input>
@@ -174,7 +180,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             type={'number'}
             onChange={(e) => {
               let options = value;
-              options.settings.panel.zoomScale = e.currentTarget.valueAsNumber;
+              options.settings.panel.zoomScale = finiteOrFallback(e.currentTarget.valueAsNumber, options.settings.panel.zoomScale);
               onChange(options);
             }}
           ></Input>
@@ -186,7 +192,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             type={'number'}
             onChange={(e) => {
               let options = value;
-              options.settings.panel.offset.x = e.currentTarget.valueAsNumber;
+              options.settings.panel.offset.x = finiteOrFallback(e.currentTarget.valueAsNumber, options.settings.panel.offset.x);
               onChange(options);
             }}
           ></Input>
@@ -198,7 +204,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             type={'number'}
             onChange={(e) => {
               let options = value;
-              options.settings.panel.offset.y = e.currentTarget.valueAsNumber;
+              options.settings.panel.offset.y = finiteOrFallback(e.currentTarget.valueAsNumber, options.settings.panel.offset.y);
               onChange(options);
             }}
           ></Input>

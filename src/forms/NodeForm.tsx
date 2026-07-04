@@ -31,7 +31,7 @@ import {
   LanguageIcons,
   AerospaceIcons,
 } from './iconOptions';
-import { getDataFrameName, sanitizeUrl } from 'utils';
+import { finiteOrFallback, getDataFrameName, sanitizeUrl } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -52,9 +52,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const handleChange = (e: React.FormEvent<HTMLInputElement>, i: number) => {
     let weathermap: Weathermap = value;
     if (e.currentTarget.name === 'X') {
-      weathermap.nodes[i].position[0] = e.currentTarget.valueAsNumber;
+      weathermap.nodes[i].position[0] = finiteOrFallback(e.currentTarget.valueAsNumber, weathermap.nodes[i].position[0]);
     } else if (e.currentTarget.name === 'Y') {
-      weathermap.nodes[i].position[1] = e.currentTarget.valueAsNumber;
+      weathermap.nodes[i].position[1] = finiteOrFallback(e.currentTarget.valueAsNumber, weathermap.nodes[i].position[1]);
     } else if (e.currentTarget.name === 'label') {
       weathermap.nodes[i].label = e.currentTarget.value;
     }
@@ -145,6 +145,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const handleIconSizeChange = (amt: number, i: number, type: 'width' | 'height') => {
     let weathermap: Weathermap = value;
     const icon = weathermap.nodes[i].nodeIcon!;
+    amt = finiteOrFallback(amt, type === 'width' ? icon.size.width : icon.size.height);
     if (lockAspectRatio && icon.size.width > 0 && icon.size.height > 0) {
       const ratio = icon.size.width / icon.size.height;
       if (type === 'width') {
@@ -609,7 +610,10 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                           value={mapping.value}
                           onChange={(e) => {
                             let weathermap: Weathermap = value;
-                            weathermap.nodes[i].statusValueMappings![mi].value = e.currentTarget.valueAsNumber;
+                            weathermap.nodes[i].statusValueMappings![mi].value = finiteOrFallback(
+                              e.currentTarget.valueAsNumber,
+                              weathermap.nodes[i].statusValueMappings![mi].value
+                            );
                             onChange(weathermap);
                           }}
                           width={8}

@@ -61,3 +61,44 @@ test('status color target radios have stable per-node ids (#162)', async () => {
     expect(document.getElementById(id)).toBeInTheDocument();
   }
 });
+
+// #200: blank numeric inputs must not write NaN into node positions.
+describe('number inputs do not store NaN (#200)', () => {
+  const lastValue = (spy: jest.Mock): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+
+  const openNodeA = async () => {
+    const picker = screen.getAllByRole('combobox')[0];
+    fireEvent.keyDown(picker, { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByText('Node A'));
+  };
+
+  test('clearing the X position keeps the previous coordinate', async () => {
+    const initial = getData(theme);
+    const nodeA = initial.nodes.find((n) => n.label === 'Node A')!;
+    const startX = nodeA.position[0];
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
+    await openNodeA();
+
+    const xInput = container.querySelector('input[name="X"]')!;
+    fireEvent.change(xInput, { target: { value: '' } });
+
+    const updated = lastValue(spy).nodes.find((n) => n.label === 'Node A')!;
+    expect(updated.position[0]).toBe(startX);
+    expect(Number.isNaN(updated.position[0])).toBe(false);
+  });
+
+  test('0 is a valid coordinate and typing resumes after a blank', async () => {
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+    await openNodeA();
+
+    const xInput = container.querySelector('input[name="X"]')!;
+    fireEvent.change(xInput, { target: { value: '0' } });
+    expect(lastValue(spy).nodes.find((n) => n.label === 'Node A')!.position[0]).toBe(0);
+
+    fireEvent.change(xInput, { target: { value: '' } });
+    fireEvent.change(xInput, { target: { value: '250' } });
+    expect(lastValue(spy).nodes.find((n) => n.label === 'Node A')!.position[0]).toBe(250);
+  });
+});
