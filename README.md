@@ -166,17 +166,19 @@ systemctl restart grafana-server
 
 Every release ships a `.zip.md5` checksum, a community signature (`MANIFEST.txt`), and a GitHub build-provenance attestation.
 
-### 🐳 Try the full demo playground (Docker)
+### 🐳 Local environments — know which one you want
 
-```bash
-cd testing && docker compose up --build
-```
+The repo ships **two** Docker Compose environments with different jobs:
 
-Grafana starts at **http://localhost:3101** (anonymous admin) with the plugin pre-loaded, a Prometheus datasource, a simulated-WAN exporter, and all demo dashboards provisioned — WAN utilization, incident replay, rack boards, the world-map backbone, and more.
+| | 🛠️ Dev server | 🐳 Demo & E2E playground |
+|---|---|---|
+| **Start** | `npm run server` *(repo root)* | `cd testing && docker compose up --build` |
+| **URL** | `http://localhost:3000` — admin / admin | `http://localhost:3101` — anonymous admin |
+| **Contains** | your local `dist/` build + root `provisioning/` | plugin + Prometheus + simulated-WAN exporter + **all demo dashboards** |
+| **Use it for** | plugin development (pair with `npm run dev` watch mode) | trying every use case, plugin review, `npm run e2e:local` |
+| **Pin Grafana** | `GRAFANA_VERSION=11.0.0 npm run server` | `GRAFANA_VERSION=11.0.0 docker compose up --build` |
 
-```bash
-GRAFANA_VERSION=11.0.0 docker compose up --build   # pin any Grafana version
-```
+The playground provisions WAN utilization, incident replay, rack boards, the world-map backbone, and more — every scenario from the [Use Cases guide](https://allamiro.github.io/grafana-network-weathermap-ng/guide/use-cases/), ready to click through.
 
 |  | Requirement | Version |
 |:-:|---|---|
