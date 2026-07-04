@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [1.5.14](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.14) (2026-07-04)
 
+### Features
+
+* **vendor icon set — 49 bundled icons** (PR [#190](https://github.com/allamiro/grafana-network-weathermap-ng/pull/190)): 19 brand logos from the Simple Icons project (CC0) — Juniper, F5, Fortinet, Palo Alto Networks, MikroTik, Ubiquiti, Netgear, TP-Link, Huawei, SonicWall, Nokia, Ericsson, OPNsense, pfSense, OpenWrt, Dell, HP, Lenovo, Supermicro — plus 30 composite device icons (e.g. `vendors/juniper-router`, `vendors/f5-load-balancer`) combining Networking shapes with vendor corner badges. New **Vendors** group in the node icon picker; Icon Reference regenerated (1046 icons, 11 sets)
+
 ### Bug Fixes
 
 * **panel crash resilience for malformed or partial weathermap options** — missing/partial `options.weathermap`, links referencing deleted nodes, and overlapping nodes (zero-length arrow vectors) no longer crash the panel; options are normalized before any dereference, malformed links are skipped, and SVG geometry can no longer contain `NaN` ([#198](https://github.com/allamiro/grafana-network-weathermap-ng/issues/198), PR [#206](https://github.com/allamiro/grafana-network-weathermap-ng/pull/206))
