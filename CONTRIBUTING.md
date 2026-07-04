@@ -35,19 +35,41 @@ Grafana will be available at `http://localhost:3000` (admin / admin).
 | `npm run dev` | Start webpack in watch mode |
 | `npm run build` | Production build |
 | `npm run test:ci` | Run unit tests |
-| `npm run e2e` | Run Playwright E2E tests |
+| `npm run e2e` | Run Playwright E2E tests (`GRAFANA_URL` targets any instance) |
+| `npm run e2e:local` | E2E against the anonymous-admin `testing/` stack on :3101 |
 | `npm run lint` | ESLint check |
 | `npm run typecheck` | TypeScript type check |
 
-## Docker environment
+## Docker environments
 
-A fully provisioned local environment is provided via Docker Compose:
+There are two Compose environments with different jobs:
+
+**Dev server** (repo root — what `npm run server` runs):
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-This starts Grafana at `http://localhost:3000` with the plugin pre-loaded and sample dashboards provisioned from the `provisioning/` directory.
+Grafana at `http://localhost:3000` (admin / admin) with `dist/` mounted as the plugin and the `provisioning/` directory applied. Pair it with `npm run dev` for watch-mode rebuilds.
+
+**Demo & E2E playground** (`testing/`):
+
+```bash
+cd testing && docker compose up --build
+```
+
+Grafana at `http://localhost:3101` (anonymous admin, login form disabled) with the plugin pre-loaded, a Prometheus datasource, a simulated-WAN exporter, and every demo dashboard provisioned — WAN utilization, incident replay, rack boards, the world-map backbone. This is the stack the Use Cases guide, the Grafana review instructions, and `npm run e2e:local` target. Pin a Grafana version with `GRAFANA_VERSION=11.0.0 docker compose up --build`.
+
+### Running E2E locally
+
+```bash
+cd testing && docker compose up -d      # Grafana on :3101
+npm run e2e:local                        # seeds anonymous auth, runs the suite
+# or against any instance with password auth:
+GRAFANA_URL=http://localhost:3000 npm run e2e
+```
+
+`PW_CHANNEL=chrome` reuses your system Chrome instead of downloading Playwright's bundled browser. In CI, the E2E workflow runs weekly, on demand, and on PRs touching `tests/**` or the Playwright config.
 
 ## Submitting changes
 
