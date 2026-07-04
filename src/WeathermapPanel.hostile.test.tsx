@@ -112,3 +112,31 @@ test('connection node with fewer than two links (corrupt VIA) does not crash', (
   });
   expectRendered();
 });
+
+describe('malformed links and geometry (#198)', () => {
+  test('skips links with missing endpoint nodes but renders valid links', () => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      const ghost = { ...JSON.parse(JSON.stringify(wm.nodes[0])), id: 'ghost-node' };
+      const mkLink = (a: unknown, z: unknown, id: string) => ({
+        ...JSON.parse(JSON.stringify(wm.links[0])),
+        id,
+        nodes: [a, z],
+      });
+      // Malformed links FIRST, proving they are skipped rather than aborting
+      // processing before the valid link is reached.
+      wm.links.unshift(mkLink(ghost, wm.nodes[1], 'missing-source'));
+      wm.links.unshift(mkLink(wm.nodes[0], ghost, 'missing-target'));
+      wm.links.unshift(mkLink(ghost, ghost, 'missing-both'));
+    });
+    // Only the one valid link renders; the three malformed ones are skipped.
+    expect(screen.getAllByTestId('link')).toHaveLength(1);
+  });
+
+  test('overlapping nodes do not emit NaN geometry', () => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      wm.nodes[1].position = [...wm.nodes[0].position] as [number, number];
+    });
+    expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
+    expect(document.body.innerHTML).not.toContain('NaN');
+  });
+});
