@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.13](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.13) (2026-07-04)
+
+### Bug Fixes
+
+* **query dropdown entries were indistinguishable** when a single query returned many series — the concise `refId: fieldName` labels introduced for [#49](https://github.com/allamiro/grafana-network-weathermap-ng/issues/49) collapsed to identical `A: Value` entries for multi-series Prometheus responses. Labels now show short display names (custom legends, label sets) verbatim, keep long unique names concise, and expand to the full label set whenever concise labels would collide; stored selections are unchanged ([#191](https://github.com/allamiro/grafana-network-weathermap-ng/issues/191), PR [#195](https://github.com/allamiro/grafana-network-weathermap-ng/pull/195))
+
+### Chores (not part of the plugin archive)
+
+* regression-hardening test suite — editor dropdown component tests, a duplicate-DOM-id guard, options-migration round-trip guarantees, a hostile-data render matrix, and a dist packaging verification step in CI and the signed release pipeline (PR [#196](https://github.com/allamiro/grafana-network-weathermap-ng/pull/196))
+* least-privilege `GITHUB_TOKEN` permissions across CI workflows, resolving the open CodeQL alerts (PR [#194](https://github.com/allamiro/grafana-network-weathermap-ng/pull/194))
+* docs site: step-by-step Getting Started/Links screenshots and the Dracula color scheme (PRs [#192](https://github.com/allamiro/grafana-network-weathermap-ng/pull/192), [#193](https://github.com/allamiro/grafana-network-weathermap-ng/pull/193))
+
 ## [1.5.12](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.12) (2026-07-03)
 
 ### Features
