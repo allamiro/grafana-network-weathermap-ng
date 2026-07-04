@@ -317,6 +317,27 @@ describe('sampleAtTime (raw step-hold, no clamping)', () => {
   });
 });
 
+// #204: duplicate display names must behave deterministically — the dropdown
+// keeps the first occurrence, and the panel's value map does the same.
+describe('duplicate display names are deterministic (#204)', () => {
+  const dupFrame = (refId: string, displayName: string, value: number) =>
+    toDataFrame({
+      refId,
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'Value', values: [value, value], config: { displayNameFromDS: displayName } },
+      ],
+    });
+
+  test('buildQueryOptions keeps the first frame for a duplicated name', () => {
+    const frames = [dupFrame('A', 'dup-series', 1), dupFrame('B', 'dup-series', 2), dupFrame('C', 'unique', 3)];
+    const options = buildQueryOptions(frames);
+
+    // One option per distinct name; the duplicate collapses to one entry.
+    expect(options.map((o) => o.value)).toEqual(['dup-series', 'unique']);
+  });
+});
+
 describe('timeline helpers (valueAtTime / getTimeField)', () => {
   const times = [1000, 2000, 3000];
   const values = [10, 20, 30];

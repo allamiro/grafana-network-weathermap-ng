@@ -752,3 +752,32 @@ describe('timeline and state synchronization (#201)', () => {
     expect(nodeRect().getAttribute('stroke')).toBe('#aa0000');
   });
 });
+
+// #204: with two frames sharing a display name, the resolved link value must
+// come from the FIRST frame — matching the dropdown's de-duplication — not
+// from whichever duplicate happens to arrive last in data.series.
+test('duplicate display names resolve deterministically to the first frame (#204)', () => {
+  const testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'dup-series';
+  testProps.options = { weathermap };
+  const mkFrame = (refId: string, v: number) =>
+    toDataFrame({
+      refId,
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'Value', values: [v, v], config: { displayNameFromDS: 'dup-series' } },
+      ],
+    });
+  testProps.data = {
+    state: LoadingState.Done,
+    series: [mkFrame('A', 53), mkFrame('B', 97)],
+    timeRange: getDefaultRelativeTimeRange(),
+  } as unknown as PanelProps<SimpleOptions>['data'];
+  testProps.onOptionsChange = jest.fn();
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  expect(container.textContent).toContain('53');
+  expect(container.textContent).not.toContain('97');
+});
