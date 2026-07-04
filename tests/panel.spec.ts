@@ -15,11 +15,17 @@ const setupPanel = async (
   panelEditPage: { setVisualization: (n: string) => Promise<void> },
   page: Page
 ) => {
+  // Pre-check which picker UI is present instead of catching: a failure
+  // inside either path must surface, not silently fall through.
   const changeViz = page.getByRole('button', { name: /Change visualization/i });
-  try {
-    await changeViz.click({ timeout: 5000 });
+  const hasButton = await changeViz
+    .waitFor({ state: 'visible', timeout: 5000 })
+    .then(() => true)
+    .catch(() => false);
+  if (hasButton) {
+    await changeViz.click();
     await page.getByText('Network Weathermap NG', { exact: true }).first().click();
-  } catch {
+  } else {
     await panelEditPage.setVisualization('Network Weathermap NG');
   }
 };
