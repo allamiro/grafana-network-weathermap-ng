@@ -63,7 +63,7 @@
           "options": {
             "showDisabledItems": false,
             "skipEmptyValues": false,
-            "disableDataAlignment": false,
+            "disableDataAlignment": true,
             "useZabbixValueMapping": false
           }
         }

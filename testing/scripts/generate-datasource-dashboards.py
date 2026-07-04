@@ -96,7 +96,9 @@ zabbix = make(
             "options": {
                 "showDisabledItems": False,
                 "skipEmptyValues": False,
-                "disableDataAlignment": False,
+                # Alignment merges all series into ONE wide frame, which binds
+                # only its first field in the panel's per-frame mapping (#259).
+                "disableDataAlignment": True,
                 "useZabbixValueMapping": False,
             },
         }
