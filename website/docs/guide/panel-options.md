@@ -9,7 +9,7 @@ Panel-level options apply to the whole weathermap. Open the panel options sideba
 !!! tip "Where do I host my floor plan / map image?"
     The **Image** field takes a URL — the plugin does not upload files. Your options:
 
-    1. **Any `https://` URL** your dashboard viewers' browsers can reach (an internal web server, a wiki attachment, an S3/object-storage link, Wikimedia Commons, ...).
+    1. **Any `http://` or `https://` URL** your dashboard viewers' browsers can reach (an internal web server, a wiki attachment, an S3/object-storage link, Wikimedia Commons, ...). Prefer `https` where you have it — but plain `http` is accepted, which matters for lab and air-gapped intranets.
     2. **Grafana's own `public/` folder** — copy the file onto the Grafana server, e.g. `/usr/share/grafana/public/img/floorplan.png`, then use the relative URL `public/img/floorplan.png`. Works fully air-gapped and survives viewer networks that can't reach external hosts.
     3. **A provisioned sidecar** — the demo dashboards serve their floor-plan and world-map images from the `testing/` stack's exporter container on `:8080`; any tiny static file server works the same way.
 
