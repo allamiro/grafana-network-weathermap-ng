@@ -65,9 +65,9 @@ describe('SVG export URL handling (#203)', () => {
     (URL as unknown as { createObjectURL: unknown }).createObjectURL = blobSpy;
     let blobContent = '';
     const RealBlob = global.Blob;
-    jest.spyOn(global, 'Blob').mockImplementation((parts: unknown[], opts?: BlobPropertyBag) => {
-      blobContent = (parts as string[]).join('');
-      return new RealBlob(parts as BlobPart[], opts);
+    jest.spyOn(global, 'Blob').mockImplementation((parts?: BlobPart[], opts?: BlobPropertyBag) => {
+      blobContent = ((parts ?? []) as string[]).join('');
+      return new RealBlob(parts, opts);
     });
 
     const props = { value, onChange: jest.fn() } as unknown as StandardEditorProps<Weathermap>;
