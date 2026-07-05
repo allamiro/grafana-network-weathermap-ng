@@ -43,3 +43,6 @@ grafana-weathermap-*.zip
 playwright/.auth/
 playwright-report/
 test-results/
+
+# Local demo credentials (OpenSky API client, #274)
+testing/.env

@@ -87,6 +87,26 @@ services:
       # default 128M PHP memory_limit (API returns 500). The web image wires
       # ZBX_MEMORYLIMIT into php-fpm's memory_limit.
       - ZBX_MEMORYLIMIT=1024M
+  # OpenSky live aviation feed (#274): real flight positions exported as
+  # moving_entity_* metrics for the aviation demo. Opt-in profile so the
+  # default stack never spends API credits:
+  #   cp .env.example .env   (fill in credentials)
+  #   docker compose --profile opensky up -d
+  opensky:
+    build:
+      context: opensky
+      dockerfile: Dockerfile
+    profiles:
+      - opensky
+    ports:
+      - 9101:9101
+    environment:
+      - OPENSKY_CLIENT_ID=${OPENSKY_CLIENT_ID:-}
+      - OPENSKY_CLIENT_SECRET=${OPENSKY_CLIENT_SECRET:-}
+      - OPENSKY_POLL_SECONDS=${OPENSKY_POLL_SECONDS:-30}
+      - OPENSKY_BBOX=${OPENSKY_BBOX:-49.5,2.5,52.5,7.5}
+      - OPENSKY_CORRIDOR_KM=${OPENSKY_CORRIDOR_KM:-30}
+      - OPENSKY_ROUTES=${OPENSKY_ROUTES:-}
   bridge:
     build:
       context: bridge
