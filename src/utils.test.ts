@@ -6,6 +6,7 @@ import {
   buildQueryOptions,
   getDataFrameName,
   getValueField,
+  getValueSeries,
   resolveLinkChain,
   spreadLabels,
   aggregateFieldValues,
@@ -444,6 +445,70 @@ describe('datasource frame shapes resolve (#253)', () => {
     });
     expect(getValueField(frame).values[1]).toBe(200);
     expect(getDataFrameName(frame, [frame])).toContain('Bits sent');
+  });
+});
+
+describe('wide data frames expose every value field (#260)', () => {
+  // Zabbix data alignment, Grafana join transformations, and SQL wide mode
+  // all produce a single frame carrying many named value fields. Every one
+  // of them must be independently bindable, not just the first.
+  const wideFrame = () =>
+    toDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [1000, 2000] },
+        { name: 'core-a in', type: FieldType.number, values: [10, 20] },
+        { name: 'core-a out', type: FieldType.number, values: [30, 40] },
+        { name: 'STATUS X', type: FieldType.number, values: [1, 0] },
+      ],
+    });
+
+  test('getValueSeries returns one entry per numeric field with its display name', () => {
+    const frame = wideFrame();
+    const series = getValueSeries(frame, [frame]);
+    expect(series.map((entry) => entry.name)).toEqual(['core-a in', 'core-a out', 'STATUS X']);
+    // Each entry carries its own field, not the first one repeated.
+    expect(series[1].field.values[1]).toBe(40);
+    expect(series[2].field.values[1]).toBe(0);
+  });
+
+  test('getValueSeries matches getValueField semantics on narrow frames', () => {
+    const frame = toDataFrame({
+      name: 'wm_link_bps',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [1000] },
+        { name: 'Value', type: FieldType.number, values: [7] },
+      ],
+    });
+    const series = getValueSeries(frame, [frame]);
+    expect(series).toHaveLength(1);
+    expect(series[0].field).toBe(getValueField(frame));
+  });
+
+  test('getValueSeries keeps the second-field fallback for untyped frames', () => {
+    // Some datasources ship untyped fields; the legacy fallback binds the
+    // second field so those keep resolving exactly as getValueField does.
+    const frame = toDataFrame({
+      name: 'legacy',
+      fields: [
+        { name: 'Time', values: [1000], type: FieldType.string },
+        { name: 'reading', values: ['12'], type: FieldType.string },
+      ],
+    });
+    const series = getValueSeries(frame, [frame]);
+    expect(series).toHaveLength(1);
+    expect(series[0].field.name).toBe('reading');
+  });
+
+  test('getValueSeries throws for frames without any bindable field', () => {
+    const frame = toDataFrame({ name: 'empty', fields: [] });
+    expect(() => getValueSeries(frame, [frame])).toThrow();
+  });
+
+  test('buildQueryOptions lists every value field of a wide frame', () => {
+    const frame = wideFrame();
+    const options = buildQueryOptions([frame]);
+    expect(options.map((o) => o.value)).toEqual(['core-a in', 'core-a out', 'STATUS X']);
   });
 });
 

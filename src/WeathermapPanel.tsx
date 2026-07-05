@@ -44,12 +44,11 @@ import {
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
   needsMigration,
+  getValueSeries,
   handleVersionedStateUpdates,
   resolveLinkChain,
   spreadLabels,
   LabelPlacement,
-  getDataFrameName,
-  getValueField,
   sanitizeUrl,
   aggregateFieldValues,
   getTimeField,
@@ -561,24 +560,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         return;
       }
       try {
-        const fieldValues = getValueField(frame).values as Array<number | null | undefined>;
-        const resolvedValue =
-          useTimeline && effectiveScrub !== null
-            ? valueAtTime(
-                getTimeField(frame)?.values as Array<number | null | undefined>,
-                fieldValues,
-                effectiveScrub
-              )
-            : aggregateFieldValues(fieldValues, mode);
-        const name = getDataFrameName(frame, data.series);
-        // Duplicate display names (#204): keep the FIRST frame's value. The
-        // query dropdown de-duplicates by first occurrence (buildQueryOptions)
-        // and node status resolution takes the first match, so a last-wins
-        // overwrite here silently resolved a different series than the one
-        // the user picked. TODO: true disambiguation needs a stable
-        // frame/field id in the stored link config, not just a display name.
-        if (!map.has(name)) {
-          map.set(name, resolvedValue);
+        // Wide frames carry one bindable series per value field (#260).
+        for (const { name, field } of getValueSeries(frame, data.series)) {
+          const fieldValues = field.values as Array<number | null | undefined>;
+          const resolvedValue =
+            useTimeline && effectiveScrub !== null
+              ? valueAtTime(
+                  getTimeField(frame)?.values as Array<number | null | undefined>,
+                  fieldValues,
+                  effectiveScrub
+                )
+              : aggregateFieldValues(fieldValues, mode);
+          // Duplicate display names (#204): keep the FIRST series' value. The
+          // query dropdown de-duplicates by first occurrence (buildQueryOptions)
+          // and node status resolution takes the first match, so a last-wins
+          // overwrite here silently resolved a different series than the one
+          // the user picked. TODO: true disambiguation needs a stable
+          // frame/field id in the stored link config, not just a display name.
+          if (!map.has(name)) {
+            map.set(name, resolvedValue);
+          }
         }
       } catch (e) {
         console.warn('Network Weathermap: Error while attempting to access query data.', e);
@@ -894,20 +895,32 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
   };
 
-  const filteredGraphQueries = data.series.filter((frame) => {
-    if (!hoveredLink) {
-      return;
+  // Tooltip graph series: one slim frame (time + value field) per value series
+  // bound to the hovered link. Wide frames (#260) can carry both bound series —
+  // or unrelated ones — inside a single frame, so matching happens per value
+  // field rather than per frame, and only the matching field is graphed.
+  const filteredGraphSeries: Array<{ frame: DataFrame; isInbound: boolean }> = [];
+  if (hoveredLink) {
+    for (const frame of data.series) {
+      let series: Array<{ name: string; field: Field }> = [];
+      try {
+        series = getValueSeries(frame, data.series);
+      } catch (e) {
+        console.warn('Network Weathermap: Error while attempting to access query data.', e);
+        continue;
+      }
+      const timeField = getTimeField(frame);
+      for (const { name, field } of series) {
+        if (name !== hoveredLink.link.sides.A.query && name !== hoveredLink.link.sides.Z.query) {
+          continue;
+        }
+        filteredGraphSeries.push({
+          frame: { ...frame, fields: timeField ? [timeField, field] : [field] },
+          isInbound: name === hoveredLink.link.sides.Z.query,
+        });
+      }
     }
-
-    let displayName = null;
-    try {
-      displayName = getDataFrameName(frame, data.series);
-    } catch (e) {
-      console.warn('Network Weathermap: Error while attempting to access query data.', e);
-    }
-
-    return displayName === hoveredLink.link.sides.A.query || displayName === hoveredLink.link.sides.Z.query;
-  });
+  }
 
   // Build an in-panel notice for query errors or missing data so operators can
   // diagnose problems without opening the browser console. The map still renders
@@ -1070,16 +1083,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             <div style={{ fontSize: wm.settings.tooltip.fontSize, paddingBottom: '4px' }}>
               {hoveredLink.link.sides[hoveredLink.side].dashboardLink.length > 0 ? 'Click to see more.' : ''}
             </div>
-            {(hoveredLink.link.sides.A.query || hoveredLink.link.sides.Z.query) && filteredGraphQueries.length > 0 ? (
+            {(hoveredLink.link.sides.A.query || hoveredLink.link.sides.Z.query) && filteredGraphSeries.length > 0 ? (
               <React.Fragment>
                 <TimeSeries
                   width={250}
                   height={100}
                   timeRange={timeRange}
                   timeZone={getTimeZone()}
-                  frames={filteredGraphQueries.map((frame: DataFrame) => {
-                    const isInboundQuery = getDataFrameName(frame, data.series) === hoveredLink.link.sides.Z.query;
-                    const lineColor = isInboundQuery
+                  frames={filteredGraphSeries.map(({ frame, isInbound }) => {
+                    const lineColor = isInbound
                       ? wm.settings.tooltip.inboundColor
                       : wm.settings.tooltip.outboundColor;
                     // Spread each field to avoid mutating the original frame stored in data.series.

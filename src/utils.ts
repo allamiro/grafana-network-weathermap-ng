@@ -520,6 +520,27 @@ export function sampleAtTime(
   return undefined;
 }
 
+/**
+ * All bindable value series in a frame (#260). Most datasources return one
+ * numeric field per frame, but wide frames (Zabbix data alignment, Grafana
+ * join transformations, SQL wide mode) carry many named value fields — each
+ * one is a bindable series keyed by its own field display name. For
+ * single-value frames this yields exactly getDataFrameName's result.
+ */
+export function getValueSeries(frame: DataFrame, allFrames: DataFrame[]): Array<{ name: string; field: Field }> {
+  const numeric = frame.fields.filter((f) => f.type === FieldType.number);
+  if (numeric.length === 0) {
+    // Same fallback as getValueField: time-series frames carry the value at
+    // index 1 even when a non-standard datasource leaves the type unset.
+    if (frame.fields.length >= 2) {
+      const fallback = frame.fields[1];
+      return [{ name: getFieldDisplayName(fallback, frame, allFrames), field: fallback }];
+    }
+    throw new Error(`No value field found in frame "${frame.name}"`);
+  }
+  return numeric.map((field) => ({ name: getFieldDisplayName(field, frame, allFrames), field }));
+}
+
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {
   return getFieldDisplayName(getValueField(frame), frame, allFrames);
 };
@@ -557,14 +578,16 @@ export const buildQueryOptions = (frames: DataFrame[]): QueryOption[] => {
       continue;
     }
     try {
-      const name = getDataFrameName(d, frames);
-      if (seenNames.has(name)) {
-        continue;
+      // Wide frames carry one bindable series per value field (#260).
+      for (const { name, field } of getValueSeries(d, frames)) {
+        if (seenNames.has(name)) {
+          continue;
+        }
+        seenNames.add(name);
+        const fieldName = field.name || name;
+        const concise = d.refId ? `${d.refId}: ${fieldName}` : fieldName;
+        entries.push({ value: name, concise });
       }
-      seenNames.add(name);
-      const fieldName = getValueField(d).name || name;
-      const concise = d.refId ? `${d.refId}: ${fieldName}` : fieldName;
-      entries.push({ value: name, concise });
     } catch (e) {
       console.warn('Network Weathermap: Error while attempting to access query data.', e);
     }
