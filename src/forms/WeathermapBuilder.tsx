@@ -3,6 +3,7 @@ import { StandardEditorProps } from '@grafana/data';
 import { Anchor, Weathermap } from 'types';
 import { NodeForm } from './NodeForm';
 import { LinkForm } from './LinkForm';
+import { EntityForm } from './EntityForm';
 import { ColorForm } from './ColorForm';
 import { PanelForm } from './PanelForm';
 import { v4 as uuidv4 } from 'uuid';
@@ -130,6 +131,7 @@ export const WeathermapBuilder = (props: Props) => {
     <React.Fragment>
       <NodeForm {...props} value={wm}></NodeForm>
       <LinkForm {...props} value={wm}></LinkForm>
+      <EntityForm {...props} value={wm}></EntityForm>
       <ColorForm {...props} value={wm}></ColorForm>
       <PanelForm {...props} value={wm}></PanelForm>
     </React.Fragment>

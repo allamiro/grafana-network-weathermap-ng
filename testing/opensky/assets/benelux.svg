@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560">
+<rect width="900" height="560" fill="#0d141f"/>
+<path d="M0.0,270.7 L72.0,235.2 L126.0,218.4 L189.0,203.5 L216.0,168.0 L261.0,141.9 L279.0,115.7 L288.0,102.7 L324.0,74.7 L369.0,28.0 L396.0,0.0 L900.0,0.0 L900.0,560.0 L0.0,560.0 Z" fill="#161d26" stroke="rgba(120,170,220,0.35)" stroke-width="1.5"/>
+<g stroke="rgba(204,204,220,0.16)" stroke-width="1" fill="none" stroke-dasharray="4,4">
+<path d="M162.0,233.3 L342.0,201.6 L450.0,196.0 L493.2,231.5 L594.0,248.3 L630.0,326.7"/>
+<path d="M0.0,317.3 L126.0,373.3 L297.0,472.3 L423.0,505.9 L534.6,560.0"/>
+<path d="M819.0,0.0 L756.0,74.7 L648.0,112.0 L666.0,186.7 L648.0,242.7 L630.0,326.7"/>
+<path d="M630.0,326.7 L684.0,373.3 L648.0,438.7 L720.0,504.0 L693.0,560.0"/>
+</g>
+<text x="522.0" y="65.3" fill="rgba(204,204,220,0.22)" font-size="15" font-family="sans-serif" letter-spacing="3" text-anchor="middle">NETHERLANDS</text>
+<text x="342.0" y="364.0" fill="rgba(204,204,220,0.22)" font-size="15" font-family="sans-serif" letter-spacing="3" text-anchor="middle">BELGIUM</text>
+<text x="792.0" y="252.0" fill="rgba(204,204,220,0.22)" font-size="15" font-family="sans-serif" letter-spacing="3" text-anchor="middle">GERMANY</text>
+<text x="144.0" y="513.3" fill="rgba(204,204,220,0.22)" font-size="15" font-family="sans-serif" letter-spacing="3" text-anchor="middle">FRANCE</text>
+<text x="126.0" y="65.3" fill="rgba(204,204,220,0.22)" font-size="15" font-family="sans-serif" letter-spacing="3" text-anchor="middle">North Sea</text>
+</svg>
