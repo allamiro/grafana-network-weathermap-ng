@@ -430,6 +430,47 @@ export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2
 }
 
 /**
+ * Position along a polyline for a 0..1 progress ratio (#266). Progress is
+ * clamped, distances accumulate across segments so VIA-style multi-segment
+ * paths interpolate by real length, and degenerate inputs resolve rather
+ * than throw: a single point returns itself, no points returns null.
+ */
+export function progressToPosition(
+  points: Array<{ x: number; y: number }>,
+  progress: number
+): { x: number; y: number } | null {
+  if (points.length === 0) {
+    return null;
+  }
+  if (points.length === 1) {
+    return { x: points[0].x, y: points[0].y };
+  }
+  const t = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0;
+  const lengths: number[] = [];
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const len = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
+    lengths.push(len);
+    total += len;
+  }
+  if (total === 0) {
+    return { x: points[0].x, y: points[0].y };
+  }
+  let remaining = t * total;
+  for (let i = 0; i < lengths.length; i++) {
+    if (remaining <= lengths[i] || i === lengths.length - 1) {
+      const f = lengths[i] === 0 ? 0 : remaining / lengths[i];
+      return {
+        x: points[i].x + (points[i + 1].x - points[i].x) * f,
+        y: points[i].y + (points[i + 1].y - points[i].y) * f,
+      };
+    }
+    remaining -= lengths[i];
+  }
+  return { x: points[points.length - 1].x, y: points[points.length - 1].y };
+}
+
+/**
  * Returns the first numeric field in a data frame, falling back to fields[1].
  * Non-standard datasources (Check MK, etc.) may not put the value at index 1 —
  * they may omit the time field, reorder fields, or return table-style frames.

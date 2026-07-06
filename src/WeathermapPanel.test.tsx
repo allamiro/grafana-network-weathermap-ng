@@ -1,5 +1,5 @@
 import React from 'react';
-import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
+import { FieldType, getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
@@ -95,6 +95,76 @@ test('Creating a weathermap', () => {
   expect(prevTranslation).not.toEqual(newTranslation);
 
   // TODO: find a working way to check node dragging
+});
+
+test('moving entity renders along its link at the progress position (#266)', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.entities = [
+    {
+      id: 'entity-1',
+      label: 'ICE-72',
+      linkId: weathermap.links[0].id,
+      progressQuery: 'route progress',
+      icon: '✈',
+      size: 14,
+      showLabel: true,
+    },
+  ];
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', type: FieldType.time, values: [1000, 2000] },
+          { name: 'Value', type: FieldType.number, values: [0.2, 0.5], config: { displayNameFromDS: 'route progress' } },
+        ],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = () => {};
+
+  render(<WeathermapPanel {...testProps} />);
+
+  const entity = screen.getByTestId('moving-entity');
+  expect(entity.textContent).toContain('✈');
+  expect(entity.textContent).toContain('ICE-72');
+
+  // Progress 0.5 (last value) places the entity strictly between the two
+  // nodes (x=200 and x=400, both at y=300).
+  const transform = entity.getAttribute('transform') || '';
+  const match = transform.match(/translate\(([\d.-]+),([\d.-]+)\)/);
+  expect(match).not.toBeNull();
+  const x = parseFloat(match![1]);
+  const y = parseFloat(match![2]);
+  expect(x).toBeGreaterThan(200);
+  expect(x).toBeLessThan(400);
+  expect(y).toBeCloseTo(300, 0);
+});
+
+test('moving entity hides when its progress series is missing (#266)', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.entities = [
+    {
+      id: 'entity-1',
+      label: 'ICE-72',
+      linkId: weathermap.links[0].id,
+      progressQuery: 'route progress',
+    },
+  ];
+  testProps.options = { weathermap };
+  testProps.data = { ...mPanelProps.data, series: [] };
+  testProps.onOptionsChange = () => {};
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No series resolves the progress query: the entity is hidden, and the
+  // rest of the map still renders (nodes, link).
+  expect(screen.queryByTestId('moving-entity')).toBeNull();
+  expect(screen.getAllByTestId('link')).toHaveLength(1);
 });
 
 test('Uses explicit per-side direction labels in the link tooltip when set', () => {

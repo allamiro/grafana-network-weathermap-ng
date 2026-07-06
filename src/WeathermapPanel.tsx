@@ -56,6 +56,7 @@ import {
   valueAtTime,
   addViaToLink,
   removeVia,
+  progressToPosition,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -1884,6 +1885,59 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   }}
                 />
               ))}
+            </g>
+            <g>
+              {(wm.entities ?? []).map((entity) => {
+                const link = links.find((l) => l.id === entity.linkId);
+                if (!link || !entity.progressQuery) {
+                  return null;
+                }
+                // Progress resolves through the same display-name map as link
+                // values, so timeline scrubbing replays entity movement (#266).
+                // Missing or non-finite progress hides the entity entirely.
+                const raw = dataFrameMap.get(entity.progressQuery);
+                if (raw === undefined || raw === null || !Number.isFinite(raw)) {
+                  return null;
+                }
+                const pos = progressToPosition([link.lineStartA, link.lineStartZ], raw);
+                if (!pos) {
+                  return null;
+                }
+                const size = entity.size ?? 14;
+                return (
+                  <g
+                    key={entity.id}
+                    data-testid="moving-entity"
+                    transform={`translate(${pos.x},${pos.y})`}
+                    // Purely visual overlay: never intercept node dragging or
+                    // link hover on the elements underneath.
+                    pointerEvents="none"
+                  >
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      alignmentBaseline="central"
+                      fontSize={`${size}px`}
+                      fill={wm.settings.link.label.font}
+                    >
+                      {entity.icon || '●'}
+                    </text>
+                    {entity.showLabel !== false && entity.label !== '' ? (
+                      <text
+                        y={size}
+                        textAnchor="middle"
+                        dominantBaseline="hanging"
+                        fontSize={`${Math.max(7, Math.round(size / 2))}px`}
+                        fill={wm.settings.link.label.font}
+                      >
+                        {entity.label}
+                      </text>
+                    ) : (
+                      ''
+                    )}
+                  </g>
+                );
+              })}
             </g>
           </g>
         </svg>

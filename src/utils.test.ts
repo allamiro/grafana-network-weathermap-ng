@@ -6,6 +6,7 @@ import {
   buildQueryOptions,
   getDataFrameName,
   getValueField,
+  progressToPosition,
   resolveLinkChain,
   spreadLabels,
   aggregateFieldValues,
@@ -511,6 +512,55 @@ describe('timeline helpers (valueAtTime / getTimeField)', () => {
       ],
     };
     expect(getTimeField(frame)).toBeUndefined();
+  });
+});
+
+describe('progressToPosition (#266)', () => {
+  test('interpolates along a single segment', () => {
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ];
+    expect(progressToPosition(pts, 0)).toEqual({ x: 0, y: 0 });
+    expect(progressToPosition(pts, 0.5)).toEqual({ x: 50, y: 0 });
+    expect(progressToPosition(pts, 1)).toEqual({ x: 100, y: 0 });
+  });
+
+  test('clamps out-of-range and non-finite progress', () => {
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ];
+    expect(progressToPosition(pts, -3)).toEqual({ x: 0, y: 0 });
+    expect(progressToPosition(pts, 42)).toEqual({ x: 10, y: 0 });
+    expect(progressToPosition(pts, NaN)).toEqual({ x: 0, y: 0 });
+  });
+
+  test('accumulates real length across multiple segments (VIA-style path)', () => {
+    // Two segments of 100 and 300: t=0.5 is 200 into the path, i.e. 100
+    // into the second segment.
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 300 },
+    ];
+    expect(progressToPosition(pts, 0.5)).toEqual({ x: 100, y: 100 });
+    expect(progressToPosition(pts, 0.25)).toEqual({ x: 100, y: 0 });
+  });
+
+  test('degenerate inputs resolve instead of throwing', () => {
+    expect(progressToPosition([], 0.5)).toBeNull();
+    expect(progressToPosition([{ x: 7, y: 9 }], 0.5)).toEqual({ x: 7, y: 9 });
+    // Coincident points (zero total length) pin to the first point.
+    expect(
+      progressToPosition(
+        [
+          { x: 5, y: 5 },
+          { x: 5, y: 5 },
+        ],
+        0.9
+      )
+    ).toEqual({ x: 5, y: 5 });
   });
 });
 

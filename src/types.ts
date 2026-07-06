@@ -298,11 +298,31 @@ export interface TrafficPanelSettings {
   };
 }
 
+// A marker that travels along a link, positioned by a 0..1 progress metric
+// (#266): trains between stations, aircraft between airports, replication
+// jobs between sites. Purely visual — progress 0 sits at the A side, 1 at
+// the Z side, and a missing/non-finite value hides the entity.
+export interface MovingEntity {
+  id: string;
+  label: string;
+  // Which link the entity travels along, by link id (stable across edits).
+  linkId: string;
+  // Display name of the series holding the 0..1 progress value.
+  progressQuery?: string;
+  // Glyph drawn at the entity position (any short text/emoji, e.g. ✈ 🚆 ●).
+  icon?: string;
+  // Glyph font size in px.
+  size?: number;
+  showLabel?: boolean;
+}
+
 export interface Weathermap {
   version: number;
   id: string;
   nodes: Node[];
   links: Link[];
+  // Optional: absent on all pre-existing maps, so no migration is required.
+  entities?: MovingEntity[];
   scale: Threshold[];
   settings: WeathermapSettings;
 }
