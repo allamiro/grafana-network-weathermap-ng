@@ -1816,7 +1816,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               })}
             </g>
             <g>
-              {nodes.map((d, i) => (
+              {/*
+                Paint nodes in z-index order (#280): higher zIndex renders later,
+                so it sits on top. Equal zIndex keeps creation order (by node
+                index), so the default (all 0) matches the previous behavior. A
+                sorted copy is used — `nodes` itself stays in index order because
+                the callbacks below address nodes by their stable `d.index`.
+              */}
+              {[...nodes]
+                .sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0) || a.index - b.index)
+                .map((d) => (
                 <MapNode
                   key={d.id}
                   {...{
@@ -1835,7 +1844,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       setDraggedNode(d);
                       setNodes((prevState) =>
                         prevState.map((val, index) => {
-                          if (index === i || selectedNodes.find((n) => n.id === nodes[index].id)) {
+                          if (index === d.index || selectedNodes.find((n) => n.id === nodes[index].id)) {
                             const scaledPos = getScaledMousePos({ x: position.deltaX, y: position.deltaY });
                             val.x = Math.round(
                               wm.settings.panel.grid.enabled
@@ -1859,7 +1868,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       setDraggedNode(null as unknown as DrawnNode);
                       // Build the persisted positions immutably: writing into
                       // wm.nodes[..] hands Grafana the same references (#225).
-                      const movedIndexes = new Set<number>([i, ...selectedNodes.map((n) => n.index)]);
+                      const movedIndexes = new Set<number>([d.index, ...selectedNodes.map((n) => n.index)]);
                       const snappedPosition = (index: number): [number, number] => [
                         wm.settings.panel.grid.enabled
                           ? nearestMultiple(nodes[index].x, wm.settings.panel.grid.size)
@@ -1881,15 +1890,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       });
                     },
                     onClick: (e) => {
+                      const clicked = tempNodes[d.index];
                       if ((e.ctrlKey || e.metaKey) && isEditMode) {
                         setSelectedNodes((v) => {
                           // Return a NEW array: mutating and returning the same
                           // reference makes React skip selection re-renders (#225).
-                          const cIndex = v.findIndex((n) => n.id === tempNodes[i].id);
-                          return cIndex > -1 ? v.filter((_, vi) => vi !== cIndex) : [...v, tempNodes[i]];
+                          const cIndex = v.findIndex((n) => n.id === clicked.id);
+                          return cIndex > -1 ? v.filter((_, vi) => vi !== cIndex) : [...v, clicked];
                         });
-                      } else if (!isEditMode && tempNodes[i].dashboardLink) {
-                        openDashboardLink(tempNodes[i].dashboardLink, tempNodes[i].openInSameTab);
+                      } else if (!isEditMode && clicked.dashboardLink) {
+                        openDashboardLink(clicked.dashboardLink, clicked.openInSameTab);
                       }
                       // Force an update
                       onOptionsChange(options);

@@ -83,6 +83,9 @@ export interface Node {
   dashboardLink?: string;
   openInSameTab?: boolean;
   tooltipMetrics?: NodeTooltipMetric[];
+  // Paint order: higher values render on top. Defaults to 0 when unset, in which
+  // case nodes keep their creation order (later nodes on top), as before.
+  zIndex?: number;
   anchors: {
     [Anchor.Center]: NodeAnchor;
     [Anchor.Top]: NodeAnchor;
