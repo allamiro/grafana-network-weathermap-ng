@@ -1,5 +1,5 @@
 import React from 'react';
-import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
+import { FieldType, getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
@@ -95,6 +95,41 @@ test('Creating a weathermap', () => {
   expect(prevTranslation).not.toEqual(newTranslation);
 
   // TODO: find a working way to check node dragging
+});
+
+test('wide frame: link sides bound to separate value fields both resolve (#260)', () => {
+  // A single wide frame carries both directions as named value fields —
+  // before #260 only the first one was bindable and the other showed n/a.
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'core-a out';
+  weathermap.links[0].sides.Z.query = 'core-a in';
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', type: FieldType.time, values: [1000, 2000] },
+          { name: 'core-a in', type: FieldType.number, values: [10, 20] },
+          { name: 'core-a out', type: FieldType.number, values: [30, 40] },
+        ],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Both link value labels resolve — nothing is left at n/a.
+  expect(screen.queryAllByText('n/a')).toHaveLength(0);
+
+  // The tooltip graph extracts each bound value field from the wide frame.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
 });
 
 test('Uses explicit per-side direction labels in the link tooltip when set', () => {

@@ -6,9 +6,8 @@ import {
   getSolidFromAlphaColor,
   calculateRectangleAutoWidth,
   calculateRectangleAutoHeight,
-  getDataFrameName,
   getTimeField,
-  getValueField,
+  getValueSeries,
   sanitizeUrl,
   sampleAtTime,
 } from '../utils';
@@ -73,35 +72,41 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
 
   let nodeStatusColor: string | null = null;
   if (node.statusQuery) {
-    const recentFrame = data.series
-      .filter((series) => {
-        // A transient empty or valueless frame (fresh exporter, scrape gap,
-        // regex matching nothing) must not take down the whole panel (#178) —
-        // name resolution throws for frames without a value field.
-        try {
-          return getDataFrameName(series, data.series) === node.statusQuery;
-        } catch (e) {
-          return false;
+    const matches: Array<number | null | undefined> = [];
+    for (const frame of data.series) {
+      // A transient empty or valueless frame (fresh exporter, scrape gap,
+      // regex matching nothing) must not take down the whole panel (#178) —
+      // series resolution throws for frames without a value field. Wide
+      // frames carry one bindable series per value field (#260).
+      try {
+        for (const { name, field } of getValueSeries(frame, data.series)) {
+          if (name !== node.statusQuery) {
+            continue;
+          }
+          // Timeline scrubbing (#201): while scrubbing, node status replays
+          // the raw value at the selected time (step-hold like link values,
+          // but without their throughput negative-clamp — negative status
+          // values are legitimate mapping inputs and must resolve like live
+          // mode). Live mode keeps reading the most recent datapoint.
+          if (scrubTimeMs !== null && scrubTimeMs !== undefined) {
+            matches.push(
+              sampleAtTime(
+                getTimeField(frame)?.values as Array<number | null | undefined>,
+                field.values as Array<number | null | undefined>,
+                scrubTimeMs
+              )
+            );
+          } else {
+            matches.push(field.values[field.values.length - 1]);
+          }
         }
-      })
-      .map((frame) => {
-        const valueField = getValueField(frame);
-        // Timeline scrubbing (#201): while scrubbing, node status replays the
-        // raw value at the selected time (step-hold like link values, but
-        // without their throughput negative-clamp — negative status values
-        // are legitimate mapping inputs and must resolve like live mode).
-        // Live mode keeps reading the most recent datapoint.
-        if (scrubTimeMs !== null && scrubTimeMs !== undefined) {
-          return sampleAtTime(
-            getTimeField(frame)?.values as Array<number | null | undefined>,
-            valueField.values as Array<number | null | undefined>,
-            scrubTimeMs
-          );
-        }
-        return valueField.values[valueField.values.length - 1];
-      });
+      } catch (e) {
+        continue;
+      }
+    }
 
-    const rawValue = recentFrame.length > 0 ? recentFrame[0] : undefined;
+    // A null sample (no data at that instant) is treated as missing.
+    const rawValue = matches.length > 0 ? matches[0] ?? undefined : undefined;
 
     if (rawValue === undefined) {
       nodeStatusColor = node.colors.statusDown;
