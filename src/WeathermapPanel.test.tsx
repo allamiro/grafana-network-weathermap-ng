@@ -274,6 +274,16 @@ test('Shows the timeline slider when enabled', () => {
   expect(timeline).not.toBeNull();
   // Starts in the live state.
   expect(timeline.textContent).toContain('Live');
+
+  // The slider is driven by a small 0..500 position index, so its numeric box
+  // never shows a raw 13-digit epoch timestamp that would be cut off (#277).
+  const sliderInput = timeline.querySelector('input') as HTMLInputElement | null;
+  expect(sliderInput).not.toBeNull();
+  const shown = Number(sliderInput!.value);
+  expect(Number.isNaN(shown)).toBe(false);
+  expect(shown).toBeLessThanOrEqual(500);
+  // Must not be the raw time-range value (2_000_000 in this mock).
+  expect(shown).toBeLessThan(1_000_000);
 });
 
 test('Hides the timeline slider when disabled', () => {

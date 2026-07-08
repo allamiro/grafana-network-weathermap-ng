@@ -1928,7 +1928,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               return null;
             }
             const current = effectiveScrub ?? toMs;
-            const step = Math.max(1, Math.round((toMs - fromMs) / 500));
+            // Drive the slider on a small 0..STEPS position index rather than raw
+            // epoch milliseconds, so Grafana's built-in value box shows a short
+            // number instead of a 13-digit timestamp that gets cut off (#277).
+            // The readable timestamp is shown in the label to the left.
+            const STEPS = 500;
+            const span = toMs - fromMs;
+            const position = Math.round(((current - fromMs) / span) * STEPS);
             return (
               <div
                 data-testid="weathermap-timeline"
@@ -1945,16 +1951,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   border-top: 1px solid ${theme.colors.border.weak};
                 `}
               >
-                <span style={{ fontSize: '12px', whiteSpace: 'nowrap', minWidth: '128px' }}>
+                <span
+                  style={{ fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0, minWidth: '128px' }}
+                >
                   {useTimeline ? dateTimeFormat(current, { timeZone: getTimeZone() }) : 'Live (latest)'}
                 </span>
                 <div style={{ flex: '1 1 auto' }}>
                   <Slider
-                    min={fromMs}
-                    max={toMs}
-                    step={step}
-                    value={current}
-                    onChange={(v) => setScrubTime(v)}
+                    min={0}
+                    max={STEPS}
+                    step={1}
+                    value={position}
+                    onChange={(v) => setScrubTime(Math.round(fromMs + (v / STEPS) * span))}
                   />
                 </div>
                 <Button variant="secondary" size="sm" disabled={!useTimeline} onClick={() => setScrubTime(null)}>
