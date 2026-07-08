@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 
+* **larger nodes**: the node padding sliders now go up to 200 (previously 50, which also snapped back typed values), so nodes can be sized for faceplate/background layouts ([#279](https://github.com/allamiro/grafana-network-weathermap-ng/issues/279), PR [#289](https://github.com/allamiro/grafana-network-weathermap-ng/pull/289))
 * **node-z-index**: each node now has an optional **Z-Index** field (next to X/Y) to control stacking order — higher values paint on top; blank keeps the default creation order, so existing maps are unchanged ([#280](https://github.com/allamiro/grafana-network-weathermap-ng/issues/280), PR [#287](https://github.com/allamiro/grafana-network-weathermap-ng/pull/287))
 
 ### Bug Fixes

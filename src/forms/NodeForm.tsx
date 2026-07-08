@@ -554,7 +554,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     <InlineField grow label={'Horizontal'}>
                       <Slider
                         min={0}
-                        max={50}
+                        // Larger nodes (#279): the old 50 cap also snapped
+                        // back typed values; saved maps render any padding.
+                        max={200}
                         value={node.padding.horizontal}
                         step={1}
                         onChange={(num) => handleNodePaddingChange(num, i, 'horizontal')}
@@ -563,7 +565,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     <InlineField grow label={'Vertical'}>
                       <Slider
                         min={0}
-                        max={50}
+                        max={200}
                         value={node.padding.vertical}
                         step={1}
                         onChange={(num) => handleNodePaddingChange(num, i, 'vertical')}
