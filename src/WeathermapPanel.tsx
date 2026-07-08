@@ -1366,12 +1366,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             {wm.settings.link.gradientColor &&
               resolvedLinks.map((d) => (
                 <React.Fragment key={d.id}>
+                  {/*
+                    Both gradients span the full link (A node -> Z node) with the
+                    same A->Z stops so every element that samples them — the A and
+                    Z line halves and both arrow heads — sits on one continuous
+                    gradient. This removes the color break at the arrow tips (#283).
+                  */}
                   <linearGradient
                     id={`grad-a-${d.id}`}
                     x1={d.lineStartA.x}
                     y1={d.lineStartA.y}
-                    x2={d.lineEndA.x}
-                    y2={d.lineEndA.y}
+                    x2={d.lineStartZ.x}
+                    y2={d.lineStartZ.y}
                     gradientUnits="userSpaceOnUse"
                   >
                     <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
@@ -1379,14 +1385,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   </linearGradient>
                   <linearGradient
                     id={`grad-z-${d.id}`}
-                    x1={d.lineStartZ.x}
-                    y1={d.lineStartZ.y}
-                    x2={d.lineEndZ.x}
-                    y2={d.lineEndZ.y}
+                    x1={d.lineStartA.x}
+                    y1={d.lineStartA.y}
+                    x2={d.lineStartZ.x}
+                    y2={d.lineStartZ.y}
                     gradientUnits="userSpaceOnUse"
                   >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
+                    <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
+                    <stop offset="100%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
                   </linearGradient>
                 </React.Fragment>
               ))}
@@ -1544,7 +1550,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                                         ${d.arrowPolygonA.p2.x}
                                         ${d.arrowPolygonA.p2.y}
                                     `}
-                          fill={d.isDown ? (d.statusDownColor || '#d32f2f') : getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)}
+                          fill={
+                            d.isDown
+                              ? (d.statusDownColor || '#d32f2f')
+                              : wm.settings.link.gradientColor
+                              ? `url(#grad-a-${d.id})`
+                              : getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)
+                          }
                           onMouseMove={(e) => {
                             handleLinkHover(d, 'A', e);
                           }}
@@ -1602,7 +1614,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                                         ${d.arrowPolygonZ.p2.x}
                                         ${d.arrowPolygonZ.p2.y}
                                     `}
-                          fill={d.isDown ? (d.statusDownColor || '#d32f2f') : getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)}
+                          fill={
+                            d.isDown
+                              ? (d.statusDownColor || '#d32f2f')
+                              : wm.settings.link.gradientColor
+                              ? `url(#grad-z-${d.id})`
+                              : getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)
+                          }
                           onMouseMove={(e) => {
                             handleLinkHover(d, 'Z', e);
                           }}
