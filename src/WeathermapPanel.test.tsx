@@ -287,6 +287,38 @@ test('Hides the timeline slider when disabled', () => {
   expect(screen.queryByTestId('weathermap-timeline')).toBeNull();
 });
 
+test('Gradient color applies to link arrow tips (issue #283)', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.link.gradientColor = true;
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+  const arrows = Array.from(container.querySelectorAll('polygon'));
+  expect(arrows.length).toBeGreaterThan(0);
+  // Arrow heads must be painted with the gradient, not a solid color, so the
+  // gradient continues smoothly to the tips.
+  expect(arrows.every((p) => (p.getAttribute('fill') || '').startsWith('url(#grad'))).toBe(true);
+});
+
+test('Arrow tips use a solid color when gradient is off', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.settings.link.gradientColor = false;
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+  const arrows = Array.from(container.querySelectorAll('polygon'));
+  expect(arrows.length).toBeGreaterThan(0);
+  expect(arrows.some((p) => (p.getAttribute('fill') || '').startsWith('url(#grad'))).toBe(false);
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };
