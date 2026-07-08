@@ -1176,3 +1176,60 @@ test('a down link labels both sides DOWN instead of stale throughput (#273)', ()
   // even though the A-side series still reports 50.
   expect(screen.getAllByText('DOWN')).toHaveLength(2);
 });
+
+test('hovering a down link still shows the real data in the tooltip (#273)', () => {
+  // The map label says DOWN (utilization is meaningless on a broken link),
+  // but the hover tooltip deliberately keeps the bound series' raw values
+  // and graph so operators can see the traffic history and the moment of
+  // collapse during an outage.
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Map labels: DOWN, and no raw throughput text anywhere on the map.
+  expect(screen.getAllByText('DOWN')).toHaveLength(2);
+  expect(screen.queryByText(/50 b\/s/)).toBeNull();
+
+  // Hover: the tooltip shows the real A-side value even though the link is down.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  expect(screen.getAllByText(/50 b\/s/).length).toBeGreaterThan(0);
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
+test('down behavior needs nothing but a status query — works on a fresh default link (#273)', () => {
+  // A link created through the editor (generateBasicLink defaults) plus only
+  // a status query gets the full down treatment: DOWN labels and, with
+  // animation on, static markers instead of dots.
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  const link = weathermap.links[0];
+  // Assert the editor-created shape: no demo-specific fields required.
+  expect(link.statusDownColor).toBeUndefined();
+  expect(link.statusBlink).toBeUndefined();
+  link.statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+  expect(screen.getAllByText('DOWN')).toHaveLength(2);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+  expect(screen.getAllByTestId('link-down-marker')).toHaveLength(3);
+});
