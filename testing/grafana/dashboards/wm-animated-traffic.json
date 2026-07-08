@@ -100,8 +100,8 @@
         },
         {
           "refId": "G",
-          "expr": "wm_port_status{device=\"RACK1-TOR\", port=\"Gi1/0/7\"}",
-          "legendFormat": "PORT {{port}}",
+          "expr": "wm_link_status",
+          "legendFormat": "LINK {{link}}",
           "range": true,
           "format": "time_series"
         }
@@ -928,7 +928,10 @@
                   "queryA": "DISC core-a<->core-b/1",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK core-a<->core-b/1",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-core-a<->core-b/2",
@@ -1115,7 +1118,7 @@
                   "units": "pps"
                 }
               ],
-              "statusQuery": "PORT Gi1/0/7",
+              "statusQuery": "LINK core-a<->core-b/2",
               "statusDownColor": "#8F3BB8",
               "statusBlink": true
             },
@@ -1303,7 +1306,10 @@
                   "queryA": "DISC core-a<->edge-1",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK core-a<->edge-1",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-core-b<->edge-2",
@@ -1489,7 +1495,10 @@
                   "queryA": "DISC core-b<->edge-2",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK core-b<->edge-2",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-edge-1<->site-atl",
@@ -1677,7 +1686,10 @@
                   "queryA": "DISC edge-1<->site-atl",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK edge-1<->site-atl",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-edge-1<->site-dfw",
@@ -1866,8 +1878,9 @@
                   "units": "pps"
                 }
               ],
-              "statusQuery": "STATUS SITE-DFW",
-              "statusDownColor": "#8F3BB8"
+              "statusQuery": "LINK edge-1<->site-dfw",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-edge-2<->site-nyc/a",
@@ -2037,7 +2050,10 @@
                   "queryA": "DISC edge-2<->site-nyc",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK edge-2<->site-nyc",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-edge-2<->site-nyc/z",
@@ -2208,7 +2224,10 @@
                   "queryA": "DISC edge-2<->site-nyc",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK edge-2<->site-nyc",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-core-b<->inet",
@@ -2394,7 +2413,10 @@
                   "queryA": "DISC core-b<->inet",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "LINK core-b<->inet",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             }
           ],
           "scale": [

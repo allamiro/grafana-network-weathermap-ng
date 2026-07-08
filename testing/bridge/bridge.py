@@ -38,6 +38,7 @@ SERIES = {
     "wm_packet_loss_pct": lambda l: f"LOSS {l.get('device','')}",
     "wm_link_errors": lambda l: f"ERR {l.get('link','')}",
     "wm_link_discards": lambda l: f"DISC {l.get('link','')}",
+    "wm_link_status": lambda l: f"LINK {l.get('link','')}",
     "wm_bandwidth_data": lambda l: f"BW {l.get('link','')} {l.get('type','')}".rstrip(),
 }
 

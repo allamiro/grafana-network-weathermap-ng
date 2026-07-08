@@ -44,31 +44,33 @@ for panel in dashboard["panels"]:
     # trunks read as "parallel links don't animate" (user feedback). The
     # override behavior is pinned by unit tests instead.
 
-    # Down-state demo (#273): SITE-DFW's simulated device status cycles down,
-    # so binding its link to the STATUS series shows the static ✕ markers —
-    # traffic cannot flow on a down link, regardless of utilization color.
+    # Down-state demo (#273), modeled like a real network: every link binds
+    # its own operational status (wm_link_status, the simulator's
+    # ifOperStatus). When a link is down its counters freeze, so the traffic
+    # series drops to zero and the tooltip graph shows the collapse and
+    # flatline — exactly what SNMP would produce.
     for link in wm["links"]:
-        if link["id"] == "link-edge-1<->site-dfw":
-            link["statusQuery"] = "STATUS SITE-DFW"
-            # Purple, deliberately off the green->red utilization ramp so a
-            # down link can never be misread as "95-100% utilized".
-            link["statusDownColor"] = "#8F3BB8"
+        route = link["id"].removeprefix("link-")
+        # VIA-routed pairs (/a, /z segments) are one physical link in the
+        # simulator — both segments bind the same operational status.
+        if route.endswith("/a") or route.endswith("/z"):
+            route = route[:-2]
+        link["statusQuery"] = f"LINK {route}"
+        # Uniform, data-driven down styling on every link: purple
+        # (deliberately off the green->red utilization ramp, so down can
+        # never be misread as "95-100% utilized") and blinking — the same
+        # look wherever a link fails.
+        link["statusDownColor"] = "#8F3BB8"
+        link["statusBlink"] = True
 
-    # Permanently-down demo on the CORE parallel pair (user feedback): the
-    # second CORE-A<->CORE-B trunk binds a simulator port that is hard down,
-    # so one trunk of the pair always animates while the other always shows
-    # the DOWN state — purple (off the utilization ramp), blinking (the
-    # existing statusBlink feature), static ✕ badges, DOWN labels.
-    for link in wm["links"]:
-        if link["id"] == "link-core-a<->core-b/2":
-            link["statusQuery"] = "PORT Gi1/0/7"
-            link["statusDownColor"] = "#8F3BB8"
-            link["statusBlink"] = True
+    # Eth-Trunk2 has failed optics in the simulator (wm_link_status = 0,
+    # counters frozen at zero), so the CORE pair always shows one animated
+    # trunk beside one DOWN trunk — driven purely by the data above.
     panel["targets"].append(
         {
             "refId": "G",
-            "expr": 'wm_port_status{device="RACK1-TOR", port="Gi1/0/7"}',
-            "legendFormat": "PORT {{port}}",
+            "expr": "wm_link_status",
+            "legendFormat": "LINK {{link}}",
             "range": True,
             "format": "time_series",
         }
