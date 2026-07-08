@@ -40,14 +40,32 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
   }
 
   if (settings.scale && settings.scale.fontSizing) {
+    // Explicit font color wins (#278); otherwise keep the automatic contrast
+    // against the panel background color (best effort — it cannot see
+    // background images or the map content underneath).
+    const fontColor =
+      settings.scale.fontColor ||
+      theme.colors.getContrastText(
+        settings.panel.backgroundColor.startsWith('image')
+          ? settings.panel.backgroundColor.split('|', 3)[1]
+          : settings.panel.backgroundColor
+      );
     return (
       <div
+        data-testid="color-scale"
         className={cx(
           styles.colorScaleContainer,
           css`
             top: ${settings.scale.position.y}%;
             left: ${settings.scale.position.x}%;
-          `
+          `,
+          settings.scale.backgroundColor
+            ? css`
+                background: ${settings.scale.backgroundColor};
+                border: 1px solid rgba(204, 204, 220, 0.25);
+                border-radius: 4px;
+              `
+            : css``
         )}
       >
         <div
@@ -55,11 +73,7 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
             styles.colorBoxTitle,
             css`
               font-size: ${settings.scale.fontSizing.title}px;
-              color: ${theme.colors.getContrastText(
-                settings.panel.backgroundColor.startsWith('image')
-                  ? settings.panel.backgroundColor.split('|', 3)[1]
-                  : settings.panel.backgroundColor
-              )};
+              color: ${fontColor};
             `
           )}
         >
@@ -100,11 +114,7 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
                   styles.colorLabel,
                   css`
                     font-size: ${settings.scale.fontSizing.threshold}px;
-                    color: ${theme.colors.getContrastText(
-                      settings.panel.backgroundColor.startsWith('image')
-                        ? settings.panel.backgroundColor.split('|', 3)[1]
-                        : settings.panel.backgroundColor
-                    )};
+                    color: ${fontColor};
                   `
                 )}
               >

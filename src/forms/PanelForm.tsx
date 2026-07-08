@@ -875,6 +875,63 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           />
         </InlineField>
+        {/* Legibility overrides (#278): explicit font color and an optional
+            background box, so the scale stays readable over background images
+            or light map content. Unset = previous automatic behavior. */}
+        <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
+          Scale Font Color:
+          <ColorPicker
+            color={value.settings.scale.fontColor || '#ffffff'}
+            onChange={(color) => {
+              let options = structuredClone(value);
+              options.settings.scale.fontColor = color;
+              onChange(options);
+            }}
+          />
+          {value.settings.scale.fontColor ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ marginLeft: '8px' }}
+              onClick={() => {
+                let options = structuredClone(value);
+                options.settings.scale.fontColor = undefined;
+                onChange(options);
+              }}
+            >
+              Auto
+            </Button>
+          ) : (
+            ''
+          )}
+        </InlineLabel>
+        <InlineLabel width={'auto'} style={{ marginBottom: '4px' }}>
+          Scale Background:
+          <ColorPicker
+            color={value.settings.scale.backgroundColor || 'rgba(0, 0, 0, 0)'}
+            onChange={(color) => {
+              let options = structuredClone(value);
+              options.settings.scale.backgroundColor = color;
+              onChange(options);
+            }}
+          />
+          {value.settings.scale.backgroundColor ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ marginLeft: '8px' }}
+              onClick={() => {
+                let options = structuredClone(value);
+                options.settings.scale.backgroundColor = undefined;
+                onChange(options);
+              }}
+            >
+              None
+            </Button>
+          ) : (
+            ''
+          )}
+        </InlineLabel>
       </React.Fragment>
     );
   } else {

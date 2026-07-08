@@ -299,6 +299,13 @@ export interface TrafficPanelSettings {
     title: number;
     threshold: number;
   };
+  // Optional explicit font color (#278). Unset keeps the automatic contrast
+  // against the panel background color — which cannot account for background
+  // images or light map content underneath the scale.
+  fontColor?: string;
+  // Optional background box behind the scale (#278). Unset = transparent,
+  // exactly as before.
+  backgroundColor?: string;
 }
 
 export interface Weathermap {
