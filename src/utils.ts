@@ -429,6 +429,39 @@ export function handleVersionedStateUpdates(wm: Weathermap, theme: GrafanaTheme2
   return merge(modelWeathermap, migrated);
 }
 
+// Traffic-flow animation mapping (#273). Symbolic scaling, not per-packet:
+// sqrt easing keeps low traffic visible without letting high traffic race.
+// Constants are referenced by the docs and demo dashboard — keep them named.
+export const ANIMATION_BASE_SPEED_PX_S = 20;
+export const ANIMATION_SPEED_RANGE_PX_S = 100;
+export const ANIMATION_MAX_EXTRA_DOTS = 7;
+
+/** Clamp a utilization ratio into [0, 1]; non-finite resolves to 0. */
+export function clampUtilization(utilization: number): number {
+  if (!Number.isFinite(utilization) || utilization <= 0) {
+    return 0;
+  }
+  return Math.min(1, utilization);
+}
+
+/** Dot speed in px/s for a utilization ratio. 0 = do not animate. */
+export function utilizationToSpeed(utilization: number): number {
+  const u = clampUtilization(utilization);
+  if (u === 0) {
+    return 0;
+  }
+  return ANIMATION_BASE_SPEED_PX_S + Math.sqrt(u) * ANIMATION_SPEED_RANGE_PX_S;
+}
+
+/** Number of dots for a utilization ratio. 0 = do not animate. */
+export function utilizationToDotCount(utilization: number): number {
+  const u = clampUtilization(utilization);
+  if (u === 0) {
+    return 0;
+  }
+  return 1 + Math.round(u * ANIMATION_MAX_EXTRA_DOTS);
+}
+
 /**
  * Returns the first numeric field in a data frame, falling back to fields[1].
  * Non-standard datasources (Check MK, etc.) may not put the value at index 1 —

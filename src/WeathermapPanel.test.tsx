@@ -1020,3 +1020,71 @@ test('a node with padding far above the old 50 cap renders correctly (#279)', ()
   const svgNums = (container.querySelector('svg')!.innerHTML.match(/NaN/g) || []).length;
   expect(svgNums).toBe(0);
 });
+
+// Traffic-flow animation (#264/#273): opt-in at every level, dots derived
+// from the already-resolved link values.
+const animationSetup = (
+  animation?: { enabled: boolean; respectReducedMotion?: boolean; maxAnimatedLinks?: number; pauseInEditMode?: boolean },
+  linkOverride?: 'inherit' | 'enabled' | 'disabled'
+) => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'anim a';
+  weathermap.links[0].sides.A.bandwidth = 100;
+  weathermap.links[0].sides.Z.query = 'anim z';
+  weathermap.links[0].sides.Z.bandwidth = 100;
+  if (animation) {
+    weathermap.settings.animation = animation;
+  }
+  if (linkOverride) {
+    weathermap.links[0].animation = linkOverride;
+  }
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', values: [1000, 2000] },
+          { name: 'Value', values: [50, 50], config: { displayNameFromDS: 'anim a' } },
+        ],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = () => {};
+  return testProps;
+};
+
+test('animation is fully off by default (#264)', () => {
+  render(<WeathermapPanel {...animationSetup()} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('enabling animation renders utilization-scaled dots for resolved sides only (#273)', () => {
+  render(<WeathermapPanel {...animationSetup({ enabled: true })} />);
+  // A side: 50 of 100 -> utilization 0.5 -> 1 + round(0.5 * 7) = 5 dots.
+  // Z side: no series resolves -> no dots at all.
+  expect(screen.getAllByTestId('link-anim-dot')).toHaveLength(5);
+});
+
+test('per-link disabled wins over the panel switch (#273)', () => {
+  render(<WeathermapPanel {...animationSetup({ enabled: true }, 'disabled')} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('per-link enabled animates even when the panel switch is off (#273)', () => {
+  render(<WeathermapPanel {...animationSetup(undefined, 'enabled')} />);
+  expect(screen.getAllByTestId('link-anim-dot')).toHaveLength(5);
+});
+
+test('edit mode pauses animation by default (#264)', () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  render(<WeathermapPanel {...animationSetup({ enabled: true })} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('max animated links cap of zero disables all dots (#264)', () => {
+  render(<WeathermapPanel {...animationSetup({ enabled: true, maxAnimatedLinks: 0 })} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});

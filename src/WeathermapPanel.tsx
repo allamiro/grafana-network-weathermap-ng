@@ -55,6 +55,9 @@ import {
   valueAtTime,
   addViaToLink,
   removeVia,
+  clampUtilization,
+  utilizationToSpeed,
+  utilizationToDotCount,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -1826,6 +1829,96 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   </React.Fragment>
                 );
               })}
+            </g>
+            <g>
+              {/*
+                Traffic-flow particles (#264/#273). Opt-in at every level:
+                panel master switch (or per-link 'enabled' override), gated by
+                prefers-reduced-motion, edit-mode pause, timeline-scrub pause
+                (animation reflects live motion; scrubbing is a replay), link
+                down state, and the max-animated-links cap. Dots are SMIL
+                animateMotion elements — the compositor animates them with no
+                React re-renders and no requestAnimationFrame.
+              */}
+              {(() => {
+                const anim = wm.settings.animation;
+                const reducedMotion =
+                  (anim?.respectReducedMotion ?? true) &&
+                  typeof window.matchMedia === 'function' &&
+                  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                const paused =
+                  reducedMotion ||
+                  ((anim?.pauseInEditMode ?? true) && isEditMode) ||
+                  (useTimeline && effectiveScrub !== null);
+                if (paused) {
+                  return null;
+                }
+                const globalOn = anim?.enabled ?? false;
+                const animated = resolvedLinks
+                  .filter((d) => {
+                    const override = d.animation ?? 'inherit';
+                    const on = globalOn ? override !== 'disabled' : override === 'enabled';
+                    return on && !d.isDown;
+                  })
+                  .slice(0, Math.max(0, anim?.maxAnimatedLinks ?? 100));
+                return animated.map((d) => {
+                  const dirs: Array<{ key: string; from: Position; to: Position; value: number; bandwidth: number }> = [
+                    {
+                      key: 'A',
+                      from: d.lineStartA,
+                      to: d.lineStartZ,
+                      value: d.sides.A.currentValue,
+                      bandwidth: d.sides.A.bandwidth,
+                    },
+                  ];
+                  if (!d.singleDirection) {
+                    dirs.push({
+                      key: 'Z',
+                      from: d.lineStartZ,
+                      to: d.lineStartA,
+                      value: d.sides.Z.currentValue,
+                      bandwidth: d.sides.Z.bandwidth,
+                    });
+                  }
+                  return dirs.map((dir) => {
+                    // Zero, missing, NaN, or negative traffic — and a missing
+                    // or zero bandwidth — all resolve to "no dots".
+                    const utilization =
+                      dir.bandwidth > 0 ? clampUtilization(Math.max(0, dir.value) / dir.bandwidth) : 0;
+                    const dotCount = utilizationToDotCount(utilization);
+                    const speed = utilizationToSpeed(utilization);
+                    if (dotCount === 0 || speed === 0) {
+                      return null;
+                    }
+                    const length = Math.hypot(dir.to.x - dir.from.x, dir.to.y - dir.from.y);
+                    if (!Number.isFinite(length) || length === 0) {
+                      return null;
+                    }
+                    const dur = length / speed;
+                    const color = getScaleColor(dir.value, dir.bandwidth);
+                    return (
+                      <g key={`${d.id}-anim-${dir.key}`} pointerEvents="none">
+                        {Array.from({ length: dotCount }, (_, dotIndex) => (
+                          <circle
+                            key={dotIndex}
+                            data-testid="link-anim-dot"
+                            r={Math.max(1.5, d.stroke / 4)}
+                            fill={color}
+                            opacity={0.9}
+                          >
+                            <animateMotion
+                              path={`M ${dir.from.x} ${dir.from.y} L ${dir.to.x} ${dir.to.y}`}
+                              dur={`${dur}s`}
+                              begin={`${-((dotIndex * dur) / dotCount)}s`}
+                              repeatCount="indefinite"
+                            />
+                          </circle>
+                        ))}
+                      </g>
+                    );
+                  });
+                });
+              })()}
             </g>
             <g>
               {/*

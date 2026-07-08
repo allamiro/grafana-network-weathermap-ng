@@ -6,6 +6,9 @@ import {
   buildQueryOptions,
   getDataFrameName,
   getValueField,
+  clampUtilization,
+  utilizationToSpeed,
+  utilizationToDotCount,
   getValueSeries,
   resolveLinkChain,
   spreadLabels,
@@ -576,6 +579,39 @@ describe('timeline helpers (valueAtTime / getTimeField)', () => {
       ],
     };
     expect(getTimeField(frame)).toBeUndefined();
+  });
+});
+
+describe('traffic-flow animation mapping (#273)', () => {
+  test('clampUtilization bounds and sanitizes', () => {
+    expect(clampUtilization(0.5)).toBe(0.5);
+    expect(clampUtilization(4)).toBe(1);
+    expect(clampUtilization(0)).toBe(0);
+    expect(clampUtilization(-3)).toBe(0);
+    expect(clampUtilization(NaN)).toBe(0);
+    // Non-finite input is invalid -> no dots, not max speed.
+    expect(clampUtilization(Infinity)).toBe(0);
+    expect(clampUtilization(-Infinity)).toBe(0);
+  });
+
+  test('speed follows 20 + sqrt(u) * 100 and gates zero traffic', () => {
+    expect(utilizationToSpeed(0)).toBe(0);
+    expect(utilizationToSpeed(NaN)).toBe(0);
+    expect(utilizationToSpeed(-1)).toBe(0);
+    expect(utilizationToSpeed(1)).toBe(120);
+    expect(utilizationToSpeed(0.25)).toBe(70);
+    // Over-bandwidth clamps to the max speed instead of racing away.
+    expect(utilizationToSpeed(9)).toBe(120);
+  });
+
+  test('dot count follows 1 + round(u * 7) and gates zero traffic', () => {
+    expect(utilizationToDotCount(0)).toBe(0);
+    expect(utilizationToDotCount(NaN)).toBe(0);
+    expect(utilizationToDotCount(-0.5)).toBe(0);
+    expect(utilizationToDotCount(0.01)).toBe(1);
+    expect(utilizationToDotCount(0.5)).toBe(5);
+    expect(utilizationToDotCount(1)).toBe(8);
+    expect(utilizationToDotCount(50)).toBe(8);
   });
 });
 

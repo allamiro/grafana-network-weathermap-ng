@@ -932,6 +932,75 @@ export const PanelForm = ({ value, onChange }: Props) => {
             ''
           )}
         </InlineLabel>
+        <FormDivider title="Animation" />
+        {/* Animation foundation (#264): master switch and safety gates for
+            traffic-flow particles (#273) and future animation features.
+            Everything defaults to off/conservative. */}
+        <InlineField
+          grow
+          label="Enable Traffic Animation"
+          className={styles.inlineField}
+          tooltip="Animated dots along links showing metric-derived direction and intensity. Individual links can also opt in or out in the link editor."
+        >
+          <InlineSwitch
+            value={value.settings.animation?.enabled ?? false}
+            onChange={(e) => {
+              let options = structuredClone(value);
+              options.settings.animation = {
+                ...(options.settings.animation ?? {}),
+                enabled: e.currentTarget.checked,
+              };
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <InlineField grow label="Respect Reduced Motion" className={styles.inlineField}>
+          <InlineSwitch
+            value={value.settings.animation?.respectReducedMotion ?? true}
+            onChange={(e) => {
+              let options = structuredClone(value);
+              options.settings.animation = {
+                enabled: options.settings.animation?.enabled ?? false,
+                ...(options.settings.animation ?? {}),
+                respectReducedMotion: e.currentTarget.checked,
+              };
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <InlineField grow label="Pause In Edit Mode" className={styles.inlineField}>
+          <InlineSwitch
+            value={value.settings.animation?.pauseInEditMode ?? true}
+            onChange={(e) => {
+              let options = structuredClone(value);
+              options.settings.animation = {
+                enabled: options.settings.animation?.enabled ?? false,
+                ...(options.settings.animation ?? {}),
+                pauseInEditMode: e.currentTarget.checked,
+              };
+              onChange(options);
+            }}
+          />
+        </InlineField>
+        <InlineField grow label="Max Animated Links" className={styles.inlineField}>
+          <Input
+            value={value.settings.animation?.maxAnimatedLinks ?? 100}
+            type={'number'}
+            min={0}
+            onChange={(e) => {
+              let options = structuredClone(value);
+              options.settings.animation = {
+                enabled: options.settings.animation?.enabled ?? false,
+                ...(options.settings.animation ?? {}),
+                maxAnimatedLinks: finiteOrFallback(
+                  e.currentTarget.valueAsNumber,
+                  options.settings.animation?.maxAnimatedLinks ?? 100
+                ),
+              };
+              onChange(options);
+            }}
+          />
+        </InlineField>
       </React.Fragment>
     );
   } else {
