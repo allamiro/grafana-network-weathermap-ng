@@ -201,3 +201,24 @@ test('a newly added node gets its own colors object (#281)', () => {
   expect(newNode.colors).toEqual(updated.nodes[0].colors);
   expect(newNode.colors).not.toBe(updated.nodes[0].colors);
 });
+
+test('node padding sliders allow values above the old 50 cap (#279)', async () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  // Pick "Node A", then expand the Padding section.
+  const picker = screen.getAllByRole('combobox')[0];
+  fireEvent.keyDown(picker, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByText('Node A'));
+  fireEvent.click(screen.getByText('Padding'));
+
+  // Both padding sliders advertise the raised bound, so typed values up to
+  // 200 no longer snap back to 50.
+  const sliders = screen
+    .getAllByRole('slider')
+    .filter((el) => el.getAttribute('aria-valuemax') !== null);
+  const maxes = sliders.map((el) => el.getAttribute('aria-valuemax'));
+  expect(maxes).toEqual(expect.arrayContaining(['200']));
+  expect(maxes).not.toContain('50');
+});
