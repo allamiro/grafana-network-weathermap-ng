@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.15](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.15) (2026-07-08)
+
+### Features
+
+* **node-z-index**: each node now has an optional **Z-Index** field (next to X/Y) to control stacking order — higher values paint on top; blank keeps the default creation order, so existing maps are unchanged ([#280](https://github.com/allamiro/grafana-network-weathermap-ng/issues/280), PR [#287](https://github.com/allamiro/grafana-network-weathermap-ng/pull/287))
+
+### Bug Fixes
+
+* **timeline-timestamp**: the timeline slider no longer shows a cut-off unix timestamp — the slider is driven by a small position index and the readable, timezone-aware timestamp is shown in the label ([#277](https://github.com/allamiro/grafana-network-weathermap-ng/issues/277), PR [#285](https://github.com/allamiro/grafana-network-weathermap-ng/pull/285))
+* **connection-label**: toggling **Use As Connection (BETA)** no longer overwrites the node's label with `C<n>` — the label is preserved ([#282](https://github.com/allamiro/grafana-network-weathermap-ng/issues/282), PR [#286](https://github.com/allamiro/grafana-network-weathermap-ng/pull/286))
+* **node-colors**: a newly added node now gets its own colors object instead of sharing the first node's by reference, hardening against cross-node color edits ([#281](https://github.com/allamiro/grafana-network-weathermap-ng/issues/281), PR [#286](https://github.com/allamiro/grafana-network-weathermap-ng/pull/286))
+* **gradient-arrow-tips**: link gradient coloring now spans the full A→Z path and paints the arrow heads, removing the color break at the tips ([#283](https://github.com/allamiro/grafana-network-weathermap-ng/issues/283), PR [#284](https://github.com/allamiro/grafana-network-weathermap-ng/pull/284))
+
 ## [1.5.14](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.14) (2026-07-04)
 
 ### Features

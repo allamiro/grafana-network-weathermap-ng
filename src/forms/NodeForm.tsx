@@ -46,10 +46,6 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const theme = useTheme2();
   const [lockAspectRatio, setLockAspectRatio] = useState(false);
 
-  let connectionCounter = 0;
-  for (let node of value.nodes) {
-    connectionCounter += node.isConnection ? 1 : 0;
-  }
 
   const handleChange = (e: React.FormEvent<HTMLInputElement>, i: number) => {
     // Immutable update (#225): clone the touched node so onChange delivers a
@@ -61,6 +57,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
       node.position[1] = finiteOrFallback(e.currentTarget.valueAsNumber, node.position[1]);
     } else if (e.currentTarget.name === 'label') {
       node.label = e.currentTarget.value;
+    } else if (e.currentTarget.name === 'zIndex') {
+      // Blank clears the z-index (back to default order); otherwise store the number.
+      node.zIndex = e.currentTarget.value === '' ? undefined : finiteOrFallback(e.currentTarget.valueAsNumber, 0);
     }
     onChange({ ...value, nodes: value.nodes.map((n, ni) => (ni === i ? node : n)) });
   };
@@ -99,7 +98,8 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   };
 
   const handleConnectionChange = (e: React.FormEvent<HTMLInputElement>, i: number): void => {
-    updateNode(i, { isConnection: e.currentTarget.checked, label: 'C' + connectionCounter });
+    // Toggling "Use As Connection" must not rename the node — keep its label (#282).
+    updateNode(i, { isConnection: e.currentTarget.checked });
   };
 
   const handleStatusQueryChange = (query: string | undefined, i: number) => {
@@ -202,7 +202,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
       },
       colors:
         weathermap.nodes.length > 0
-          ? weathermap.nodes[0].colors
+          ? // Clone so the new node doesn't share the first node's colors object
+            // by reference (#281) — otherwise editing one could affect the other.
+            { ...weathermap.nodes[0].colors }
           : {
               font: theme.colors.secondary.contrastText,
               background: theme.colors.secondary.main,
@@ -369,6 +371,16 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     type={'number'}
                     className={styles.nodeLabel}
                     name={'Y'}
+                  />
+                </InlineField>
+                <InlineField grow label={'Z-Index'} tooltip={'Paint order — higher values sit on top of lower ones. Leave blank for the default (creation) order.'}>
+                  <Input
+                    value={node.zIndex ?? ''}
+                    onChange={(e) => handleChange(e, i)}
+                    placeholder={'0'}
+                    type={'number'}
+                    className={styles.nodeLabel}
+                    name={'zIndex'}
                   />
                 </InlineField>
                 <InlineField grow label={'Label'}>

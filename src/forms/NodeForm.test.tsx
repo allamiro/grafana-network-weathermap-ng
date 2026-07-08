@@ -160,3 +160,44 @@ test('node color change delivers new node and colors references (#225)', async (
   expect(updated.nodes[0].colors).not.toBe(initial.nodes[0].colors);
   expect(initial).toEqual(before);
 });
+
+test('toggling Use As Connection keeps the node label (#282)', async () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  // Select Node A and open the Advanced section.
+  const picker = screen.getAllByRole('combobox')[0];
+  fireEvent.keyDown(picker, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByText('Node A'));
+  fireEvent.click(screen.getByText('Advanced'));
+
+  // Toggle "Use As Connection (BETA)".
+  let el: HTMLElement | null = screen.getByText('Use As Connection (BETA)');
+  while (el && !el.querySelector('input')) {
+    el = el.parentElement;
+  }
+  const toggle = el!.querySelector('input') as HTMLInputElement;
+  fireEvent.click(toggle);
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  const nodeA = updated.nodes.find((n: { label?: string }) => n.label === 'Node A');
+  // The node keeps its label (not renamed to "C0") and becomes a connection.
+  expect(nodeA).toBeDefined();
+  expect(nodeA.isConnection).toBe(true);
+});
+
+test('a newly added node gets its own colors object (#281)', () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.click(screen.getByText('Add Node'));
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  const newNode = updated.nodes[updated.nodes.length - 1];
+  // Same values as the first node, but a distinct object — so editing one
+  // node's color can never affect another (#281).
+  expect(newNode.colors).toEqual(updated.nodes[0].colors);
+  expect(newNode.colors).not.toBe(updated.nodes[0].colors);
+});

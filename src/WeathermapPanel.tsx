@@ -1816,7 +1816,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               })}
             </g>
             <g>
-              {nodes.map((d, i) => (
+              {/*
+                Paint nodes in z-index order (#280): higher zIndex renders later,
+                so it sits on top. Equal zIndex keeps creation order (by node
+                index), so the default (all 0) matches the previous behavior. A
+                sorted copy is used — `nodes` itself stays in index order because
+                the callbacks below address nodes by their stable `d.index`.
+              */}
+              {[...nodes]
+                .sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0) || a.index - b.index)
+                .map((d) => (
                 <MapNode
                   key={d.id}
                   {...{
@@ -1835,7 +1844,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       setDraggedNode(d);
                       setNodes((prevState) =>
                         prevState.map((val, index) => {
-                          if (index === i || selectedNodes.find((n) => n.id === nodes[index].id)) {
+                          if (index === d.index || selectedNodes.find((n) => n.id === nodes[index].id)) {
                             const scaledPos = getScaledMousePos({ x: position.deltaX, y: position.deltaY });
                             val.x = Math.round(
                               wm.settings.panel.grid.enabled
@@ -1859,7 +1868,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       setDraggedNode(null as unknown as DrawnNode);
                       // Build the persisted positions immutably: writing into
                       // wm.nodes[..] hands Grafana the same references (#225).
-                      const movedIndexes = new Set<number>([i, ...selectedNodes.map((n) => n.index)]);
+                      const movedIndexes = new Set<number>([d.index, ...selectedNodes.map((n) => n.index)]);
                       const snappedPosition = (index: number): [number, number] => [
                         wm.settings.panel.grid.enabled
                           ? nearestMultiple(nodes[index].x, wm.settings.panel.grid.size)
@@ -1881,15 +1890,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       });
                     },
                     onClick: (e) => {
+                      const clicked = tempNodes[d.index];
                       if ((e.ctrlKey || e.metaKey) && isEditMode) {
                         setSelectedNodes((v) => {
                           // Return a NEW array: mutating and returning the same
                           // reference makes React skip selection re-renders (#225).
-                          const cIndex = v.findIndex((n) => n.id === tempNodes[i].id);
-                          return cIndex > -1 ? v.filter((_, vi) => vi !== cIndex) : [...v, tempNodes[i]];
+                          const cIndex = v.findIndex((n) => n.id === clicked.id);
+                          return cIndex > -1 ? v.filter((_, vi) => vi !== cIndex) : [...v, clicked];
                         });
-                      } else if (!isEditMode && tempNodes[i].dashboardLink) {
-                        openDashboardLink(tempNodes[i].dashboardLink, tempNodes[i].openInSameTab);
+                      } else if (!isEditMode && clicked.dashboardLink) {
+                        openDashboardLink(clicked.dashboardLink, clicked.openInSameTab);
                       }
                       // Force an update
                       onOptionsChange(options);
@@ -1928,7 +1938,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               return null;
             }
             const current = effectiveScrub ?? toMs;
-            const step = Math.max(1, Math.round((toMs - fromMs) / 500));
+            // Drive the slider on a small 0..STEPS position index rather than raw
+            // epoch milliseconds, so Grafana's built-in value box shows a short
+            // number instead of a 13-digit timestamp that gets cut off (#277).
+            // The readable timestamp is shown in the label to the left.
+            const STEPS = 500;
+            const span = toMs - fromMs;
+            const position = Math.round(((current - fromMs) / span) * STEPS);
             return (
               <div
                 data-testid="weathermap-timeline"
@@ -1945,16 +1961,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   border-top: 1px solid ${theme.colors.border.weak};
                 `}
               >
-                <span style={{ fontSize: '12px', whiteSpace: 'nowrap', minWidth: '128px' }}>
+                <span
+                  style={{ fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0, minWidth: '128px' }}
+                >
                   {useTimeline ? dateTimeFormat(current, { timeZone: getTimeZone() }) : 'Live (latest)'}
                 </span>
                 <div style={{ flex: '1 1 auto' }}>
                   <Slider
-                    min={fromMs}
-                    max={toMs}
-                    step={step}
-                    value={current}
-                    onChange={(v) => setScrubTime(v)}
+                    min={0}
+                    max={STEPS}
+                    step={1}
+                    value={position}
+                    onChange={(v) => setScrubTime(Math.round(fromMs + (v / STEPS) * span))}
                   />
                 </div>
                 <Button variant="secondary" size="sm" disabled={!useTimeline} onClick={() => setScrubTime(null)}>
