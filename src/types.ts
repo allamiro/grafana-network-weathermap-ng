@@ -285,6 +285,10 @@ export interface WeathermapSettings {
     maxAnimatedLinks?: number;
     // Pause all animation while the panel is being edited. Default true.
     pauseInEditMode?: boolean;
+    // Show the built-in legend explaining the animation glyphs (moving dot =
+    // live traffic, ✕ = down). Rendered only while animation is active, so a
+    // panel without animation never shows it. Default true.
+    showLegend?: boolean;
   };
   fontSizing: {
     node: number;

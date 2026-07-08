@@ -550,6 +550,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       toReturn.isDown = false;
     }
 
+    // A down link cannot carry traffic, so a throughput/utilization number is
+    // meaningless (and usually just the last stale counter). Label both sides
+    // DOWN instead — the tooltip still exposes the raw values for debugging.
+    if (toReturn.isDown) {
+      toReturn.sides.A.currentText = 'DOWN';
+      toReturn.sides.Z.currentText = 'DOWN';
+    }
+
     return toReturn;
   }
 
@@ -1255,6 +1263,65 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           ''
         )}
         <ColorScale thresholds={wm.scale} settings={wm.settings} />
+        {/*
+          Built-in animation legend (#273): explains the animation glyphs and
+          renders ONLY while animation is active on this panel, so maps
+          without animation never show it (and it cannot be confused with the
+          utilization scale).
+        */}
+        {(wm.settings.animation?.showLegend ?? true) &&
+        ((wm.settings.animation?.enabled ?? false) || wm.links.some((l) => l.animation === 'enabled')) ? (
+          <div
+            className={css`
+              position: absolute;
+              bottom: 1%;
+              left: 1%;
+              z-index: 2;
+              padding: 6px 10px;
+              border-radius: 4px;
+              background-color: ${theme.colors.background.secondary};
+              border: 1px solid ${theme.colors.border.weak};
+              font-size: 12px;
+              pointer-events: none;
+              color: ${theme.colors.text.primary};
+            `}
+            data-testid="animation-legend"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '18px' }}>
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: theme.colors.success.main,
+                  display: 'inline-block',
+                }}
+              ></span>
+              moving dots — live traffic (speed &amp; density follow utilization)
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '18px' }}>
+              <span
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  border: `1.5px solid ${theme.colors.text.secondary}`,
+                  color: theme.colors.text.primary,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '9px',
+                  fontWeight: 'bold',
+                }}
+              >
+                ✕
+              </span>
+              static ✕ + DOWN — link down, no traffic (warm line colors = utilization, not failure)
+            </div>
+          </div>
+        ) : (
+          ''
+        )}
         {wm.settings.statusLegend?.enabled && wm.settings.statusLegend.items.length > 0 ? (
           <div
             className={css`
@@ -1865,25 +1932,42 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   // the link gets static ✕ markers in its down color — never
                   // animated, on both halves plus the middle.
                   if (d.isDown) {
+                    // Badge styling (not a plain red glyph): the utilization
+                    // scale also ends in red, so a red ✕ read as "95-100%".
+                    // A neutral disc with a down-colored ring and a
+                    // theme-contrast ✕ stays unambiguous next to any line color.
                     const downColor = d.statusDownColor || '#d32f2f';
+                    const badgeR = Math.max(6, d.stroke);
                     return (
                       <g key={`${d.id}-anim-down`} pointerEvents="none">
-                        {[0.25, 0.5, 0.75].map((t) => (
-                          <text
-                            key={t}
-                            data-testid="link-down-marker"
-                            x={d.lineStartA.x + (d.lineStartZ.x - d.lineStartA.x) * t}
-                            y={d.lineStartA.y + (d.lineStartZ.y - d.lineStartA.y) * t}
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            alignmentBaseline="central"
-                            fontSize={`${Math.max(9, d.stroke * 1.6)}px`}
-                            fontWeight="bold"
-                            fill={downColor}
-                          >
-                            ✕
-                          </text>
-                        ))}
+                        {[0.25, 0.5, 0.75].map((t) => {
+                          const mx = d.lineStartA.x + (d.lineStartZ.x - d.lineStartA.x) * t;
+                          const my = d.lineStartA.y + (d.lineStartZ.y - d.lineStartA.y) * t;
+                          return (
+                            <g key={t} data-testid="link-down-marker">
+                              <circle
+                                cx={mx}
+                                cy={my}
+                                r={badgeR}
+                                fill={theme.colors.background.primary}
+                                stroke={downColor}
+                                strokeWidth={1.5}
+                              />
+                              <text
+                                x={mx}
+                                y={my}
+                                textAnchor="middle"
+                                dominantBaseline="central"
+                                alignmentBaseline="central"
+                                fontSize={`${badgeR * 1.2}px`}
+                                fontWeight="bold"
+                                fill={theme.colors.text.primary}
+                              >
+                                ✕
+                              </text>
+                            </g>
+                          );
+                        })}
                       </g>
                     );
                   }

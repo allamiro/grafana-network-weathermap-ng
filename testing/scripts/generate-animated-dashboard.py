@@ -50,18 +50,12 @@ for panel in dashboard["panels"]:
     for link in wm["links"]:
         if link["id"] == "link-edge-1<->site-dfw":
             link["statusQuery"] = "STATUS SITE-DFW"
+            # Purple, deliberately off the green->red utilization ramp so a
+            # down link can never be misread as "95-100% utilized".
+            link["statusDownColor"] = "#8F3BB8"
 
-    # Legend teaching the visual language: moving dots = live traffic,
-    # static ✕ = down, warm line colors = utilization (fullness), not failure.
-    wm["settings"]["statusLegend"] = {
-        "enabled": True,
-        "position": {"x": 1, "y": 86},
-        "items": [
-            {"id": "anim-flow", "color": "#73BF69", "label": "moving dots = live traffic (speed & density follow utilization)"},
-            {"id": "anim-down", "color": "#d32f2f", "label": "static \u2715 = link down (no traffic possible)"},
-            {"id": "anim-util", "color": "#FADE2A", "label": "yellow/orange/red line = high utilization, not failure"},
-        ],
-    }
+    # No dashboard-level legend: the plugin renders its own animation legend
+    # automatically while animation is active (settings.animation.showLegend).
 
 out = os.path.join(ROOT, "wm-animated-traffic.json")
 with open(out, "w") as f:

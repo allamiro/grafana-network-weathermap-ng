@@ -982,6 +982,25 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           />
         </InlineField>
+        <InlineField
+          grow
+          label="Show Animation Legend"
+          className={styles.inlineField}
+          tooltip="Legend explaining the animation glyphs. Only rendered while animation is active on this panel."
+        >
+          <InlineSwitch
+            value={value.settings.animation?.showLegend ?? true}
+            onChange={(e) => {
+              let options = structuredClone(value);
+              options.settings.animation = {
+                enabled: options.settings.animation?.enabled ?? false,
+                ...(options.settings.animation ?? {}),
+                showLegend: e.currentTarget.checked,
+              };
+              onChange(options);
+            }}
+          />
+        </InlineField>
         <InlineField grow label="Max Animated Links" className={styles.inlineField}>
           <Input
             value={value.settings.animation?.maxAnimatedLinks ?? 100}

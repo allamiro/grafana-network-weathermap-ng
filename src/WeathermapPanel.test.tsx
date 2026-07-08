@@ -1130,3 +1130,49 @@ test('down markers only appear when animation is enabled for the link (#273)', (
   render(<WeathermapPanel {...testProps} />);
   expect(screen.queryAllByTestId('link-down-marker')).toHaveLength(0);
 });
+
+test('animation legend renders only while animation is active (#273)', () => {
+  // No animation at all: no legend.
+  const off = render(<WeathermapPanel {...animationSetup()} />);
+  expect(off.queryByTestId('animation-legend')).toBeNull();
+  off.unmount();
+
+  // Panel switch on: legend appears.
+  const on = render(<WeathermapPanel {...animationSetup({ enabled: true })} />);
+  expect(on.getByTestId('animation-legend')).not.toBeNull();
+  on.unmount();
+
+  // Only a per-link override enabled: legend still appears.
+  const perLink = render(<WeathermapPanel {...animationSetup(undefined, 'enabled')} />);
+  expect(perLink.getByTestId('animation-legend')).not.toBeNull();
+});
+
+test('animation legend can be hidden via showLegend (#273)', () => {
+  const props = animationSetup({ enabled: true });
+  props.options.weathermap.settings.animation!.showLegend = false;
+  render(<WeathermapPanel {...props} />);
+  expect(screen.queryByTestId('animation-legend')).toBeNull();
+  // The animation itself still runs.
+  expect(screen.getAllByTestId('link-anim-dot').length).toBeGreaterThan(0);
+});
+
+test('a down link labels both sides DOWN instead of stale throughput (#273)', () => {
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Utilization is meaningless on a broken link: both side labels say DOWN
+  // even though the A-side series still reports 50.
+  expect(screen.getAllByText('DOWN')).toHaveLength(2);
+});
