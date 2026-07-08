@@ -40,10 +40,10 @@ for panel in dashboard["panels"]:
         "maxAnimatedLinks": 100,
         "pauseInEditMode": True,
     }
-    # Demonstrate the per-link override: the first link never animates even
-    # though the panel switch is on.
-    if wm["links"]:
-        wm["links"][0]["animation"] = "disabled"
+    # No per-link opt-out in the demo: disabling one of the parallel CORE
+    # trunks read as "parallel links don't animate" (user feedback). The
+    # override behavior is pinned by unit tests instead; idle links already
+    # demonstrate the no-dots state naturally.
 
 out = os.path.join(ROOT, "wm-animated-traffic.json")
 with open(out, "w") as f:

@@ -921,8 +921,7 @@
                   "queryA": "DISC core-a<->core-b/1",
                   "units": "pps"
                 }
-              ],
-              "animation": "disabled"
+              ]
             },
             {
               "id": "link-core-a<->core-b/2",
