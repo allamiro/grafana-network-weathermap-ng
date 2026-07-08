@@ -319,6 +319,40 @@ test('Arrow tips use a solid color when gradient is off', () => {
   expect(arrows.some((p) => (p.getAttribute('fill') || '').startsWith('url(#grad'))).toBe(false);
 });
 
+// DOCUMENT_POSITION_FOLLOWING = 4 (avoids colliding with the imported `Node` type).
+const FOLLOWS = 4;
+
+test('Nodes paint in creation order by default (#280)', () => {
+  let testProps = { ...mPanelProps };
+  testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  const aGroup = screen.getByText('Node A').closest('g')!;
+  const bGroup = screen.getByText('Node B').closest('g')!;
+  // Node B (created second) renders after Node A, so it sits on top.
+  expect(aGroup.compareDocumentPosition(bGroup) & FOLLOWS).toBeTruthy();
+});
+
+test('A higher z-index node paints on top (#280)', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  // Give the first node (Node A) a high z-index so it should render last.
+  weathermap.nodes.find((n) => n.label === 'Node A')!.zIndex = 10;
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = (o: SimpleOptions) => {
+    testProps.options = o;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+  const aGroup = screen.getByText('Node A').closest('g')!;
+  const bGroup = screen.getByText('Node B').closest('g')!;
+  // Now Node A must render AFTER Node B (i.e. B is followed by A) → A on top.
+  expect(bGroup.compareDocumentPosition(aGroup) & FOLLOWS).toBeTruthy();
+});
+
 // Tests plays badly with new deps
 // test('Editing a weathermap', () => {
 //   let testProps = { ...mPanelProps };

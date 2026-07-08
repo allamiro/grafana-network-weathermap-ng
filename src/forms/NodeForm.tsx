@@ -61,6 +61,9 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
       node.position[1] = finiteOrFallback(e.currentTarget.valueAsNumber, node.position[1]);
     } else if (e.currentTarget.name === 'label') {
       node.label = e.currentTarget.value;
+    } else if (e.currentTarget.name === 'zIndex') {
+      // Blank clears the z-index (back to default order); otherwise store the number.
+      node.zIndex = e.currentTarget.value === '' ? undefined : finiteOrFallback(e.currentTarget.valueAsNumber, 0);
     }
     onChange({ ...value, nodes: value.nodes.map((n, ni) => (ni === i ? node : n)) });
   };
@@ -369,6 +372,16 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                     type={'number'}
                     className={styles.nodeLabel}
                     name={'Y'}
+                  />
+                </InlineField>
+                <InlineField grow label={'Z-Index'} tooltip={'Paint order — higher values sit on top of lower ones. Leave blank for the default (creation) order.'}>
+                  <Input
+                    value={node.zIndex ?? ''}
+                    onChange={(e) => handleChange(e, i)}
+                    placeholder={'0'}
+                    type={'number'}
+                    className={styles.nodeLabel}
+                    name={'zIndex'}
                   />
                 </InlineField>
                 <InlineField grow label={'Label'}>
