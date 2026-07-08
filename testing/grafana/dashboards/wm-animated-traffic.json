@@ -1855,7 +1855,8 @@
                   "queryA": "DISC edge-1<->site-dfw",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "STATUS SITE-DFW"
             },
             {
               "id": "link-edge-2<->site-nyc/a",
@@ -2487,6 +2488,30 @@
               "respectReducedMotion": true,
               "maxAnimatedLinks": 100,
               "pauseInEditMode": true
+            },
+            "statusLegend": {
+              "enabled": true,
+              "position": {
+                "x": 1,
+                "y": 86
+              },
+              "items": [
+                {
+                  "id": "anim-flow",
+                  "color": "#73BF69",
+                  "label": "moving dots = live traffic (speed & density follow utilization)"
+                },
+                {
+                  "id": "anim-down",
+                  "color": "#d32f2f",
+                  "label": "static \u2715 = link down (no traffic possible)"
+                },
+                {
+                  "id": "anim-util",
+                  "color": "#FADE2A",
+                  "label": "yellow/orange/red line = high utilization, not failure"
+                }
+              ]
             }
           }
         }

@@ -1857,11 +1857,36 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 const animated = resolvedLinks
                   .filter((d) => {
                     const override = d.animation ?? 'inherit';
-                    const on = globalOn ? override !== 'disabled' : override === 'enabled';
-                    return on && !d.isDown;
+                    return globalOn ? override !== 'disabled' : override === 'enabled';
                   })
                   .slice(0, Math.max(0, anim?.maxAnimatedLinks ?? 100));
                 return animated.map((d) => {
+                  // Down link (#273): traffic cannot flow, so instead of dots
+                  // the link gets static ✕ markers in its down color — never
+                  // animated, on both halves plus the middle.
+                  if (d.isDown) {
+                    const downColor = d.statusDownColor || '#d32f2f';
+                    return (
+                      <g key={`${d.id}-anim-down`} pointerEvents="none">
+                        {[0.25, 0.5, 0.75].map((t) => (
+                          <text
+                            key={t}
+                            data-testid="link-down-marker"
+                            x={d.lineStartA.x + (d.lineStartZ.x - d.lineStartA.x) * t}
+                            y={d.lineStartA.y + (d.lineStartZ.y - d.lineStartA.y) * t}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            alignmentBaseline="central"
+                            fontSize={`${Math.max(9, d.stroke * 1.6)}px`}
+                            fontWeight="bold"
+                            fill={downColor}
+                          >
+                            ✕
+                          </text>
+                        ))}
+                      </g>
+                    );
+                  }
                   const dirs: Array<{ key: string; from: Position; to: Position; value: number; bandwidth: number }> = [
                     {
                       key: 'A',

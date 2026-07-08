@@ -1088,3 +1088,45 @@ test('max animated links cap of zero disables all dots (#264)', () => {
   render(<WeathermapPanel {...animationSetup({ enabled: true, maxAnimatedLinks: 0 })} />);
   expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
 });
+
+test('a down link shows static ✕ markers instead of dots when animation is on (#273)', () => {
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No moving dots on a down link — three static markers instead.
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+  const markers = screen.getAllByTestId('link-down-marker');
+  expect(markers).toHaveLength(3);
+  // Static means static: no animateMotion inside the markers.
+  markers.forEach((m) => expect(m.querySelector('animateMotion')).toBeNull());
+});
+
+test('down markers only appear when animation is enabled for the link (#273)', () => {
+  const testProps = animationSetup(); // no animation block at all
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+  expect(screen.queryAllByTestId('link-down-marker')).toHaveLength(0);
+});

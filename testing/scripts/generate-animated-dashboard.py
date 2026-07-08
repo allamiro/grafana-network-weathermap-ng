@@ -42,8 +42,26 @@ for panel in dashboard["panels"]:
     }
     # No per-link opt-out in the demo: disabling one of the parallel CORE
     # trunks read as "parallel links don't animate" (user feedback). The
-    # override behavior is pinned by unit tests instead; idle links already
-    # demonstrate the no-dots state naturally.
+    # override behavior is pinned by unit tests instead.
+
+    # Down-state demo (#273): SITE-DFW's simulated device status cycles down,
+    # so binding its link to the STATUS series shows the static ✕ markers —
+    # traffic cannot flow on a down link, regardless of utilization color.
+    for link in wm["links"]:
+        if link["id"] == "link-edge-1<->site-dfw":
+            link["statusQuery"] = "STATUS SITE-DFW"
+
+    # Legend teaching the visual language: moving dots = live traffic,
+    # static ✕ = down, warm line colors = utilization (fullness), not failure.
+    wm["settings"]["statusLegend"] = {
+        "enabled": True,
+        "position": {"x": 1, "y": 86},
+        "items": [
+            {"id": "anim-flow", "color": "#73BF69", "label": "moving dots = live traffic (speed & density follow utilization)"},
+            {"id": "anim-down", "color": "#d32f2f", "label": "static \u2715 = link down (no traffic possible)"},
+            {"id": "anim-util", "color": "#FADE2A", "label": "yellow/orange/red line = high utilization, not failure"},
+        ],
+    }
 
 out = os.path.join(ROOT, "wm-animated-traffic.json")
 with open(out, "w") as f:
