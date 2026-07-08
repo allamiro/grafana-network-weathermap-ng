@@ -965,3 +965,23 @@ test('VIA remove leaves the rendered options untouched (#238)', () => {
   expect(weathermap.nodes.filter((n) => n.isConnection)).toHaveLength(1);
   expect(weathermap.links).toHaveLength(2);
 });
+
+test('a node with padding far above the old 50 cap renders correctly (#279)', () => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.nodes[0].padding = { horizontal: 200, vertical: 200 };
+  testProps.options = { weathermap };
+  testProps.onOptionsChange = () => {};
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  // Every node and the link still render; the enlarged node's rect grew to
+  // cover its padding, and no SVG geometry became NaN.
+  weathermap.nodes.forEach((n) => expect(screen.queryByText(n.label!)).not.toBeNull());
+  expect(screen.getAllByTestId('link')).toHaveLength(1);
+  const rects = Array.from(container.querySelectorAll('rect'));
+  const widths = rects.map((r) => parseFloat(r.getAttribute('width') || '0'));
+  expect(Math.max(...widths)).toBeGreaterThan(400);
+  const svgNums = (container.querySelector('svg')!.innerHTML.match(/NaN/g) || []).length;
+  expect(svgNums).toBe(0);
+});
