@@ -70,3 +70,38 @@ test('Creating a scale', () => {
 
   expect(screen.queryByTestId('scale-item')).toBeNull();
 });
+
+// #278: explicit scale font color and optional background box.
+test('scale font color override is applied to the title and labels', () => {
+  const settings = structuredClone(getData(theme).settings);
+  settings.scale.fontColor = 'rgb(255, 0, 204)';
+  render(<ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />);
+
+  const title = screen.getByText(settings.scale.title);
+  expect(getComputedStyle(title).color).toBe('rgb(255, 0, 204)');
+  const label = screen.getByText('0% - 100%');
+  expect(getComputedStyle(label).color).toBe('rgb(255, 0, 204)');
+});
+
+test('scale background box renders only when configured', () => {
+  const settings = structuredClone(getData(theme).settings);
+  const { rerender } = render(
+    <ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />
+  );
+  // Default: transparent, no border — exactly the old behavior.
+  const container = screen.getByTestId('color-scale');
+  expect(getComputedStyle(container).background).toBe('');
+
+  const boxed = structuredClone(settings);
+  boxed.scale.backgroundColor = 'rgb(24, 27, 31)';
+  rerender(<ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={boxed} />);
+  expect(getComputedStyle(screen.getByTestId('color-scale')).background).toContain('rgb(24, 27, 31)');
+});
+
+test('without an override the automatic contrast color is kept', () => {
+  const settings = structuredClone(getData(theme).settings);
+  render(<ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />);
+  // testData panel background is #FFFFFF -> auto contrast resolves dark.
+  const title = screen.getByText(settings.scale.title);
+  expect(getComputedStyle(title).color).not.toBe('');
+});

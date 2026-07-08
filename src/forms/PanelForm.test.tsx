@@ -2,7 +2,7 @@
 // report NaN via valueAsNumber, and NaN must never reach the saved options —
 // it propagates into the panel viewBox and SVG geometry.
 import React, { useState } from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { StandardEditorProps } from '@grafana/data';
 import { PanelForm } from './PanelForm';
 import { Weathermap } from 'types';
@@ -115,4 +115,34 @@ test('viewbox width change delivers a new weathermap object (#225)', () => {
   expect(updated.settings.panel).not.toBe(initial.settings.panel);
   expect(updated.settings.panel.panelSize.width).toBe(850);
   expect(initial).toEqual(before);
+});
+
+// #278: the scale legibility overrides render, write immutably, and clear
+// back to the automatic behavior.
+test('scale font color and background controls appear and clear (#278)', async () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  expect(screen.getByText(/Scale Font Color/)).not.toBeNull();
+  expect(screen.getByText(/Scale Background/)).not.toBeNull();
+  // No override set: the clear buttons are absent (auto behavior active).
+  expect(screen.queryByRole('button', { name: 'Auto' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'None' })).toBeNull();
+});
+
+test('clearing a configured scale font color restores auto contrast (#278)', async () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  initial.settings.scale.fontColor = '#ff00cc';
+  initial.settings.scale.backgroundColor = '#181b1f';
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Auto' }));
+  expect(lastValue(spy).settings.scale.fontColor).toBeUndefined();
+  // The background override is untouched by the font clear.
+  expect(lastValue(spy).settings.scale.backgroundColor).toBe('#181b1f');
+
+  fireEvent.click(screen.getByRole('button', { name: 'None' }));
+  expect(lastValue(spy).settings.scale.backgroundColor).toBeUndefined();
 });
