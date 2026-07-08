@@ -271,7 +271,7 @@
                   "numFilledLinks": 0
                 },
                 "2": {
-                  "numLinks": 3,
+                  "numLinks": 2,
                   "numFilledLinks": 0
                 },
                 "3": {
@@ -482,7 +482,7 @@
                   "numFilledLinks": 0
                 },
                 "1": {
-                  "numLinks": 2,
+                  "numLinks": 1,
                   "numFilledLinks": 0
                 },
                 "2": {
@@ -1114,7 +1114,10 @@
                   "queryA": "DISC core-a<->core-b/2",
                   "units": "pps"
                 }
-              ]
+              ],
+              "statusQuery": "PORT Gi1/0/7",
+              "statusDownColor": "#8F3BB8",
+              "statusBlink": true
             },
             {
               "id": "link-core-a<->edge-1",
@@ -2392,196 +2395,6 @@
                   "units": "pps"
                 }
               ]
-            },
-            {
-              "id": "link-edge-1<->site-dfw/backup",
-              "nodes": [
-                {
-                  "id": "node-edge-1",
-                  "position": [
-                    220,
-                    330
-                  ],
-                  "label": "EDGE-1",
-                  "showLabel": true,
-                  "anchors": {
-                    "0": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    },
-                    "1": {
-                      "numLinks": 1,
-                      "numFilledLinks": 0
-                    },
-                    "2": {
-                      "numLinks": 2,
-                      "numFilledLinks": 0
-                    },
-                    "3": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    },
-                    "4": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    }
-                  },
-                  "useConstantSpacing": false,
-                  "compactVerticalLinks": false,
-                  "padding": {
-                    "vertical": 6,
-                    "horizontal": 12
-                  },
-                  "colors": {
-                    "font": "#ffffff",
-                    "background": "#22252b",
-                    "border": "#5794F2",
-                    "statusDown": "#F2495C"
-                  },
-                  "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/switch.svg",
-                    "name": "networking/switch",
-                    "size": {
-                      "width": 32,
-                      "height": 32
-                    },
-                    "padding": {
-                      "vertical": 0,
-                      "horizontal": 0
-                    },
-                    "drawInside": false
-                  },
-                  "isConnection": false,
-                  "tooltipMetrics": [
-                    {
-                      "label": "Latency",
-                      "query": "LAT EDGE-1",
-                      "units": "ms"
-                    },
-                    {
-                      "label": "Packet Loss",
-                      "query": "LOSS EDGE-1",
-                      "units": "percent"
-                    }
-                  ],
-                  "statusQuery": "STATUS EDGE-1",
-                  "nodeStatusColorTarget": "both"
-                },
-                {
-                  "id": "node-site-dfw",
-                  "position": [
-                    330,
-                    480
-                  ],
-                  "label": "SITE-DFW",
-                  "showLabel": true,
-                  "anchors": {
-                    "0": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    },
-                    "1": {
-                      "numLinks": 1,
-                      "numFilledLinks": 0
-                    },
-                    "2": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    },
-                    "3": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    },
-                    "4": {
-                      "numLinks": 0,
-                      "numFilledLinks": 0
-                    }
-                  },
-                  "useConstantSpacing": false,
-                  "compactVerticalLinks": false,
-                  "padding": {
-                    "vertical": 6,
-                    "horizontal": 12
-                  },
-                  "colors": {
-                    "font": "#ffffff",
-                    "background": "#22252b",
-                    "border": "#5794F2",
-                    "statusDown": "#F2495C"
-                  },
-                  "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/building.svg",
-                    "name": "networking/building",
-                    "size": {
-                      "width": 32,
-                      "height": 32
-                    },
-                    "padding": {
-                      "vertical": 0,
-                      "horizontal": 0
-                    },
-                    "drawInside": false
-                  },
-                  "isConnection": false,
-                  "tooltipMetrics": [
-                    {
-                      "label": "Latency",
-                      "query": "LAT SITE-DFW",
-                      "units": "ms"
-                    },
-                    {
-                      "label": "Packet Loss",
-                      "query": "LOSS SITE-DFW",
-                      "units": "percent"
-                    }
-                  ],
-                  "dashboardLink": "/d/wm-floorplan",
-                  "openInSameTab": false,
-                  "statusQuery": "STATUS SITE-DFW",
-                  "nodeStatusColorTarget": "both"
-                }
-              ],
-              "sides": {
-                "A": {
-                  "bandwidth": 1000000000,
-                  "query": "edge-1<->site-dfw tx",
-                  "labelOffset": 30,
-                  "anchor": 2,
-                  "dashboardLink": "",
-                  "portLabel": "GigabitEthernet0/9 (backup)",
-                  "directionLabel": "Out"
-                },
-                "Z": {
-                  "bandwidth": 1000000000,
-                  "query": "edge-1<->site-dfw rx",
-                  "labelOffset": 30,
-                  "anchor": 1,
-                  "dashboardLink": "",
-                  "directionLabel": "In"
-                }
-              },
-              "units": "bps",
-              "arrows": {
-                "width": 8,
-                "height": 10,
-                "offset": 2
-              },
-              "stroke": 6,
-              "showThroughputPercentage": false,
-              "tooltipMetrics": [
-                {
-                  "label": "Errors",
-                  "queryA": "ERR edge-1<->site-dfw",
-                  "units": "pps"
-                },
-                {
-                  "label": "Discards",
-                  "queryA": "DISC edge-1<->site-dfw",
-                  "units": "pps"
-                }
-              ],
-              "statusQuery": "PORT Gi1/0/7",
-              "statusDownColor": "#8F3BB8"
             }
           ],
           "scale": [
