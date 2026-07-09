@@ -52,6 +52,15 @@ rate(ifHCOutOctets{ifName="ge-0/0/1"}[5m]) * 8
 
 **Deviations:** none — Prometheus is the baseline; legends map 1:1 to display names.
 
+**Link status (for the `down` state and [traffic animation](animation.md)):** bind a link's **Status Query** to an operational-status series — `0`/absent renders the link *down* (dashed, `DOWN`, and, with animation on, static ✕ badges):
+
+```promql
+wm_link_status{link="core-a<->edge-1"}     # demo simulator (1 = up, 0 = down)
+ifOperStatus{instance="core-switch", ifName="Gi1/0/1"}   # real SNMP equivalent
+```
+
+The *WAN Demo — Animated Traffic Flow* dashboard is driven entirely from these Prometheus series — see the [animation use case](use-cases.md#13-animated-traffic-flow-moving-dots) for the full data path.
+
 ![WAN Utilization demo on Prometheus](../img/datasources/wm-prometheus.png)
 
 ---

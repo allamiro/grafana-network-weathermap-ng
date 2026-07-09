@@ -230,6 +230,37 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 This is a **visualization of metrics you already query — not packet capture**. See the full reference (SNMP/Prometheus data flow, PromQL, timeline behavior, accessibility) in [Traffic Animation](animation.md).
 
+### It reacts to real data, not a canned animation
+
+The dots, colors, and down-state all follow the live time series. In the demo, forcing the operational status of the **CORE-A ↔ EDGE-1** link to `0` (a real interface-down event) makes the plugin drop its dots, dash the line, blink it, stamp both ends **DOWN**, and draw static ✕ badges — while every healthy link keeps flowing. Restore the feed and it animates again on the next scrape.
+
+![Live down-link reaction: CORE-A ↔ EDGE-1 down while healthy links keep flowing](../img/use-cases/wm-animated-down.gif)
+
+### Data source setup (Prometheus)
+
+The demo dashboard is fed by the [testing stack](https://github.com/allamiro/grafana-network-weathermap-ng/tree/main/testing#readme): a small exporter simulates SNMP interface counters and operational status, Prometheus scrapes them, and the panel binds the resulting series. This is the same shape as a production SNMP path — swap the simulator for `snmp_exporter`:
+
+```
+  Network device (switch / router / firewall)
+     │  interface counters + ifOperStatus  (SNMP)
+     ▼
+  snmp_exporter (if_mib)          ← demo: a metrics exporter simulating the same series
+     │  /metrics  (wm_link_bps, wm_link_status …)
+     ▼
+  Prometheus  ── scrape ──▶ stores the time series
+     │  PromQL:  rate(ifHCOutOctets[2m]) * 8   /   ifOperStatus
+     ▼
+  Grafana query (per link side + status)
+     │  display name = legend
+     ▼
+  Network Weathermap NG
+     • A/Z side value → dot direction, speed, density
+     • bandwidth      → utilization → color + dot count
+     • status query   → down: dashed line, DOWN, static ✕
+```
+
+Bind it in the link editor: **A/Z Side Query** = the direction's bits/sec, **A/Z Bandwidth** = the interface capacity, **Status Query** = the operational status (`wm_link_status{link="…"}`, or `ifOperStatus{…}` in production). See [Data Sources → Prometheus](datasources.md#prometheus) for the query/legend details.
+
 **Demo:** *WAN Demo — Animated Traffic Flow* — low/medium/high/bidirectional/idle links plus a permanently-down trunk showing ✕ badges next to an animated one, with the built-in legend explaining the glyphs.
 
 ---
