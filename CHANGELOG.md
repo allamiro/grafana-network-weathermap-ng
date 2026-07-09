@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 * **down-link labels (only when animation is enabled)** — when traffic animation is active for a link, a down status now labels both sides **DOWN** instead of showing a stale throughput number (the hover tooltip still exposes the real series and its history). This is scoped to the animation feature: maps that never enable animation render down links exactly as before (dashed line + last value), so existing status-query dashboards upgrade with no visible change ([#273](https://github.com/allamiro/grafana-network-weathermap-ng/issues/273), PR [#291](https://github.com/allamiro/grafana-network-weathermap-ng/pull/291))
 
+### Tooling
+
+* **Grafana dashboard backup/restore utility** (`tools/grafana-backup.py`) — a dependency-free (Python stdlib only) safety net for **backing up your existing dashboards before installing this plugin or upgrading Grafana**. Exports every dashboard as JSON with its **queries and datasource references** preserved, plus all data sources and folders and a manifest; idempotent `restore` writes them back. Works with token, basic-auth, or open/anonymous Grafana, and handles dashboards across mixed data sources (Prometheus/InfluxDB/Elasticsearch/Zabbix) ([#293](https://github.com/allamiro/grafana-network-weathermap-ng/issues/293), PR [#292](https://github.com/allamiro/grafana-network-weathermap-ng/pull/292))
+
 ## [1.5.15](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.15) (2026-07-08)
 
 ### Features
