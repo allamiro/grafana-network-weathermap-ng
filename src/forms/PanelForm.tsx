@@ -943,6 +943,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
           tooltip="Animated dots along links showing metric-derived direction and intensity. Individual links can also opt in or out in the link editor."
         >
           <InlineSwitch
+            data-testid="nwm-animation-enabled"
             value={value.settings.animation?.enabled ?? false}
             onChange={(e) => {
               let options = structuredClone(value);

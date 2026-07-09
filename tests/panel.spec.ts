@@ -79,34 +79,33 @@ test.describe('Network Weathermap Panel', () => {
     });
 
     await setupPanel(panelEditPage, page);
+    // Wait for the editor/panel to settle before asserting map content.
+    await expect(panelEditPage.panel.locator).toBeVisible();
     await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
 
     // Off by default: no animation legend and no animated dots on a fresh panel.
     await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
     await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
 
-    // Flip the panel-level master switch. Grafana's InlineSwitch hides the
-    // real <input> behind a styled <label for=id>, so the input itself isn't
-    // directly clickable — click its label (fall back to a forced click).
-    const toggle = page.getByLabel('Enable Traffic Animation', { exact: true });
+    // Flip the panel-level master switch. Target the switch by its own stable
+    // data-testid (label/id association is inconsistent across Grafana
+    // versions), and force the click because Grafana's InlineSwitch hides the
+    // real <input> behind a styled label so it isn't a normal click target.
+    const toggle = page.getByTestId('nwm-animation-enabled');
     await toggle.scrollIntoViewIfNeeded();
-    const switchId = await toggle.getAttribute('id');
-    const switchLabel = switchId ? page.locator(`label[for="${switchId}"]`) : toggle;
-    if (switchId && (await switchLabel.count())) {
-      await switchLabel.click();
-    } else {
-      await toggle.click({ force: true });
-    }
+    await toggle.click({ force: true });
     await expect(toggle).toBeChecked();
 
-    // The built-in legend renders once animation is active — this is
-    // data-independent, so it verifies the feature end-to-end in a real
-    // browser without needing a provisioned datasource.
-    await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toBeVisible();
+    // We're in the panel editor, and "Pause In Edit Mode" defaults on — so
+    // even with animation enabled, the render is paused: no dots and (per the
+    // legend/paused parity) no legend. This exercises the enable path and the
+    // edit-mode pause end-to-end in a real browser, and asserts the map itself
+    // still renders (an error boundary would drop it).
+    await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
+    await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
+    await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
 
-    // Reduced-motion preference must not crash the panel — assert real map
-    // content still renders, not just that the panel shell is present (an
-    // error boundary would keep the shell but drop the map).
+    // Reduced-motion preference must not crash the panel either.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
 
