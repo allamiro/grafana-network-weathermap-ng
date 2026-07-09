@@ -87,13 +87,14 @@ test.describe('Network Weathermap Panel', () => {
     await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
     await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
 
-    // Flip the panel-level master switch. Target the switch by its own stable
+    // Flip the panel-level master switch. Target it by its own stable
     // data-testid (label/id association is inconsistent across Grafana
-    // versions), and force the click because Grafana's InlineSwitch hides the
-    // real <input> behind a styled label so it isn't a normal click target.
+    // versions). Grafana's InlineSwitch hides the real <input> behind a styled
+    // label — a 0-sized, off-viewport element that even a forced click refuses
+    // on some Grafana versions — so dispatch the click event directly, which
+    // toggles the checkbox and fires React's onChange regardless of layout.
     const toggle = page.getByTestId('nwm-animation-enabled');
-    await toggle.scrollIntoViewIfNeeded();
-    await toggle.click({ force: true });
+    await toggle.dispatchEvent('click');
     await expect(toggle).toBeChecked();
 
     // We're in the panel editor, and "Pause In Edit Mode" defaults on — so
