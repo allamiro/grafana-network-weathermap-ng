@@ -211,3 +211,15 @@ describe('number inputs do not store NaN (#200)', () => {
     expect(lastValue(spy).links[0].linkOffset).toBe(12);
   });
 });
+
+test('link status controls are available for every link (#273)', async () => {
+  render(<Harness initial={getData(theme)} onChangeSpy={jest.fn()} frames={MULTI_SERIES} />);
+  await selectFirstLink();
+
+  // The full down-state configuration ships with the editor: status query,
+  // down color, and blink — nothing depends on hand-edited JSON.
+  expect(screen.getByText('Link Status')).not.toBeNull();
+  expect(screen.getByText('Select query (value < 1 = down)')).not.toBeNull();
+  expect(screen.getByText('Down Color:')).not.toBeNull();
+  expect(screen.getByText('Blink when down')).not.toBeNull();
+});

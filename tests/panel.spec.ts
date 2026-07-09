@@ -65,6 +65,54 @@ test.describe('Network Weathermap Panel', () => {
     await expect(panelEditPage.panel.locator.getByTestId('link')).toHaveCount(2);
   });
 
+  test('traffic animation is off by default and can be enabled (#273)', async ({ panelEditPage, page }) => {
+    // Only fail on errors that signal a render/animation crash — dev-mode
+    // Grafana and unsigned-plugin warnings produce unrelated console noise.
+    const renderErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (
+        msg.type() === 'error' &&
+        /weathermap|animateMotion|Cannot read|is not a function|Maximum update depth/i.test(msg.text())
+      ) {
+        renderErrors.push(msg.text());
+      }
+    });
+
+    await setupPanel(panelEditPage, page);
+    // Wait for the editor/panel to settle before asserting map content.
+    await expect(panelEditPage.panel.locator).toBeVisible();
+    await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
+
+    // Off by default: no animation legend and no animated dots on a fresh panel.
+    await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
+    await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
+
+    // Flip the panel-level master switch. Target it by its own stable
+    // data-testid (label/id association is inconsistent across Grafana
+    // versions). Grafana's InlineSwitch hides the real <input> behind a styled
+    // label — a 0-sized, off-viewport element that even a forced click refuses
+    // on some Grafana versions — so dispatch the click event directly, which
+    // toggles the checkbox and fires React's onChange regardless of layout.
+    const toggle = page.getByTestId('nwm-animation-enabled');
+    await toggle.dispatchEvent('click');
+    await expect(toggle).toBeChecked();
+
+    // We're in the panel editor, and "Pause In Edit Mode" defaults on — so
+    // even with animation enabled, the render is paused: no dots and (per the
+    // legend/paused parity) no legend. This exercises the enable path and the
+    // edit-mode pause end-to-end in a real browser, and asserts the map itself
+    // still renders (an error boundary would drop it).
+    await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
+    await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
+    await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
+
+    // Reduced-motion preference must not crash the panel either.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
+
+    expect(renderErrors).toEqual([]);
+  });
+
   test('color scale updates when a threshold is changed', async ({ panelEditPage, page }) => {
     await setupPanel(panelEditPage, page);
 

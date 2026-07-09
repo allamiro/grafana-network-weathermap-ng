@@ -1020,3 +1020,264 @@ test('a node with padding far above the old 50 cap renders correctly (#279)', ()
   const svgNums = (container.querySelector('svg')!.innerHTML.match(/NaN/g) || []).length;
   expect(svgNums).toBe(0);
 });
+
+// Traffic-flow animation (#264/#273): opt-in at every level, dots derived
+// from the already-resolved link values.
+const animationSetup = (
+  animation?: { enabled: boolean; respectReducedMotion?: boolean; maxAnimatedLinks?: number; pauseInEditMode?: boolean },
+  linkOverride?: 'inherit' | 'enabled' | 'disabled'
+) => {
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'anim a';
+  weathermap.links[0].sides.A.bandwidth = 100;
+  weathermap.links[0].sides.Z.query = 'anim z';
+  weathermap.links[0].sides.Z.bandwidth = 100;
+  if (animation) {
+    weathermap.settings.animation = animation;
+  }
+  if (linkOverride) {
+    weathermap.links[0].animation = linkOverride;
+  }
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', values: [1000, 2000] },
+          { name: 'Value', values: [50, 50], config: { displayNameFromDS: 'anim a' } },
+        ],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = () => {};
+  return testProps;
+};
+
+test('animation is fully off by default (#264)', () => {
+  render(<WeathermapPanel {...animationSetup()} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('enabling animation renders utilization-scaled dots for resolved sides only (#273)', () => {
+  render(<WeathermapPanel {...animationSetup({ enabled: true })} />);
+  // A side: 50 of 100 -> utilization 0.5 -> 1 + round(0.5 * 7) = 5 dots.
+  // Z side: no series resolves -> no dots at all.
+  expect(screen.getAllByTestId('link-anim-dot')).toHaveLength(5);
+});
+
+test('per-link disabled wins over the panel switch (#273)', () => {
+  render(<WeathermapPanel {...animationSetup({ enabled: true }, 'disabled')} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('per-link enabled animates even when the panel switch is off (#273)', () => {
+  render(<WeathermapPanel {...animationSetup(undefined, 'enabled')} />);
+  expect(screen.getAllByTestId('link-anim-dot')).toHaveLength(5);
+});
+
+test('edit mode pauses animation by default (#264)', () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  render(<WeathermapPanel {...animationSetup({ enabled: true })} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('max animated links cap of zero disables all dots (#264)', () => {
+  render(<WeathermapPanel {...animationSetup({ enabled: true, maxAnimatedLinks: 0 })} />);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+});
+
+test('a down link shows static ✕ markers instead of dots when animation is on (#273)', () => {
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No moving dots on a down link — three static markers instead.
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+  const markers = screen.getAllByTestId('link-down-marker');
+  expect(markers).toHaveLength(3);
+  // Static means static: no animateMotion inside the markers.
+  markers.forEach((m) => expect(m.querySelector('animateMotion')).toBeNull());
+});
+
+test('down markers only appear when animation is enabled for the link (#273)', () => {
+  const testProps = animationSetup(); // no animation block at all
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+  expect(screen.queryAllByTestId('link-down-marker')).toHaveLength(0);
+});
+
+test('animation legend renders only while animation is active (#273)', () => {
+  // No animation at all: no legend.
+  const off = render(<WeathermapPanel {...animationSetup()} />);
+  expect(off.queryByTestId('animation-legend')).toBeNull();
+  off.unmount();
+
+  // Panel switch on: legend appears.
+  const on = render(<WeathermapPanel {...animationSetup({ enabled: true })} />);
+  expect(on.getByTestId('animation-legend')).not.toBeNull();
+  on.unmount();
+
+  // Only a per-link override enabled: legend still appears.
+  const perLink = render(<WeathermapPanel {...animationSetup(undefined, 'enabled')} />);
+  expect(perLink.getByTestId('animation-legend')).not.toBeNull();
+});
+
+test('animation legend can be hidden via showLegend (#273)', () => {
+  const props = animationSetup({ enabled: true });
+  props.options.weathermap.settings.animation!.showLegend = false;
+  render(<WeathermapPanel {...props} />);
+  expect(screen.queryByTestId('animation-legend')).toBeNull();
+  // The animation itself still runs.
+  expect(screen.getAllByTestId('link-anim-dot').length).toBeGreaterThan(0);
+});
+
+test('a down link labels both sides DOWN instead of stale throughput (#273)', () => {
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Utilization is meaningless on a broken link: both side labels say DOWN
+  // even though the A-side series still reports 50.
+  expect(screen.getAllByText('DOWN')).toHaveLength(2);
+});
+
+test('a down link WITHOUT animation keeps its throughput label (no DOWN relabel) (#273)', () => {
+  // Regression guard: the DOWN relabel is part of the opt-in animation
+  // treatment. A map that never enables animation (no settings.animation
+  // block, no per-link override) must render down links exactly as before —
+  // the last resolved value, not "DOWN". Existing status-query users upgrade
+  // with zero visible change.
+  const testProps = animationSetup(); // no animation anywhere
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No DOWN relabel, and the A-side throughput value is still shown.
+  expect(screen.queryAllByText('DOWN')).toHaveLength(0);
+  expect(screen.getAllByText(/50 b\/s/).length).toBeGreaterThan(0);
+});
+
+test('per-link disabled keeps the throughput label even when the panel switch is on (#273)', () => {
+  // The per-link 'disabled' override opts a link out of the whole animation
+  // treatment, including the DOWN relabel.
+  const testProps = animationSetup({ enabled: true }, 'disabled');
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  expect(screen.queryAllByText('DOWN')).toHaveLength(0);
+  expect(screen.getAllByText(/50 b\/s/).length).toBeGreaterThan(0);
+});
+
+test('hovering a down link still shows the real data in the tooltip (#273)', () => {
+  // The map label says DOWN (utilization is meaningless on a broken link),
+  // but the hover tooltip deliberately keeps the bound series' raw values
+  // and graph so operators can see the traffic history and the moment of
+  // collapse during an outage.
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Map labels: DOWN, and no raw throughput text anywhere on the map.
+  expect(screen.getAllByText('DOWN')).toHaveLength(2);
+  expect(screen.queryByText(/50 b\/s/)).toBeNull();
+
+  // Hover: the tooltip shows the real A-side value even though the link is down.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  expect(screen.getAllByText(/50 b\/s/).length).toBeGreaterThan(0);
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
+test('down behavior needs nothing but a status query — works on a fresh default link (#273)', () => {
+  // A link created through the editor (generateBasicLink defaults) plus only
+  // a status query gets the full down treatment: DOWN labels and, with
+  // animation on, static markers instead of dots.
+  const testProps = animationSetup({ enabled: true });
+  const weathermap = testProps.options.weathermap;
+  const link = weathermap.links[0];
+  // Assert the editor-created shape: no demo-specific fields required.
+  expect(link.statusDownColor).toBeUndefined();
+  expect(link.statusBlink).toBeUndefined();
+  link.statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+  expect(screen.getAllByText('DOWN')).toHaveLength(2);
+  expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
+  expect(screen.getAllByTestId('link-down-marker')).toHaveLength(3);
+});

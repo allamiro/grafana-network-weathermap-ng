@@ -39,6 +39,7 @@ nav:
       - Links: guide/links.md
       - Panel Options: guide/panel-options.md
       - Interactions & Editing: guide/interactions.md
+      - Traffic Animation: guide/animation.md
       - Use Cases: guide/use-cases.md
       - Data Sources: guide/datasources.md
   - Customization: customization.md

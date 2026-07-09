@@ -164,6 +164,10 @@ export interface Link {
   // the Z end, and only the A-side value label. For flows that physically go
   // one way (power feeds, unidirectional replication).
   singleDirection?: boolean;
+  // Traffic-flow animation override (#273). 'inherit' (or unset) follows the
+  // panel-level switch; 'enabled' animates this link even when the panel
+  // switch is off; 'disabled' never animates it.
+  animation?: 'inherit' | 'enabled' | 'disabled';
 }
 
 export interface DrawnNode extends Node {
@@ -268,6 +272,23 @@ export interface WeathermapSettings {
     // Opt-in greedy de-overlap pass that nudges colliding value labels along
     // their link (#179). Off by default so existing maps render unchanged.
     labelCollision?: boolean;
+  };
+  // Animation foundation (#264) + traffic-flow particles (#273). Optional:
+  // an absent block means everything is off, so pre-existing maps are
+  // untouched and no migration is required.
+  animation?: {
+    // Master switch for all animation. Default false.
+    enabled: boolean;
+    // AND-gate with the OS prefers-reduced-motion preference. Default true.
+    respectReducedMotion?: boolean;
+    // Hard cap on concurrently animated links. Default 100.
+    maxAnimatedLinks?: number;
+    // Pause all animation while the panel is being edited. Default true.
+    pauseInEditMode?: boolean;
+    // Show the built-in legend explaining the animation glyphs (moving dot =
+    // live traffic, ✕ = down). Rendered only while animation is active, so a
+    // panel without animation never shows it. Default true.
+    showLegend?: boolean;
   };
   fontSizing: {
     node: number;

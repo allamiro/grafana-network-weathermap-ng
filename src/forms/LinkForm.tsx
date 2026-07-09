@@ -439,6 +439,29 @@ export const LinkForm = (props: Props) => {
               </InlineField>
               <InlineField
                 grow
+                label={'Traffic Animation'}
+                className={styles.inlineField}
+                tooltip={
+                  'Animated dots along this link (#273). Inherit follows the panel-level Animation switch; Enabled animates this link even when the panel switch is off; Disabled never animates it.'
+                }
+              >
+                <Select
+                  inputId={`nwm-link-animation-${i}`}
+                  value={link.animation ?? 'inherit'}
+                  options={[
+                    { label: 'Inherit', value: 'inherit' },
+                    { label: 'Enabled', value: 'enabled' },
+                    { label: 'Disabled', value: 'disabled' },
+                  ]}
+                  onChange={(v) => {
+                    let options = structuredClone(value);
+                    options.links[i].animation = (v.value ?? 'inherit') as 'inherit' | 'enabled' | 'disabled';
+                    onChange(options);
+                  }}
+                ></Select>
+              </InlineField>
+              <InlineField
+                grow
                 label={'Arrow Meeting Point (%)'}
                 className={styles.inlineField}
                 tooltip={'Where along the A→Z line the two directional arrows meet. 50% is the midpoint (default); lower values move the junction toward the A side, higher toward the Z side.'}

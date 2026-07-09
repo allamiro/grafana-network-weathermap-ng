@@ -33,12 +33,15 @@ type simLink struct {
 	rxBase    float64 // baseline utilization 0..1 for Z->A
 	saturates bool    // periodically pushed to ~100% (capacity planning / red scale)
 	incident  bool    // traffic collapses while the flapping device is down (incident replay)
+	hardDown  bool    // link is operationally down: status 0, counters frozen (rate = 0)
 }
 
 var simLinks = []simLink{
 	// Parallel core links.
 	{link: "core-a<->core-b/1", device: "CORE-A", peer: "CORE-B", iface: "Eth-Trunk1", capacity: 10e9, txBase: 0.45, rxBase: 0.30},
-	{link: "core-a<->core-b/2", device: "CORE-A", peer: "CORE-B", iface: "Eth-Trunk2", capacity: 10e9, txBase: 0.25, rxBase: 0.40},
+	// Failed optics: operationally down, so its counters are frozen — like a
+	// real interface, rate() is exactly 0 while wm_link_status reports 0.
+	{link: "core-a<->core-b/2", device: "CORE-A", peer: "CORE-B", iface: "Eth-Trunk2", capacity: 10e9, txBase: 0.25, rxBase: 0.40, hardDown: true},
 	// Core to edge.
 	{link: "core-a<->edge-1", device: "CORE-A", peer: "EDGE-1", iface: "HundredGigE0/0/1", capacity: 10e9, txBase: 0.35, rxBase: 0.25},
 	{link: "core-b<->edge-2", device: "CORE-B", peer: "EDGE-2", iface: "HundredGigE0/0/2", capacity: 10e9, txBase: 0.30, rxBase: 0.35},
@@ -131,6 +134,10 @@ var (
 		Name: "wm_packet_loss_pct",
 		Help: "Simulated device packet loss percentage.",
 	}, []string{"device"})
+	wmLinkStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "wm_link_status",
+		Help: "Simulated link operational status, like ifOperStatus (1 = up, 0 = down).",
+	}, []string{"link"})
 	wmPortStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "wm_port_status",
 		Help: "Simulated switch port status (0 = down, 1 = up, 2 = admin-disabled).",
@@ -260,10 +267,19 @@ func simulate(p *perlin.Perlin, step int, now time.Time) {
 		if l.saturates && inWindow(now, satPeriod, satBurst) {
 			tx = 0.97 * l.capacity
 		}
-		if l.incident && deviceDown {
-			tx *= 0.02
-			rx *= 0.02
+
+		// Real-world semantics: a down interface stops counting, so its rate
+		// is exactly zero — the historical graph shows the collapse and then
+		// flatlines, exactly what SNMP ifOperStatus + counters would produce.
+		// This covers both permanently-down links and links whose device is
+		// down during an incident window.
+		linkUp := 1.0
+		if l.hardDown || (l.incident && deviceDown) {
+			linkUp = 0
+			tx = 0
+			rx = 0
 		}
+		wmLinkStatus.WithLabelValues(l.link).Set(linkUp)
 
 		wmLinkBps.WithLabelValues(l.link, l.device, l.peer, l.iface, "tx").Set(math.Min(tx, l.capacity))
 		wmLinkBps.WithLabelValues(l.link, l.device, l.peer, l.iface, "rx").Set(math.Min(rx, l.capacity))

@@ -84,6 +84,21 @@ Give a link a **Status Query** so it can render as *down*:
 - When the status value is `0` or absent, the link uses a configurable **down color** and a **dashed** stroke.
 - Optional **blink** animation draws attention to down links.
 - While down, status rendering overrides gradient/flow-animation.
+- When [traffic animation](animation.md#down-links) is enabled for the link, a down status also replaces the moving dots with static **✕ badges** and labels both sides **DOWN**.
+
+---
+
+## Traffic animation (per-link override)
+
+When [traffic animation](animation.md) is available, each link has a **Traffic Animation** control:
+
+| Value | Behavior |
+|---|---|
+| **Inherit** (default) | Follows the panel-level **Enable Traffic Animation** switch. |
+| **Enabled** | Animates this link even when the panel switch is off. |
+| **Disabled** | Never animates this link, even when the panel switch is on. |
+
+Animation uses this link's existing A/Z values and bandwidths — no extra queries. Dots move A→Z for the A-side value and Z→A for the Z-side value; speed and density scale with utilization. See [Traffic Animation](animation.md) for the full behavior.
 
 ---
 
