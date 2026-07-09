@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [Unreleased]
+## [1.6.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.0) (2026-07-09)
 
 ### Features
 

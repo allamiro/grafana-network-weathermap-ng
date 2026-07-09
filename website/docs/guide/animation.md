@@ -26,34 +26,25 @@ Animation reuses the **same A-side / Z-side values that already color your links
            → Network Weathermap NG  → animated dots on the link
 ```
 
-The same idea works with any source that returns numeric time series:
-
-| Environment | Collection path |
-|---|---|
-| Network devices | SNMP → `snmp_exporter` → Prometheus |
-| Linux servers | `node_exporter` → Prometheus |
-| Zabbix | Zabbix item → Grafana Zabbix data source |
-| InfluxDB | Telegraf SNMP input → InfluxDB |
-
 !!! note "Metric availability depends on your device"
     SNMP interface metrics require the `snmp_exporter` **if_mib** module or equivalent. Exact counters (`ifHCOutOctets`, `ifOperStatus`, `ifOutErrors`, …) depend on the device and SNMP configuration.
 
-### Example PromQL
+### Works with any Grafana data source
 
-The MVP drives animation from a bits/sec value on each side plus the side bandwidth.
+Animation is **data-source-agnostic** — it reads whatever numeric series already drive your links, so it works identically no matter where the numbers come from. You need, per link side, a **traffic value** (bits/sec, packets/sec, or utilization %) and a **bandwidth**; optionally a **status series** (`1`/`0`) for the down-link ✕ treatment. The binding rules (display names, legends, per-source quirks) are the same as for any weathermap link — the full reference is in [Data Sources](datasources.md).
 
-```promql
-# A → Z bits/sec  (outbound octets from the A-side interface)
-rate(ifHCOutOctets{instance="core-switch", ifName="Gi1/0/1"}[2m]) * 8
+| Data source | Traffic value (per side) | Status series (optional) |
+|---|---|---|
+| **Prometheus** (SNMP) | `rate(ifHCOutOctets{instance="core-switch",ifName="Gi1/0/1"}[2m]) * 8` | `ifOperStatus{instance="core-switch",ifName="Gi1/0/1"}` |
+| **Prometheus** (Linux `node_exporter`) | `rate(node_network_transmit_bytes_total{device="eth0"}[2m]) * 8` | `node_network_up{device="eth0"}` |
+| **InfluxDB** (Flux) | `from(bucket:"wm") … filter(r._measurement=="wm_link_bps" and r.direction=="tx")` | `… r._measurement == "wm_link_status"` |
+| **Elasticsearch** | `Average` of `bps`, Lucene `device:core-a AND direction:tx` | `Max` of `status`, Lucene `link:"core-a<->edge-1"` |
+| **Zabbix** | Item `Interface ge-0/0/1: Bits sent` | Item `Interface ge-0/0/1: Operational status` |
 
-# Z → A bits/sec  (outbound octets from the Z-side interface)
-rate(ifHCOutOctets{instance="firewall", ifName="eth1"}[2m]) * 8
+Bind these in the link editor exactly as you would for a non-animated link: **A/Z Side Query** = the direction's traffic value, **A/Z Bandwidth #** (or Bandwidth Query) = the capacity, and **Status Query** = the operational status. Turn animation on, and the same numbers that color the link now also drive its dots. See each source's legend/alias and known deviations in [Data Sources](datasources.md).
 
-# Interface status (drives the down-link ✕ treatment via the link Status Query)
-ifOperStatus{instance="core-switch", ifName="Gi1/0/1"}
-```
-
-For Linux hosts, use `node_network_transmit_bytes_total` (×8 for bits) and `node_network_up`.
+!!! tip "Bandwidth is what turns a value into a speed"
+    Utilization = value ÷ bandwidth. Without a bandwidth on a side, that side resolves to *no dots* (it can't compute a speed) — so always set **A/Z Bandwidth #** or a **Bandwidth Query** on links you want to animate.
 
 ---
 
