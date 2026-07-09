@@ -971,6 +971,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   })();
 
   if (wm) {
+    // Whether traffic-flow particles/down-markers are actually being painted
+    // this render — the same gates the particle layer applies below. The
+    // built-in legend keys off this so it never advertises "moving dots" while
+    // animation is paused (reduced motion, edit mode, or timeline scrubbing).
+    const animationActive = (() => {
+      const anim = wm.settings.animation;
+      const reducedMotion =
+        (anim?.respectReducedMotion ?? true) &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const paused =
+        reducedMotion ||
+        ((anim?.pauseInEditMode ?? true) && isEditMode) ||
+        (useTimeline && effectiveScrub !== null);
+      if (paused) {
+        return false;
+      }
+      return (anim?.enabled ?? false) || wm.links.some((l) => l.animation === 'enabled');
+    })();
+
     return (
       <div
         ref={wrapperRef}
@@ -1276,8 +1296,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           without animation never show it (and it cannot be confused with the
           utilization scale).
         */}
-        {(wm.settings.animation?.showLegend ?? true) &&
-        ((wm.settings.animation?.enabled ?? false) || wm.links.some((l) => l.animation === 'enabled')) ? (
+        {(wm.settings.animation?.showLegend ?? true) && animationActive ? (
           <div
             className={css`
               position: absolute;
@@ -1916,15 +1935,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               */}
               {(() => {
                 const anim = wm.settings.animation;
-                const reducedMotion =
-                  (anim?.respectReducedMotion ?? true) &&
-                  typeof window.matchMedia === 'function' &&
-                  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                const paused =
-                  reducedMotion ||
-                  ((anim?.pauseInEditMode ?? true) && isEditMode) ||
-                  (useTimeline && effectiveScrub !== null);
-                if (paused) {
+                // Same gate the legend uses (reduced motion, edit mode,
+                // timeline scrub) — keep the two in lockstep so the legend
+                // never advertises motion that isn't painted.
+                if (!animationActive) {
                   return null;
                 }
                 const globalOn = anim?.enabled ?? false;

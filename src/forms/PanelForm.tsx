@@ -1011,9 +1011,12 @@ export const PanelForm = ({ value, onChange }: Props) => {
               options.settings.animation = {
                 enabled: options.settings.animation?.enabled ?? false,
                 ...(options.settings.animation ?? {}),
-                maxAnimatedLinks: finiteOrFallback(
-                  e.currentTarget.valueAsNumber,
-                  options.settings.animation?.maxAnimatedLinks ?? 100
+                maxAnimatedLinks: Math.max(
+                  0,
+                  finiteOrFallback(
+                    e.currentTarget.valueAsNumber,
+                    options.settings.animation?.maxAnimatedLinks ?? 100
+                  )
                 ),
               };
               onChange(options);

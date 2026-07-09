@@ -267,14 +267,12 @@ func simulate(p *perlin.Perlin, step int, now time.Time) {
 		if l.saturates && inWindow(now, satPeriod, satBurst) {
 			tx = 0.97 * l.capacity
 		}
-		if l.incident && deviceDown {
-			tx *= 0.02
-			rx *= 0.02
-		}
 
 		// Real-world semantics: a down interface stops counting, so its rate
 		// is exactly zero — the historical graph shows the collapse and then
 		// flatlines, exactly what SNMP ifOperStatus + counters would produce.
+		// This covers both permanently-down links and links whose device is
+		// down during an incident window.
 		linkUp := 1.0
 		if l.hardDown || (l.incident && deviceDown) {
 			linkUp = 0

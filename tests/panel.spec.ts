@@ -85,20 +85,30 @@ test.describe('Network Weathermap Panel', () => {
     await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
     await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
 
-    // Flip the panel-level master switch. InlineField associates its label
-    // with the switch input; fall back to the labelled control if needed.
+    // Flip the panel-level master switch. Grafana's InlineSwitch hides the
+    // real <input> behind a styled <label for=id>, so the input itself isn't
+    // directly clickable — click its label (fall back to a forced click).
     const toggle = page.getByLabel('Enable Traffic Animation', { exact: true });
     await toggle.scrollIntoViewIfNeeded();
-    await toggle.click();
+    const switchId = await toggle.getAttribute('id');
+    const switchLabel = switchId ? page.locator(`label[for="${switchId}"]`) : toggle;
+    if (switchId && (await switchLabel.count())) {
+      await switchLabel.click();
+    } else {
+      await toggle.click({ force: true });
+    }
+    await expect(toggle).toBeChecked();
 
     // The built-in legend renders once animation is active — this is
     // data-independent, so it verifies the feature end-to-end in a real
     // browser without needing a provisioned datasource.
     await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toBeVisible();
 
-    // Reduced-motion preference must not crash the panel.
+    // Reduced-motion preference must not crash the panel — assert real map
+    // content still renders, not just that the panel shell is present (an
+    // error boundary would keep the shell but drop the map).
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await expect(panelEditPage.panel.locator).toBeVisible();
+    await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
 
     expect(renderErrors).toEqual([]);
   });
