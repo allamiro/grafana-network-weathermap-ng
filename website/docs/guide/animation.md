@@ -31,20 +31,28 @@ Animation reuses the **same A-side / Z-side values that already color your links
 
 ### Works with any Grafana data source
 
-Animation is **data-source-agnostic** — it reads whatever numeric series already drive your links, so it works identically no matter where the numbers come from. You need, per link side, a **traffic value** (bits/sec, packets/sec, or utilization %) and a **bandwidth**; optionally a **status series** (`1`/`0`) for the down-link ✕ treatment. The binding rules (display names, legends, per-source quirks) are the same as for any weathermap link — the full reference is in [Data Sources](datasources.md).
+Animation is **data-source-agnostic** — it reads whatever numeric series already drive your links, so it works identically no matter where the numbers come from. You need, per link side, a **traffic value** and a **bandwidth in the same unit**, and optionally a **status series** for the down-link ✕ treatment. The binding rules (display names, legends, per-source quirks) are the same as for any weathermap link — the full reference is in [Data Sources](datasources.md).
 
-| Data source | Traffic value (per side) | Status series (optional) |
+Two rules that trip people up:
+
+- **Value and bandwidth must share a unit.** Utilization is a plain `value ÷ bandwidth` — no unit conversion. So a bits/sec value needs a bits/sec bandwidth; a packets/sec value needs a packets/sec capacity. If your query already returns a **utilization percentage** (e.g. `50`), set the side **Bandwidth # to `100`** so `50 ÷ 100 = 0.5`. Mixing units (a `50` percent value against a `10000000000` bit bandwidth) yields ≈0 and no dots.
+- **The status series must be `1` = up / `0` = down** (the plugin treats `0` or absent as down and *any* non-zero as up). Enum metrics are **not** 1/0 — normalize them (see the SNMP note below the table).
+
+| Data source | Traffic value (per side) | Status series → normalized to 1/0 |
 |---|---|---|
-| **Prometheus** (SNMP) | `rate(ifHCOutOctets{instance="core-switch",ifName="Gi1/0/1"}[2m]) * 8` | `ifOperStatus{instance="core-switch",ifName="Gi1/0/1"}` |
-| **Prometheus** (Linux `node_exporter`) | `rate(node_network_transmit_bytes_total{device="eth0"}[2m]) * 8` | `node_network_up{device="eth0"}` |
+| **Prometheus** (SNMP) | `rate(ifHCOutOctets{instance="core-switch",ifName="Gi1/0/1"}[2m]) * 8` | `ifOperStatus{instance="core-switch",ifName="Gi1/0/1"} == bool 1` |
+| **Prometheus** (Linux `node_exporter`) | `rate(node_network_transmit_bytes_total{device="eth0"}[2m]) * 8` | `node_network_up{device="eth0"}` (already 1/0) |
 | **InfluxDB** (Flux) | `from(bucket:"wm") … filter(r._measurement=="wm_link_bps" and r.direction=="tx")` | `… r._measurement == "wm_link_status"` |
 | **Elasticsearch** | `Average` of `bps`, Lucene `device:core-a AND direction:tx` | `Max` of `status`, Lucene `link:"core-a<->edge-1"` |
 | **Zabbix** | Item `Interface ge-0/0/1: Bits sent` | Item `Interface ge-0/0/1: Operational status` |
 
 Bind these in the link editor exactly as you would for a non-animated link: **A/Z Side Query** = the direction's traffic value, **A/Z Bandwidth #** (or Bandwidth Query) = the capacity, and **Status Query** = the operational status. Turn animation on, and the same numbers that color the link now also drive its dots. See each source's legend/alias and known deviations in [Data Sources](datasources.md).
 
+!!! warning "SNMP `ifOperStatus` is an enum, not 1/0"
+    IF-MIB `ifOperStatus` returns `1 = up`, `2 = down` (and `3` testing, `7` lowerLayerDown …). Fed raw, a *down* interface reports `2` — non-zero — so the plugin reads it as **up**. Normalize it to 1/0 with `== bool 1` (as in the table), or with a recording rule. The same applies to Zabbix's *Operational status* item and any other enumerated status metric — map the "up" value to 1 and everything else to 0.
+
 !!! tip "Bandwidth is what turns a value into a speed"
-    Utilization = value ÷ bandwidth. Without a bandwidth on a side, that side resolves to *no dots* (it can't compute a speed) — so always set **A/Z Bandwidth #** or a **Bandwidth Query** on links you want to animate.
+    Utilization = value ÷ bandwidth. Without a bandwidth on a side, that side resolves to *no dots* (it can't compute a speed) — so always set **A/Z Bandwidth #** or a **Bandwidth Query** on links you want to animate, in the **same unit** as the value.
 
 ---
 
