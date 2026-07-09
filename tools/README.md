@@ -24,9 +24,32 @@ Works with both secured and open Grafana:
 All flags also read from the environment: `GRAFANA_URL`, `GRAFANA_TOKEN`,
 `GRAFANA_USER`, `GRAFANA_PASSWORD`.
 
-For production, create a **service account** (Administration → Service accounts)
-with the **Viewer** role for backup, or **Editor/Admin** for restore, and use
-its token.
+### How to generate a Grafana token
+
+**Grafana 9.1+ (service account token — recommended):**
+
+1. Log in to Grafana as an **Admin**.
+2. Go to **Administration → Users and access → Service accounts**
+   (older 9.x: **Configuration (gear) → Service accounts**).
+3. Click **Add service account**. Give it a name (e.g. `dashboard-backup`) and a role:
+   - **Viewer** — enough to **back up** (read dashboards/data sources).
+   - **Editor** (or **Admin**) — needed to **restore** (write dashboards/folders/data sources).
+4. Click **Create**, then on the service account page click **Add service account token**.
+5. Name the token, optionally set an **expiration**, and click **Generate token**.
+6. **Copy the token now** — Grafana shows it only once. It looks like `glsa_xxxxxxxx…`.
+7. Use it with the tool:
+   ```bash
+   export GRAFANA_TOKEN="glsa_xxxxxxxxxxxxxxxxxxxx"
+   python3 tools/grafana-backup.py backup --url https://grafana.example.com
+   ```
+
+**Grafana < 9.1 (legacy API key):** **Configuration (gear) → API Keys → Add API key** →
+set a name and role (Viewer to back up, Editor/Admin to restore) → **Add** → copy the key
+and use it as `--token`.
+
+> **Tip:** Keep the token in an environment variable or your secrets manager — don't paste
+> it on the command line where it can land in your shell history. Delete the service account
+> / token when you're done if it was only for a one-off migration.
 
 ## Back up (do this before adding the plugin)
 
