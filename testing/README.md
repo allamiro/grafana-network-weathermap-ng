@@ -47,12 +47,18 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — Interactive Rack View** | The rack-cabling topology with the dense-map readability features on (plugin ≥ 1.5.12): hover highlight with VIA-chain tracing, one-way power cables, label collision avoidance, zoom-dependent labels, built-in status legend, bold PSU labels. |
 | **WAN Demo — Multi-hop Path (VIAs)** | One DC interconnect routed through three VIA points, as double-click VIA editing produces. |
 | **WAN Demo — Parallel Links (LAG members)** | Three-member LAG spread with Link Offset, each member with its own query, port label, and utilization %. |
+| **WAN Demo — Animated Traffic Flow** | Metric-driven particle animation: dots flow per direction, speed/density scale with utilization, a permanently-down CORE trunk shows ✕ badges. |
+| **WAN Demo — BGP Neighbor Map** | BGP sessions as links: session state = link status (dashed + ✕ + DOWN + blink on drop), prefixes as labels, max-prefix fullness as color. iBGP core + eBGP transits (Cisco/Juniper/F5), a permanently-down eBGP peer (EDGE2↔PEER-Y), parallel IPv4/IPv6. Click a router for session detail. |
+| **WAN Demo — BGP Session Detail** | Per-router drill-down (state / prefixes / uptime / flaps), reached from the map; `node_name` variable. |
+| **WAN Demo — BGP Fleet Overview** | Established / down / total counters, a session status table, and a prefixes-received bar gauge. |
 
 The WAN dashboards are generated — do not hand-edit them. To change the topology
 or scenarios, edit and re-run:
 
 ```bash
-node testing/scripts/generate-scenario-dashboards.js
+node testing/scripts/generate-scenario-dashboards.js       # core WAN demos
+python3 testing/scripts/generate-animated-dashboard.py     # animated traffic
+python3 testing/scripts/generate-bgp-dashboards.py         # BGP neighbor map + detail + overview
 ```
 
 The world-map background is `BlankMap-World-Equirectangular.svg` from Wikimedia
@@ -70,6 +76,7 @@ The exporter (`testing/exporter/main.go`) produces:
 - `wm_latency_ms` / `wm_packet_loss_pct{device}` — node tooltip metrics; loss jumps to 100% while a device is down.
 - `wm_port_status{device, port}` — per-port status for the rack boards (0 = down, 1 = up, 2 = admin-disabled); covers switch ports, server NICs/iLO/PSU inlets, and PDU outlets.
 - `wm_power_watts{device, feed}` — per-feed server power draw for the rack-cabling demo (feed `a`/`b`; SRV-2 is single-supply, SRV-3's dead A feed reads 0 with the full draw on `b`).
+- `bgp_session_up` / `bgp_session_state` / `bgp_prefixes_received` / `bgp_prefixes_advertised` / `bgp_prefix_limit` / `bgp_session_uptime_seconds` / `bgp_peer_flaps_total` `{node_name, peer, peer_ip, peer_as, afi, session_type, vendor}` — normalized BGP neighbor telemetry (`testing/exporter/bgp.go`): a dual-stack AS65001 with Cisco RRs, Juniper borders, and an F5, peering eBGP to two transits + an IX peer. **EDGE2↔TRANSIT-B flaps** (down ~90 s every 8 min) and **EDGE2↔PEER-Y is permanently down**. In production these names come from recording rules over the vendor's raw metric — see [`tools/bgp/`](../tools/bgp/).
 - Every link also gets staggered ~45 s micro-bursts every 13 minutes so the maps keep changing like a real enterprise network.
 
 The exporter also serves the demo background images over HTTP (port 8080,

@@ -1,0 +1,92 @@
+# Prometheus recording rules — normalize each platform's raw BGP telemetry into
+# the vendor-neutral series the "BGP Neighbor Map" dashboard binds to:
+#
+#   bgp_session_up               1 = Established, 0 = down   (the neighbor status)
+#   bgp_session_state            raw FSM enum (idle=1 … established=6)
+#   bgp_prefixes_received        prefixes accepted from the peer
+#   bgp_prefixes_advertised      prefixes advertised to the peer
+#   bgp_session_uptime_seconds   seconds since the session came up
+#
+# WHY normalize: the map treats a Status Query as 0/absent = down, non-zero = up.
+# Vendor state metrics are ENUMS (idle=1 … established=6), so a session in
+# state "active" (3) would read as "up" if fed raw. `== bool 6` collapses that
+# to a correct 1/0. Do the same for any enumerated status metric.
+#
+# LABELS: your dashboard needs identifying labels (node_name, peer, afi). The
+# cleanest place to attach node_name is the Prometheus scrape config for the
+# SNMP/gNMI target (e.g. a static `node_name` target label). The peer/afi come
+# from the metric's own index labels — the `labels:` guidance under each block
+# shows the typical source label; rename with label_replace here or in the
+# dashboard's field config as needed.
+#
+# Load by adding this file to prometheus.yml:
+#   rule_files:
+#     - /etc/prometheus/bgp-recording-rules.yml
+
+groups:
+  # ---------------------------------------------------------------- Cisco ----
+  # CISCO-BGP4-MIB cbgpPeer2 table (IPv4 + IPv6), via snmp_exporter.
+  # Index/labels typically include cbgpPeer2RemoteAddr, cbgpPeer2RemoteAs.
+  - name: bgp_cisco
+    rules:
+      - record: bgp_session_state
+        expr: cbgpPeer2State
+      - record: bgp_session_up
+        expr: (cbgpPeer2State == bool 6)
+      - record: bgp_prefixes_received
+        expr: cbgpPeer2AcceptedPrefixes
+      - record: bgp_prefixes_advertised
+        expr: cbgpPeer2AdvertisedPrefixes
+      - record: bgp_prefix_limit
+        expr: cbgpPeer2PrefixAdminLimit
+      - record: bgp_session_uptime_seconds
+        expr: cbgpPeer2FsmEstablishedTime
+
+  # -------------------------------------------------------------- Juniper ----
+  # BGP4-V2-MIB-JUNIPER (jnxBgpM2*), via snmp_exporter. Peer index carries the
+  # remote address / routing-instance; prefix table is per afi-safi.
+  - name: bgp_juniper
+    rules:
+      - record: bgp_session_state
+        expr: jnxBgpM2PeerState
+      - record: bgp_session_up
+        expr: (jnxBgpM2PeerState == bool 6)
+      - record: bgp_prefixes_received
+        expr: jnxBgpM2PrefixInPrefixesAccepted
+      - record: bgp_prefixes_advertised
+        expr: jnxBgpM2PrefixOutPrefixes
+
+  # ---------------------------------------------- Standard BGP4-MIB / F5 -----
+  # RFC 4273 bgpPeer* table (IPv4 unicast only). F5 BIG-IP's advanced routing
+  # (ZebOS) and many other platforms expose exactly this table. For IPv6 / other
+  # AFI-SAFI you need the vendor MIB above.
+  - name: bgp_standard_mib
+    rules:
+      - record: bgp_session_state
+        expr: bgpPeerState
+      - record: bgp_session_up
+        expr: (bgpPeerState == bool 6)
+      - record: bgp_session_uptime_seconds
+        expr: bgpPeerFsmEstablishedTime
+      # BGP4-MIB has no prefix-count OIDs; use per-peer update counters as a
+      # coarse activity signal, or move to the vendor MIB / gNMI for real counts.
+      - record: bgp_updates_received
+        expr: rate(bgpPeerInUpdates[5m])
+      - record: bgp_updates_advertised
+        expr: rate(bgpPeerOutUpdates[5m])
+
+  # --------------------------------------------- gNMI / OpenConfig (Cisco,
+  # Juniper, Arista, Nokia …) collected with gnmic's prometheus output. Metric
+  # names below assume gnmic's default path-to-name mangling; adjust to your
+  # gnmic `outputs` naming. session-state is an enum where ESTABLISHED maps to 6
+  # (OpenConfig) — if your collector emits it as a string, match on that instead.
+  - name: bgp_gnmi_openconfig
+    rules:
+      - record: bgp_session_up
+        expr: >-
+          (bgp_neighbor_session_state == bool 6)
+          or (bgp_neighbor_session_state_ESTABLISHED == bool 1)
+      - record: bgp_prefixes_received
+        expr: bgp_neighbor_afi_safi_prefixes_received
+      - record: bgp_prefixes_advertised
+        expr: bgp_neighbor_afi_safi_prefixes_sent
