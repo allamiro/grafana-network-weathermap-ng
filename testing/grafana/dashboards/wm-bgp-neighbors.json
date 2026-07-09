@@ -1,6 +1,4 @@
 {
-  "__inputs": [],
-  "__requires": [],
   "annotations": {
     "list": []
   },
@@ -23,10 +21,7 @@
       "targets": [
         {
           "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "datasource": "Prometheus",
           "expr": "bgp_prefixes_advertised",
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}} adv",
           "instant": false,
@@ -34,10 +29,7 @@
         },
         {
           "refId": "B",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "datasource": "Prometheus",
           "expr": "bgp_prefixes_received",
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}} recv",
           "instant": false,
@@ -45,10 +37,7 @@
         },
         {
           "refId": "C",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "datasource": "Prometheus",
           "expr": "bgp_session_up",
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}} up",
           "instant": false,
@@ -56,10 +45,7 @@
         },
         {
           "refId": "D",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "datasource": "Prometheus",
           "expr": "bgp_session_state",
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}} state",
           "instant": false,
@@ -67,10 +53,7 @@
         },
         {
           "refId": "E",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "datasource": "Prometheus",
           "expr": "bgp_session_uptime_seconds",
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}} uptime",
           "instant": false,
@@ -78,10 +61,7 @@
         },
         {
           "refId": "F",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "datasource": "Prometheus",
           "expr": "bgp_peer_flaps_total",
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}} flaps",
           "instant": false,

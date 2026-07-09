@@ -1,6 +1,4 @@
 {
-  "__inputs": [],
-  "__requires": [],
   "annotations": {
     "list": []
   },
@@ -13,7 +11,7 @@
       "id": 2,
       "type": "stat",
       "title": "Sessions Established",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 5,
         "w": 8,
@@ -26,10 +24,7 @@
           "expr": "sum(bgp_session_up)",
           "instant": true,
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "options": {
@@ -67,7 +62,7 @@
       "id": 3,
       "type": "stat",
       "title": "Sessions down",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 5,
         "w": 8,
@@ -80,10 +75,7 @@
           "expr": "count(bgp_session_up) - sum(bgp_session_up)",
           "instant": true,
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "options": {
@@ -125,7 +117,7 @@
       "id": 5,
       "type": "stat",
       "title": "Sessions total",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 5,
         "w": 8,
@@ -138,10 +130,7 @@
           "expr": "count(bgp_session_up)",
           "instant": true,
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "options": {
@@ -179,7 +168,7 @@
       "id": 1,
       "type": "table",
       "title": "BGP sessions \u2014 status",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 11,
         "w": 24,
@@ -192,10 +181,7 @@
           "expr": "bgp_session_up",
           "instant": true,
           "format": "table",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "transformations": [
@@ -297,7 +283,7 @@
       "id": 4,
       "type": "bargauge",
       "title": "Prefixes received per session",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 8,
         "w": 24,
@@ -310,10 +296,7 @@
           "expr": "bgp_prefixes_received",
           "instant": true,
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "options": {

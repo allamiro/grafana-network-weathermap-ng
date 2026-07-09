@@ -297,6 +297,25 @@ def dashboard(uid, title, panels, tags, desc):
     }
 
 
+def localize_datasources(obj):
+    """Replace ${DS_PROMETHEUS} import placeholders with the provisioned
+    datasource name. Provisioning never substitutes __inputs placeholders
+    (that only happens in the manual import UI), so a provisioned dashboard
+    carrying them fails with 'Datasource ${DS_PROMETHEUS} was not found'.
+    The importable copies in tools/bgp/ keep the placeholders + __inputs."""
+    if isinstance(obj, dict):
+        ds = obj.get("datasource")
+        if isinstance(ds, dict) and "${DS_PROMETHEUS}" in str(ds.get("uid", "")):
+            obj["datasource"] = "Prometheus"
+        elif isinstance(ds, str) and "${DS_PROMETHEUS}" in ds:
+            obj["datasource"] = "Prometheus"
+        for v in obj.values():
+            localize_datasources(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            localize_datasources(v)
+
+
 def main():
     tmpl = json.load(open(os.path.join(DASH, "wm-animated-traffic.json")))
     out = {
@@ -305,6 +324,10 @@ def main():
         "wm-bgp-overview.json": build_overview(),
     }
     for fname, d in out.items():
+        localize_datasources(d)
+        # Import-only bookkeeping is meaningless on provisioned dashboards.
+        d.pop("__inputs", None)
+        d.pop("__requires", None)
         path = os.path.join(DASH, fname)
         with open(path, "w") as fh:
             json.dump(d, fh, indent=2)

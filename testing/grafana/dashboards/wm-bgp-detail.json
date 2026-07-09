@@ -1,6 +1,4 @@
 {
-  "__inputs": [],
-  "__requires": [],
   "annotations": {
     "list": []
   },
@@ -13,7 +11,7 @@
       "id": 1,
       "type": "stat",
       "title": "Session state",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 4,
         "w": 24,
@@ -26,10 +24,7 @@
           "expr": "bgp_session_up{node_name=~\"${node_name}\"}",
           "instant": true,
           "legendFormat": "{{node_name}}>{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "options": {
@@ -84,7 +79,7 @@
       "id": 2,
       "type": "timeseries",
       "title": "Prefixes received",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -96,10 +91,7 @@
           "refId": "A",
           "expr": "bgp_prefixes_received{node_name=~\"${node_name}\"}",
           "legendFormat": "{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "fieldConfig": {
@@ -132,7 +124,7 @@
       "id": 3,
       "type": "timeseries",
       "title": "Prefixes advertised",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -144,10 +136,7 @@
           "refId": "A",
           "expr": "bgp_prefixes_advertised{node_name=~\"${node_name}\"}",
           "legendFormat": "{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "fieldConfig": {
@@ -180,7 +169,7 @@
       "id": 4,
       "type": "timeseries",
       "title": "Session uptime",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -192,10 +181,7 @@
           "refId": "A",
           "expr": "bgp_session_uptime_seconds{node_name=~\"${node_name}\"}",
           "legendFormat": "{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "fieldConfig": {
@@ -228,7 +214,7 @@
       "id": 5,
       "type": "timeseries",
       "title": "Peer flaps",
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "Prometheus",
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -240,10 +226,7 @@
           "refId": "A",
           "expr": "bgp_peer_flaps_total{node_name=~\"${node_name}\"}",
           "legendFormat": "{{peer}}/{{afi}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
+          "datasource": "Prometheus"
         }
       ],
       "fieldConfig": {
@@ -284,7 +267,7 @@
       {
         "name": "node_name",
         "type": "query",
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "Prometheus",
         "definition": "label_values(bgp_session_up, node_name)",
         "query": {
           "query": "label_values(bgp_session_up, node_name)",
