@@ -82,6 +82,12 @@ def api(args, path, method="GET", body=None):
         except Exception:
             parsed = payload.decode(errors="replace")
         return e.code, parsed
+    except OSError as e:
+        # URLError (connection refused, DNS failure) and raw socket timeouts
+        # are all OSError subclasses. Status 0 = "could not reach Grafana at
+        # all"; callers surface the reason instead of a raw traceback.
+        reason = getattr(e, "reason", None) or e
+        return 0, f"network error: {reason}"
 
 
 def slugify(text, fallback="untitled"):
@@ -100,14 +106,17 @@ def backup(args):
 
     status, health = api(args, "/api/health")
     if status != 200:
-        die(f"Cannot reach Grafana at {args.url} (HTTP {status}). "
-            f"Check --url and auth.")
+        detail = health if status == 0 else f"HTTP {status}"
+        die(f"Cannot reach Grafana at {args.url} ({detail}). Check --url and auth.")
     version = (health or {}).get("version", "unknown")
     print(f"Grafana {version} at {args.url}")
 
     # --- Folders ---------------------------------------------------------- #
     status, folders = api(args, "/api/folders?limit=1000")
-    folders = folders if status == 200 and isinstance(folders, list) else []
+    if status != 200 or not isinstance(folders, list):
+        # Treating this as "no folders" would write a backup that looks good
+        # but silently misses content — refuse to produce a false restore point.
+        die(f"listing folders failed (HTTP {status}): {folders}")
     with open(os.path.join(args.out, "folders.json"), "w") as f:
         json.dump(folders, f, indent=2)
     folder_by_uid = {fo["uid"]: fo for fo in folders}
@@ -115,7 +124,8 @@ def backup(args):
 
     # --- Data sources (config only; secrets are not returned by the API) -- #
     status, datasources = api(args, "/api/datasources")
-    datasources = datasources if status == 200 and isinstance(datasources, list) else []
+    if status != 200 or not isinstance(datasources, list):
+        die(f"listing data sources failed (HTTP {status}): {datasources}")
     # Drop volatile ids; keep uid/name/type/access/url/jsonData etc.
     for ds in datasources:
         ds.pop("id", None)
@@ -134,7 +144,11 @@ def backup(args):
     seen = set()
     while True:
         status, hits = api(args, f"/api/search?type=dash-db&limit=1000&page={page}")
-        if status != 200 or not hits:
+        if status != 200:
+            # A failed first page means the whole dashboard list is unknown —
+            # that must fail the backup, not masquerade as "0 dashboards".
+            die(f"dashboard search failed on page {page} (HTTP {status}): {hits}")
+        if not hits:
             break
         new = [h for h in hits if h["uid"] not in seen]
         if not new:
@@ -210,11 +224,12 @@ def restore(args):
 
     status, health = api(args, "/api/health")
     if status != 200:
-        die(f"Cannot reach Grafana at {args.url} (HTTP {status}).")
+        detail = health if status == 0 else f"HTTP {status}"
+        die(f"Cannot reach Grafana at {args.url} ({detail}).")
     print(f"Restoring into Grafana {(health or {}).get('version','?')} at {args.url}")
 
     # --- Data sources ----------------------------------------------------- #
-    ds_created = ds_skipped = 0
+    ds_created = ds_skipped = ds_failed = 0
     ds_path = os.path.join(root, "datasources.json")
     if args.datasources and os.path.exists(ds_path):
         with open(ds_path) as f:
@@ -226,11 +241,14 @@ def restore(args):
                     ds_skipped += 1
                 else:
                     print(f"    ! datasource '{ds.get('name')}' HTTP {st}")
-        print(f"  datasources:  {ds_created} created, {ds_skipped} already existed"
+                    ds_failed += 1
+        tail = f", {ds_failed} FAILED" if ds_failed else ""
+        print(f"  datasources:  {ds_created} created, {ds_skipped} already existed{tail}"
               f"  (re-enter any secrets in the Grafana UI)")
 
     # --- Folders (uid preserved so dashboards land in the right place) ---- #
     folder_uids = {}
+    fo_failed = 0
     fo_path = os.path.join(root, "folders.json")
     if os.path.exists(fo_path):
         with open(fo_path) as f:
@@ -243,6 +261,7 @@ def restore(args):
                     folder_uids[fo["uid"]] = fo["uid"]  # already there
                 else:
                     print(f"    ! folder '{fo.get('title')}' HTTP {st}")
+                    fo_failed += 1
 
     # --- Dashboards ------------------------------------------------------- #
     created = failed = skipped = 0
@@ -273,8 +292,11 @@ def restore(args):
     tail = (f", {skipped} skipped (provisioned)" if skipped else "") + \
            (f", {failed} failed" if failed else "")
     print(f"  dashboards:   {created} restored{tail}")
-    print("\nRestore complete." + (" Some items failed." if failed else ""))
-    if failed:
+    # A failed data source or folder is as fatal for automation as a failed
+    # dashboard: the dashboards may import but their queries cannot resolve.
+    total_failed = failed + ds_failed + fo_failed
+    print("\nRestore complete." + (" Some items FAILED." if total_failed else ""))
+    if total_failed:
         sys.exit(1)
 
 
@@ -287,7 +309,9 @@ def die(msg):
 def build_parser():
     p = argparse.ArgumentParser(description="Back up / restore Grafana dashboards, "
                                             "data sources and queries.")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    # required= on add_subparsers needs Python 3.7; enforce manually in main()
+    # so the documented Python 3.6 baseline actually works.
+    sub = p.add_subparsers(dest="cmd")
 
     def add_common(sp):
         sp.add_argument("--url", default=os.environ.get("GRAFANA_URL", "http://localhost:3101"),
@@ -312,11 +336,14 @@ def build_parser():
 
 
 def main():
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
     if args.cmd == "backup":
         backup(args)
     elif args.cmd == "restore":
         restore(args)
+    else:
+        parser.error("a command is required: backup or restore")
 
 
 if __name__ == "__main__":
