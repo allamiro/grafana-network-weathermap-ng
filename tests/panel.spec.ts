@@ -65,6 +65,44 @@ test.describe('Network Weathermap Panel', () => {
     await expect(panelEditPage.panel.locator.getByTestId('link')).toHaveCount(2);
   });
 
+  test('traffic animation is off by default and can be enabled (#273)', async ({ panelEditPage, page }) => {
+    // Only fail on errors that signal a render/animation crash — dev-mode
+    // Grafana and unsigned-plugin warnings produce unrelated console noise.
+    const renderErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (
+        msg.type() === 'error' &&
+        /weathermap|animateMotion|Cannot read|is not a function|Maximum update depth/i.test(msg.text())
+      ) {
+        renderErrors.push(msg.text());
+      }
+    });
+
+    await setupPanel(panelEditPage, page);
+    await expect(panelEditPage.panel.locator.getByText('Node A')).toBeVisible();
+
+    // Off by default: no animation legend and no animated dots on a fresh panel.
+    await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toHaveCount(0);
+    await expect(panelEditPage.panel.locator.getByTestId('link-anim-dot')).toHaveCount(0);
+
+    // Flip the panel-level master switch. InlineField associates its label
+    // with the switch input; fall back to the labelled control if needed.
+    const toggle = page.getByLabel('Enable Traffic Animation', { exact: true });
+    await toggle.scrollIntoViewIfNeeded();
+    await toggle.click();
+
+    // The built-in legend renders once animation is active — this is
+    // data-independent, so it verifies the feature end-to-end in a real
+    // browser without needing a provisioned datasource.
+    await expect(panelEditPage.panel.locator.getByTestId('animation-legend')).toBeVisible();
+
+    // Reduced-motion preference must not crash the panel.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(panelEditPage.panel.locator).toBeVisible();
+
+    expect(renderErrors).toEqual([]);
+  });
+
   test('color scale updates when a threshold is changed', async ({ panelEditPage, page }) => {
     await setupPanel(panelEditPage, page);
 

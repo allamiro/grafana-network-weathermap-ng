@@ -553,7 +553,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // A down link cannot carry traffic, so a throughput/utilization number is
     // meaningless (and usually just the last stale counter). Label both sides
     // DOWN instead — the tooltip still exposes the raw values for debugging.
-    if (toReturn.isDown) {
+    // Scoped to the animation feature (#273): this is part of the animated
+    // down-link treatment (static ✕ markers + DOWN labels), so it only applies
+    // when animation is eligible for this link. Maps that never opt into
+    // animation keep the pre-existing last-value/percentage label unchanged.
+    const animGlobalOn = wm.settings.animation?.enabled ?? false;
+    const animOverride = d.animation ?? 'inherit';
+    const animEligible = animGlobalOn ? animOverride !== 'disabled' : animOverride === 'enabled';
+    if (toReturn.isDown && animEligible) {
       toReturn.sides.A.currentText = 'DOWN';
       toReturn.sides.Z.currentText = 'DOWN';
     }

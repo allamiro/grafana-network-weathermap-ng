@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Features
+
+* **metric-driven traffic animation** — links can animate small moving dots showing traffic **direction** and **intensity**, derived entirely from the A/Z values and bandwidths you already query (no new queries, no packet capture). Utilization drives dot **speed** (`20 + √u·100` px/s) and **density** (`1 + round(u·7)` dots); dots inherit the link's threshold color. Dots are native SVG `animateMotion` (compositor-only — no per-frame React re-render, no `requestAnimationFrame`). **Off by default.** Panel-level controls: master switch, respect OS reduced-motion (on), pause in edit mode (on), max animated links (100), and a built-in legend shown only while animation is active. Per-link **Traffic Animation** override (inherit / enabled / disabled). Timeline scrubbing pauses animation (live = animated). A **down** link (via its Status Query) replaces dots with static **✕** badges. New [Traffic Animation](https://allamiro.github.io/grafana-network-weathermap-ng/guide/animation/) guide, demo dashboard (*WAN Demo — Animated Traffic Flow*), and E2E coverage ([#264](https://github.com/allamiro/grafana-network-weathermap-ng/issues/264), [#273](https://github.com/allamiro/grafana-network-weathermap-ng/issues/273), PR [#291](https://github.com/allamiro/grafana-network-weathermap-ng/pull/291))
+
+### Changed
+
+* **down-link labels (only when animation is enabled)** — when traffic animation is active for a link, a down status now labels both sides **DOWN** instead of showing a stale throughput number (the hover tooltip still exposes the real series and its history). This is scoped to the animation feature: maps that never enable animation render down links exactly as before (dashed line + last value), so existing status-query dashboards upgrade with no visible change ([#273](https://github.com/allamiro/grafana-network-weathermap-ng/issues/273), PR [#291](https://github.com/allamiro/grafana-network-weathermap-ng/pull/291))
+
 ## [1.5.15](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.5.15) (2026-07-08)
 
 ### Features

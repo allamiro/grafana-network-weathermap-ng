@@ -216,6 +216,24 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 
 ---
 
+## 13. Animated traffic flow (moving dots)
+
+**Goal:** make traffic *direction* and *intensity* readable at a glance — a link streams dots the way it's carrying traffic, faster and denser as it fills, while a down link visibly stops. *Requires plugin 1.6.0+.*
+
+![Animated traffic flow across a WAN map](../img/use-cases/wm-animated-traffic.gif)
+
+1. **Panel Options → Animation → Enable Traffic Animation** — the master switch (off by default).
+2. Make sure each animated link has a **side query** and a **bandwidth** (fixed or query) — animation reuses the values that already color the link; **no extra queries are needed**. Utilization = value ÷ bandwidth drives dot **speed** (`20 + √u·100` px/s) and **density** (`1 + round(u·7)` dots); dot color inherits the link's threshold color.
+3. **Per link → Traffic Animation** — leave *Inherit* to follow the panel switch, or set *Enabled* to spotlight one flow / *Disabled* to keep a link static.
+4. Add a **Status Query** so a failed link swaps its dots for static **✕ badges** and reads **DOWN** — traffic can't flow on a broken link.
+5. Safety is built in: reduced-motion is honored, edit-mode pauses, and **Max Animated Links** caps large maps. Dots are native SVG animation (compositor-only) so the panel never re-renders per frame.
+
+This is a **visualization of metrics you already query — not packet capture**. See the full reference (SNMP/Prometheus data flow, PromQL, timeline behavior, accessibility) in [Traffic Animation](animation.md).
+
+**Demo:** *WAN Demo — Animated Traffic Flow* — low/medium/high/bidirectional/idle links plus a permanently-down trunk showing ✕ badges next to an animated one, with the built-in legend explaining the glyphs.
+
+---
+
 ## Tips that apply everywhere
 
 - **Template variables** (`$var`, `${var}`) are resolved at draw time in labels, queries, status queries, dashboard links, and bandwidth queries — build one panel that serves many sites.

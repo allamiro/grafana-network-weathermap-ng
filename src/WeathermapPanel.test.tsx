@@ -1177,6 +1177,54 @@ test('a down link labels both sides DOWN instead of stale throughput (#273)', ()
   expect(screen.getAllByText('DOWN')).toHaveLength(2);
 });
 
+test('a down link WITHOUT animation keeps its throughput label (no DOWN relabel) (#273)', () => {
+  // Regression guard: the DOWN relabel is part of the opt-in animation
+  // treatment. A map that never enables animation (no settings.animation
+  // block, no per-link override) must render down links exactly as before —
+  // the last resolved value, not "DOWN". Existing status-query users upgrade
+  // with zero visible change.
+  const testProps = animationSetup(); // no animation anywhere
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // No DOWN relabel, and the A-side throughput value is still shown.
+  expect(screen.queryAllByText('DOWN')).toHaveLength(0);
+  expect(screen.getAllByText(/50 b\/s/).length).toBeGreaterThan(0);
+});
+
+test('per-link disabled keeps the throughput label even when the panel switch is on (#273)', () => {
+  // The per-link 'disabled' override opts a link out of the whole animation
+  // treatment, including the DOWN relabel.
+  const testProps = animationSetup({ enabled: true }, 'disabled');
+  const weathermap = testProps.options.weathermap;
+  weathermap.links[0].statusQuery = 'link status';
+  (testProps.data.series as unknown[]).push(
+    toDataFrame({
+      refId: 'B',
+      fields: [
+        { name: 'Time', values: [1000, 2000] },
+        { name: 'Value', values: [1, 0], config: { displayNameFromDS: 'link status' } },
+      ],
+    })
+  );
+
+  render(<WeathermapPanel {...testProps} />);
+
+  expect(screen.queryAllByText('DOWN')).toHaveLength(0);
+  expect(screen.getAllByText(/50 b\/s/).length).toBeGreaterThan(0);
+});
+
 test('hovering a down link still shows the real data in the tooltip (#273)', () => {
   // The map label says DOWN (utilization is meaningless on a broken link),
   // but the hover tooltip deliberately keeps the bound series' raw values

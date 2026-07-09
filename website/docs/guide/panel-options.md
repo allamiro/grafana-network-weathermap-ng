@@ -72,6 +72,22 @@ Perfect for **incident retrospectives** (replay an outage), **trend analysis**, 
 
 ---
 
+## Animation (traffic flow)
+
+The **Animation** section turns on metric-driven **moving dots** along links, showing traffic direction and intensity. It is **off by default** and changes nothing until enabled.
+
+| Option | Default | What it does |
+|---|---|---|
+| **Enable Traffic Animation** | Off | Master switch for all link animation. |
+| **Respect Reduced Motion** | On | AND-gated with the viewer's OS *prefers-reduced-motion* preference. |
+| **Pause In Edit Mode** | On | Freezes animation while editing the panel. |
+| **Show Animation Legend** | On | Built-in legend; only shown while animation is active. |
+| **Max Animated Links** | 100 | Hard cap on simultaneously animated links (large-map safety). |
+
+Individual links can also opt in or out via the link editor. See the full guide — data sources, PromQL, speed/density mapping, down-link behavior — in [Traffic Animation](animation.md).
+
+---
+
 ## Default link units and decimals
 
 - **Default Link Units** — the unit formatter used by links that don't set their own.
