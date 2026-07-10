@@ -325,6 +325,7 @@ func main() {
 
 			simulate(p, i, now)
 			simulatePorts(now)
+			simulateBGP(i, now)
 
 			i++
 			time.Sleep(updateDelay)
