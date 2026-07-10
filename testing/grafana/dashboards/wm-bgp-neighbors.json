@@ -116,8 +116,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                "name": "networking/cloud",
                 "size": {
                   "width": 32,
                   "height": 32
@@ -176,8 +176,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                "name": "networking/cloud",
                 "size": {
                   "width": 32,
                   "height": 32
@@ -236,8 +236,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                "name": "networking/cloud",
                 "size": {
                   "width": 32,
                   "height": 32
@@ -536,8 +536,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/vendors/f5-load-balancer.svg",
+                "name": "vendors/f5-load-balancer",
                 "size": {
                   "width": 32,
                   "height": 32
@@ -596,8 +596,8 @@
                 "statusDown": "#F2495C"
               },
               "nodeIcon": {
-                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                "name": "networking/router",
+                "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                "name": "networking/cloud",
                 "size": {
                   "width": 32,
                   "height": 32
@@ -721,8 +721,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
                       "width": 32,
                       "height": 32
@@ -900,8 +900,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
                       "width": 32,
                       "height": 32
@@ -1079,8 +1079,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
                       "width": 32,
                       "height": 32
@@ -1258,8 +1258,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
                       "width": 32,
                       "height": 32
@@ -1437,8 +1437,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
                       "width": 32,
                       "height": 32
@@ -1616,8 +1616,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/cloud.svg",
+                    "name": "networking/cloud",
                     "size": {
                       "width": 32,
                       "height": 32
@@ -2332,8 +2332,8 @@
                     "statusDown": "#F2495C"
                   },
                   "nodeIcon": {
-                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/networking/router.svg",
-                    "name": "networking/router",
+                    "src": "public/plugins/tamirsuliman-weathermap-panel/icons/vendors/f5-load-balancer.svg",
+                    "name": "vendors/f5-load-balancer",
                     "size": {
                       "width": 32,
                       "height": 32

@@ -22,6 +22,13 @@
 # Load by adding this file to prometheus.yml:
 #   rule_files:
 #     - /etc/prometheus/bgp-recording-rules.yml
+#
+# NOTE on `promtool check rules` lint: it reports the normalized names as
+# duplicate rules because every vendor group records into the same
+# bgp_session_up / bgp_prefixes_* names — that is the point of this file.
+# The source metrics are disjoint (a device only exposes its own vendor MIB),
+# so the recordings never collide; keep only the groups you actually scrape,
+# and use `--lint=none` (or ignore the duplicate warning) when checking.
 
 groups:
   # ---------------------------------------------------------------- Cisco ----
@@ -55,6 +62,8 @@ groups:
         expr: jnxBgpM2PrefixInPrefixesAccepted
       - record: bgp_prefixes_advertised
         expr: jnxBgpM2PrefixOutPrefixes
+      - record: bgp_session_uptime_seconds
+        expr: jnxBgpM2PeerFsmEstablishedTime
 
   # ---------------------------------------------- Standard BGP4-MIB / F5 -----
   # RFC 4273 bgpPeer* table (IPv4 unicast only). F5 BIG-IP's advanced routing
@@ -82,6 +91,8 @@ groups:
   # (OpenConfig) — if your collector emits it as a string, match on that instead.
   - name: bgp_gnmi_openconfig
     rules:
+      - record: bgp_session_state
+        expr: bgp_neighbor_session_state
       - record: bgp_session_up
         expr: >-
           (bgp_neighbor_session_state == bool 6)
@@ -90,3 +101,8 @@ groups:
         expr: bgp_neighbor_afi_safi_prefixes_received
       - record: bgp_prefixes_advertised
         expr: bgp_neighbor_afi_safi_prefixes_sent
+      # OpenConfig last-established is a nanosecond epoch timestamp
+      # (/network-instances/…/bgp/neighbors/neighbor/state/last-established);
+      # uptime = now minus that. Adjust the source name to your gnmic mangling.
+      - record: bgp_session_uptime_seconds
+        expr: time() - (bgp_neighbor_last_established / 1e9)

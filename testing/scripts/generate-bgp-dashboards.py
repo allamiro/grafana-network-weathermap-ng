@@ -82,6 +82,18 @@ def build_map(template_dash):
         n["showLabel"] = True
         n.pop("statusQuery", None)
         n.pop("tooltipMetrics", None)
+        # Apply the icon declared in the topology tuple — the template node is
+        # a router, so clouds / the F5 would otherwise all render as routers.
+        icon_file = {"cloud": "networking/cloud",
+                     "router": "networking/router",
+                     "loadbalancer": "vendors/f5-load-balancer"}.get(icon, "networking/router")
+        n["nodeIcon"] = {
+            "src": f"public/plugins/tamirsuliman-weathermap-panel/icons/{icon_file}.svg",
+            "name": icon_file,
+            "size": {"width": 32, "height": 32},
+            "padding": {"vertical": 0, "horizontal": 0},
+            "drawInside": False,
+        }
         n["anchors"] = {str(i): {"numLinks": anchor_count[name] if i == 0 else 0,
                                  "numFilledLinks": 0} for i in range(5)}
         # Route the node's dashboard-link to the per-router detail dashboard.

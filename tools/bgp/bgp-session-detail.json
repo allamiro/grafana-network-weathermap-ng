@@ -249,7 +249,7 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Peer flaps",
+      "title": "Session flaps (state transitions, 1h window)",
       "datasource": "${DS_PROMETHEUS}",
       "gridPos": {
         "h": 7,
@@ -260,7 +260,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "bgp_peer_flaps_total{node_name=~\"${node_name}\"}",
+          "expr": "changes(bgp_session_up{node_name=~\"${node_name}\"}[1h])",
           "legendFormat": "{{peer}}/{{afi}}",
           "datasource": {
             "type": "prometheus",
@@ -292,7 +292,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "description": "Counts bgp_session_up transitions in a sliding 1h window \u2014 derived so it works for every collection method in this kit (no vendor flap-counter OID required)."
     }
   ],
   "schemaVersion": 39,
