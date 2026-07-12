@@ -19,6 +19,7 @@ import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
 import { finiteOrFallback, sanitizeUrl } from 'utils';
 import { createRailBaselineBackground, RAIL_BASELINE_BACKGROUND_URL } from '../rail/defaults';
+import { normalizeMapMode } from '../rail/normalize';
 
 interface Settings {}
 
@@ -1037,7 +1038,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
         >
           <Select
             data-testid="nwm-map-mode"
-            value={value.mapMode ?? 'network'}
+            value={normalizeMapMode(value.mapMode)}
             options={[
               { label: 'Network', value: 'network' },
               { label: 'Rail (experimental)', value: 'rail' },
@@ -1055,7 +1056,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           ></Select>
         </InlineField>
-        {(value.mapMode ?? 'network') === 'rail' ? (
+        {normalizeMapMode(value.mapMode) === 'rail' ? (
           <InlineField
             grow
             label="Baseline Background"
@@ -1068,11 +1069,12 @@ export const PanelForm = ({ value, onChange }: Props) => {
               size="md"
               onClick={() => {
                 const existing = value.settings.panel.backgroundImage?.url;
-                if (
-                  existing &&
-                  existing !== RAIL_BASELINE_BACKGROUND_URL &&
-                  !confirm('Replace the existing background image with the rail baseline?')
-                ) {
+                if (existing === RAIL_BASELINE_BACKGROUND_URL) {
+                  // Already loaded: keep the user's customized fit /
+                  // attach-to-canvas instead of silently resetting them.
+                  return;
+                }
+                if (existing && !confirm('Replace the existing background image with the rail baseline?')) {
                   return;
                 }
                 let options = structuredClone(value);

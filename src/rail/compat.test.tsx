@@ -73,6 +73,18 @@ test('rail config present while mapMode is absent renders as network, unchanged'
   expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
 });
 
+test('hostile rail JSON is normalized at the render choke point and never crashes', () => {
+  const wm = getData(theme);
+  wm.mapMode = 'rail';
+  wm.rail = {
+    controlPoints: 'garbage',
+    trackSegments: [{ id: 't1', viaPoints: 'x' }, null, 42],
+    layers: { not: 'an array' },
+  } as unknown as Weathermap['rail'];
+  renderPanel(wm);
+  expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
+});
+
 test('old dashboards migrate without gaining mapMode or rail', () => {
   const migrated = handleVersionedStateUpdates(legacyWeathermap as unknown as Weathermap, theme);
   expect(migrated.version).toBe(CURRENT_VERSION);

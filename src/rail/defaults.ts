@@ -3,6 +3,7 @@
  * on every call so shared default state can never leak between panels.
  */
 import { BGImageOptions } from 'types';
+import { PLUGIN_ASSET_BASE } from 'utils';
 import { MapLayer, RailOperationsConfig } from './types';
 
 /** Well-known layer ids; renderers group entities by these. Order = paint order. */
@@ -60,7 +61,7 @@ export function createDefaultRailConfig(): RailOperationsConfig {
  * air-gapped and is covered by plugin signing. The plugin id is fixed in
  * plugin.json, matching how bundled node icons are referenced (NodeForm).
  */
-export const RAIL_BASELINE_BACKGROUND_URL = 'public/plugins/tamirsuliman-weathermap-panel/img/rail/rail-plugin-base.svg';
+export const RAIL_BASELINE_BACKGROUND_URL = `${PLUGIN_ASSET_BASE}/img/rail/rail-plugin-base.svg`;
 
 /** The one-click baseline preset: background attached to the canvas so it pans/zooms with the railway. */
 export function createRailBaselineBackground(): BGImageOptions {

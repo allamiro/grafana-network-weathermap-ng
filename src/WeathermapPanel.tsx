@@ -61,6 +61,7 @@ import {
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
+import { normalizeRailConfig } from './rail/normalize';
 
 // Calculate node position, width, etc.
 function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
@@ -112,7 +113,19 @@ const getlinkGraphFormatter =
  * undefined and renders the empty state.
  */
 const normalizeWeathermap = (raw: Weathermap | undefined | null): Weathermap | undefined =>
-  raw ? { ...raw, nodes: raw.nodes ?? [], links: raw.links ?? [], scale: raw.scale ?? [] } : undefined;
+  raw
+    ? {
+        ...raw,
+        nodes: raw.nodes ?? [],
+        links: raw.links ?? [],
+        scale: raw.scale ?? [],
+        // Rail config (#300) is repaired at the same choke point as the core
+        // arrays so rail render code can never dereference malformed saved
+        // JSON. An absent rail block stays absent — the feature-off contract
+        // and byte-identity of plain network maps are preserved.
+        ...(raw.rail !== undefined ? { rail: normalizeRailConfig(raw.rail) } : {}),
+      }
+    : undefined;
 
 /**
  * Weathermap panel component.

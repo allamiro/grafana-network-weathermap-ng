@@ -10,14 +10,45 @@
  *    can never be resurrected by a defaults merge
  *  - entries are repaired, not deleted — reporting problems is validation's
  *    job (validateRailTopology), and it must see the user's real data
+ *  - render-path callers must memoize (useMemo keyed on the saved rail
+ *    object), matching how normalizeWeathermap is wrapped in WeathermapPanel:
+ *    every call rebuilds the whole config with fresh identities
  */
+import { isFinitePoint } from '../geometry/polyline';
 import { createDefaultRailLayers } from './defaults';
-import { MapLayer, MapMode, RailOperationsConfig } from './types';
+import {
+  MapLayer,
+  MapMode,
+  RailControlPointType,
+  RailOperationsConfig,
+  RailTrainMarker,
+  TrackDirection,
+} from './types';
 
 /** Absent or unrecognized mode is always plain network mode. */
 export function normalizeMapMode(raw: unknown): MapMode {
   return raw === 'rail' ? 'rail' : 'network';
 }
+
+const CONTROL_POINT_TYPES: readonly RailControlPointType[] = [
+  'station',
+  'junction',
+  'interlocking',
+  'yard',
+  'terminal',
+  'depot',
+  'control_point',
+];
+
+const TRACK_DIRECTIONS: readonly TrackDirection[] = [
+  'eastbound',
+  'westbound',
+  'northbound',
+  'southbound',
+  'inbound',
+  'outbound',
+  'bidirectional',
+];
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -35,27 +66,54 @@ function asOptionalNumber(v: unknown): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 }
 
+/** Enum-like fields are coerced to a valid member, never cast (#300 review). */
+function asMember<T extends string>(v: unknown, valid: readonly T[], fallback: T): T {
+  return typeof v === 'string' && (valid as readonly string[]).includes(v) ? (v as T) : fallback;
+}
+
+function asOptionalMember<T extends string>(v: unknown, valid: readonly T[]): T | undefined {
+  return typeof v === 'string' && (valid as readonly string[]).includes(v) ? (v as T) : undefined;
+}
+
+type RawEntity = Record<string, unknown> & { id: string };
+
 /**
- * Coerce to an array of plain-object entries with a string id. Non-array
- * input becomes []; entries that are not objects are dropped (they cannot be
- * repaired); a missing/non-string id becomes '' so validation can report it.
+ * Coerce to an array of plain-object entries with a string id, then apply a
+ * per-entity repair producing the typed known fields. Non-array input becomes
+ * []; entries that are not objects are dropped (they cannot be repaired); a
+ * missing/non-string id becomes '' so validation can report it. Unknown extra
+ * fields are preserved. The spread-widening cast lives here, in exactly one
+ * place — repair() itself is fully type-checked against T.
  */
-function normalizeEntityArray<T extends { id: string }>(raw: unknown): T[] {
+function normalizeEntities<T extends { id: string }>(raw: unknown, repair: (entry: RawEntity) => Omit<T, 'id'>): T[] {
   if (!Array.isArray(raw)) {
     return [];
   }
-  return raw.filter(isRecord).map((entry) => ({ ...entry, id: asString(entry.id, '') })) as unknown as T[];
+  return raw.filter(isRecord).map((entry) => {
+    const id = asString(entry.id, '');
+    const repaired = repair({ ...entry, id }) as Record<string, unknown>;
+    const result: Record<string, unknown> = { ...entry, ...repaired, id };
+    // Optional fields repaired to undefined stay ABSENT: the saved garbage
+    // value is dropped and no present-but-undefined key flickers across
+    // normalize -> JSON round-trips.
+    for (const key of Object.keys(repaired)) {
+      if (repaired[key] === undefined) {
+        delete result[key];
+      }
+    }
+    return result as unknown as T;
+  });
 }
 
 /**
  * Coordinate pairs keep their (possibly non-finite) numeric values so
  * validation can report them; entries that are not 2-number arrays are
  * dropped. Renderer-side geometry (src/geometry/polyline.ts) independently
- * guards against non-finite coordinates.
+ * guards against non-finite coordinates via isFinitePoint.
  */
-function normalizePointArray(raw: unknown): Array<[number, number]> | undefined {
+function normalizePointArray(raw: unknown): Array<[number, number]> {
   if (!Array.isArray(raw)) {
-    return undefined;
+    return [];
   }
   return raw
     .filter((p) => Array.isArray(p) && p.length >= 2 && typeof p[0] === 'number' && typeof p[1] === 'number')
@@ -76,18 +134,22 @@ function normalizeStringArray(raw: unknown): string[] {
  */
 function normalizeLayers(raw: unknown): MapLayer[] {
   const defaults = createDefaultRailLayers();
-  const saved = Array.isArray(raw) ? raw.filter(isRecord) : [];
-  const repaired: MapLayer[] = saved
-    .map((l, i) => ({
-      id: asString(l.id, ''),
-      label: asString(l.label, asString(l.id, `Layer ${i + 1}`)),
+  // Entries without a usable id are dropped BEFORE indexing so positional
+  // zIndex fallbacks reflect the kept list, not the raw saved array.
+  const saved = (Array.isArray(raw) ? raw.filter(isRecord) : []).filter((l) => typeof l.id === 'string' && l.id !== '');
+  const repaired: MapLayer[] = saved.map((l, i) => {
+    const minZoom = asOptionalNumber(l.minZoom);
+    const maxZoom = asOptionalNumber(l.maxZoom);
+    return {
+      id: l.id as string,
+      label: asString(l.label, l.id as string),
       visible: typeof l.visible === 'boolean' ? l.visible : true,
       locked: typeof l.locked === 'boolean' ? l.locked : false,
       zIndex: asOptionalNumber(l.zIndex) ?? i,
-      ...(asOptionalNumber(l.minZoom) !== undefined ? { minZoom: asOptionalNumber(l.minZoom) } : {}),
-      ...(asOptionalNumber(l.maxZoom) !== undefined ? { maxZoom: asOptionalNumber(l.maxZoom) } : {}),
-    }))
-    .filter((l) => l.id !== '');
+      ...(minZoom !== undefined ? { minZoom } : {}),
+      ...(maxZoom !== undefined ? { maxZoom } : {}),
+    };
+  });
   const seen = new Set(repaired.map((l) => l.id));
   for (const def of defaults) {
     if (!seen.has(def.id)) {
@@ -104,52 +166,60 @@ function normalizeLayers(raw: unknown): MapLayer[] {
 export function normalizeRailConfig(raw: unknown): RailOperationsConfig {
   const source = isRecord(raw) ? raw : {};
   return {
-    controlPoints: normalizeEntityArray(source.controlPoints).map((cp: Record<string, unknown> & { id: string }) => ({
-      ...cp,
-      type: asString(cp.type, 'control_point'),
+    controlPoints: normalizeEntities(source.controlPoints, (cp) => ({
+      type: asMember(cp.type, CONTROL_POINT_TYPES, 'control_point'),
       label: asString(cp.label, ''),
-      position:
-        Array.isArray(cp.position) && typeof cp.position[0] === 'number' && typeof cp.position[1] === 'number'
-          ? ([cp.position[0], cp.position[1]] as [number, number])
-          : ([NaN, NaN] as [number, number]), // reported by validation, never rendered
-    })) as RailOperationsConfig['controlPoints'],
-    trackSegments: normalizeEntityArray(source.trackSegments).map(
-      (seg: Record<string, unknown> & { id: string }) => ({
-        ...seg,
-        fromControlPointId: asString(seg.fromControlPointId, ''),
-        toControlPointId: asString(seg.toControlPointId, ''),
-        trackNumber: asString(seg.trackNumber, ''),
-        direction: asString(seg.direction, 'bidirectional'),
-        ...(seg.viaPoints !== undefined ? { viaPoints: normalizePointArray(seg.viaPoints) } : {}),
-      })
-    ) as RailOperationsConfig['trackSegments'],
-    signals: normalizeEntityArray(source.signals).map((sig: Record<string, unknown> & { id: string }) => ({
-      ...sig,
+      position: isFinitePoint(cp.position)
+        ? ([cp.position[0], cp.position[1]] as [number, number])
+        : // Reported by validation (non-finite-position), never rendered.
+          ([NaN, NaN] as [number, number]),
+    })),
+    trackSegments: normalizeEntities(source.trackSegments, (seg) => ({
+      fromControlPointId: asString(seg.fromControlPointId, ''),
+      toControlPointId: asString(seg.toControlPointId, ''),
+      trackNumber: asString(seg.trackNumber, ''),
+      direction: asMember(seg.direction, TRACK_DIRECTIONS, 'bidirectional'),
+      // Non-array garbage resolves to undefined, which normalizeEntities
+      // strips — the key ends up absent rather than passed through.
+      viaPoints: Array.isArray(seg.viaPoints) ? normalizePointArray(seg.viaPoints) : undefined,
+    })),
+    signals: normalizeEntities(source.signals, (sig) => ({
       segmentId: asString(sig.segmentId, ''),
       positionPercent: typeof sig.positionPercent === 'number' ? sig.positionPercent : NaN,
-      facingDirection: asString(sig.facingDirection, 'bidirectional'),
-    })) as RailOperationsConfig['signals'],
-    switches: normalizeEntityArray(source.switches).map((sw: Record<string, unknown> & { id: string }) => ({
-      ...sw,
+      facingDirection: asMember(sig.facingDirection, TRACK_DIRECTIONS, 'bidirectional'),
+    })),
+    switches: normalizeEntities(source.switches, (sw) => ({
       normalSegmentId: asString(sw.normalSegmentId, ''),
       reverseSegmentId: asString(sw.reverseSegmentId, ''),
       controlPointId: asOptionalString(sw.controlPointId),
-    })) as RailOperationsConfig['switches'],
-    crossovers: normalizeEntityArray(source.crossovers).map((co: Record<string, unknown> & { id: string }) => ({
-      ...co,
+    })),
+    crossovers: normalizeEntities(source.crossovers, (co) => ({
       trackSegmentIds: normalizeStringArray(co.trackSegmentIds),
-      geometry: co.geometry === 'double' || co.geometry === 'scissors' ? co.geometry : 'single',
-    })) as RailOperationsConfig['crossovers'],
-    trains: normalizeEntityArray(source.trains) as RailOperationsConfig['trains'],
-    routes: normalizeEntityArray(source.routes).map((r: Record<string, unknown> & { id: string }) => ({
-      ...r,
+      geometry: co.geometry === 'double' || co.geometry === 'scissors' ? co.geometry : ('single' as const),
+    })),
+    trains: normalizeEntities<RailTrainMarker>(source.trains, (train) => ({
+      label: asOptionalString(train.label),
+      labelQuery: asOptionalString(train.labelQuery),
+      segmentId: asOptionalString(train.segmentId),
+      segmentQuery: asOptionalString(train.segmentQuery),
+      progress: typeof train.progress === 'number' ? train.progress : undefined,
+      progressQuery: asOptionalString(train.progressQuery),
+      direction: asOptionalMember(train.direction, TRACK_DIRECTIONS),
+      directionQuery: asOptionalString(train.directionQuery),
+      speedQuery: asOptionalString(train.speedQuery),
+      delayQuery: asOptionalString(train.delayQuery),
+      destinationQuery: asOptionalString(train.destinationQuery),
+      statusQuery: asOptionalString(train.statusQuery),
+      staleQuery: asOptionalString(train.staleQuery),
+      dashboardLink: asOptionalString(train.dashboardLink),
+    })),
+    routes: normalizeEntities(source.routes, (r) => ({
       segmentIds: normalizeStringArray(r.segmentIds),
-    })) as RailOperationsConfig['routes'],
-    incidents: normalizeEntityArray(source.incidents).map((inc: Record<string, unknown> & { id: string }) => ({
-      ...inc,
-      kind: inc.kind === 'maintenance' || inc.kind === 'possession' ? inc.kind : 'incident',
+    })),
+    incidents: normalizeEntities(source.incidents, (inc) => ({
+      kind: inc.kind === 'maintenance' || inc.kind === 'possession' ? inc.kind : ('incident' as const),
       segmentIds: normalizeStringArray(inc.segmentIds),
-    })) as RailOperationsConfig['incidents'],
+    })),
     layers: normalizeLayers(source.layers),
   };
 }

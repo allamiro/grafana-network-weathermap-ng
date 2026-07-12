@@ -86,6 +86,31 @@ describe('validateRailTopology', () => {
     expect(result).toContainEqual(expect.objectContaining({ code: 'duplicate-track-identity', severity: 'warning' }));
   });
 
+  it('does not confuse identities whose free-form fields contain delimiter characters', () => {
+    // blockId 'B|1' + track '2' vs blockId 'B' + track '1|2' are DISTINCT
+    // identities; a string-concatenated grouping key would collide them.
+    const result = validateRailTopology(
+      base({
+        trackSegments: [
+          seg('t1', 'a', 'b', { blockId: 'B|1', trackNumber: '2' }),
+          seg('t2', 'a', 'b', { blockId: 'B', trackNumber: '1|2' }),
+        ],
+      })
+    );
+    expect(result.filter((i) => i.code === 'duplicate-track-identity')).toEqual([]);
+  });
+
+  it('never throws even when handed raw un-normalized saved JSON', () => {
+    const raw = {
+      controlPoints: 'garbage',
+      trackSegments: [{ id: 't' }],
+      crossovers: [{ id: 'c' }], // no trackSegmentIds at all
+      layers: null,
+    } as unknown as RailOperationsConfig;
+    expect(() => validateRailTopology(raw)).not.toThrow();
+    expect(validateRailTopology(raw).length).toBeGreaterThan(0);
+  });
+
   it('reports signals with missing segments or out-of-range positions', () => {
     const result = validateRailTopology(
       base({

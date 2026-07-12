@@ -1,38 +1,12 @@
 // Rail Operations mode editor entry points (#300), Phase 1: the mode selector
 // and the one-click baseline background preset. Rail rendering ships later —
 // these tests pin the schema-level editor behavior.
-import React, { useState } from 'react';
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { StandardEditorProps } from '@grafana/data';
-import { PanelForm } from './PanelForm';
-import { Weathermap } from 'types';
 import { getData, theme } from '../testData';
 import { RAIL_BASELINE_BACKGROUND_URL } from '../rail/defaults';
 import { isSafeUrl } from 'utils';
-
-const deepFreeze = <T,>(o: T): T => {
-  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-    Object.freeze(o);
-  }
-  return o;
-};
-
-const Harness = ({ initial, onChangeSpy }: { initial: Weathermap; onChangeSpy: jest.Mock }) => {
-  const [wm, setWm] = useState(initial);
-  const props = {
-    value: deepFreeze(wm),
-    onChange: (v: Weathermap) => {
-      onChangeSpy(v);
-      setWm(v);
-    },
-    context: { data: [] },
-    item: { settings: { placeholder: '' } },
-  } as unknown as StandardEditorProps<Weathermap, { placeholder: string }>;
-  return <PanelForm {...props} />;
-};
-
-const lastValue = (spy: jest.Mock): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+import { Harness, lastValue } from './panelFormTestHarness';
 
 const selectMode = (mode: 'Network' | 'Rail (experimental)') => {
   const select = screen.getByTestId('nwm-map-mode');
@@ -94,5 +68,18 @@ describe('rail operations editor entry (#300)', () => {
     fireEvent.click(screen.getByTestId('nwm-rail-baseline'));
     expect(lastValue(spy).settings.panel.backgroundImage!.url).toBe(RAIL_BASELINE_BACKGROUND_URL);
     confirmSpy.mockRestore();
+  });
+
+  test('re-clicking with the baseline already loaded preserves customized fit and attach settings', () => {
+    const initial = getData(theme);
+    initial.mapMode = 'rail';
+    // User loaded the baseline earlier, then customized fit/attach via the
+    // background controls; the button must not silently reset them.
+    initial.settings.panel.backgroundImage = { url: RAIL_BASELINE_BACKGROUND_URL, fit: 'cover', attachToCanvas: false };
+    const spy = jest.fn();
+    render(<Harness initial={initial} onChangeSpy={spy} />);
+
+    fireEvent.click(screen.getByTestId('nwm-rail-baseline'));
+    expect(spy).not.toHaveBeenCalled();
   });
 });

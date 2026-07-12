@@ -105,6 +105,41 @@ describe('normalizeRailConfig', () => {
     ]);
   });
 
+  it('omits the viaPoints key entirely when the saved value is not an array', () => {
+    const config = normalizeRailConfig({
+      trackSegments: [{ id: 'seg-1', fromControlPointId: 'a', toControlPointId: 'b', viaPoints: 'garbage' }],
+    });
+    expect('viaPoints' in config.trackSegments[0]).toBe(false);
+  });
+
+  it('coerces enum-like fields to valid members instead of casting garbage through', () => {
+    const config = normalizeRailConfig({
+      controlPoints: [{ id: 'cp-1', type: 'stn', position: [1, 2], label: 'A' }],
+      trackSegments: [{ id: 't1', fromControlPointId: 'a', toControlPointId: 'b', direction: 'up' }],
+      signals: [{ id: 's1', segmentId: 't1', positionPercent: 0.5, facingDirection: 42 }],
+    });
+    expect(config.controlPoints[0].type).toBe('control_point');
+    expect(config.trackSegments[0].direction).toBe('bidirectional');
+    expect(config.signals[0].facingDirection).toBe('bidirectional');
+  });
+
+  it('repairs train marker fields like every other collection', () => {
+    const config = normalizeRailConfig({
+      trains: [
+        { id: 'rd-1', label: {}, progress: '0.5', direction: 7, segmentId: 42, speedQuery: 'train speed' },
+        { id: 'rd-2', segmentId: 't1', progress: 0.63, direction: 'eastbound' },
+      ],
+    });
+    // Garbage-valued optional fields are dropped, not cast through.
+    expect('label' in config.trains[0]).toBe(false);
+    expect('progress' in config.trains[0]).toBe(false);
+    expect('direction' in config.trains[0]).toBe(false);
+    expect('segmentId' in config.trains[0]).toBe(false);
+    expect(config.trains[0].speedQuery).toBe('train speed');
+    // Valid fields survive untouched.
+    expect(config.trains[1]).toEqual({ id: 'rd-2', segmentId: 't1', progress: 0.63, direction: 'eastbound' });
+  });
+
   it('repairs control point positions to a reportable non-finite pair', () => {
     const config = normalizeRailConfig({
       controlPoints: [{ id: 'cp-1', label: 'A' }, { id: 'cp-2', label: 'B', position: [5, 6] }],

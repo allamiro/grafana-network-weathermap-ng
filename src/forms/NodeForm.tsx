@@ -33,7 +33,7 @@ import {
   VendorIcons,
   CloudIcons,
 } from './iconOptions';
-import { finiteOrFallback, getDataFrameName, sanitizeUrl } from 'utils';
+import { finiteOrFallback, getDataFrameName, PLUGIN_ASSET_BASE, sanitizeUrl } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -136,7 +136,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
       };
     } else {
       weathermap.nodes[i].nodeIcon!.src =
-        icon === 'custom_icon' ? '' : 'public/plugins/tamirsuliman-weathermap-panel/icons/' + icon + '.svg';
+        icon === 'custom_icon' ? '' : `${PLUGIN_ASSET_BASE}/icons/` + icon + '.svg';
       weathermap.nodes[i].nodeIcon!.name = icon;
 
       if (weathermap.nodes[i].nodeIcon!.size.width === 0) {
