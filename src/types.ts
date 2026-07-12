@@ -1,4 +1,5 @@
 import { DataFrame } from '@grafana/data';
+import { MapMode, RailOperationsConfig } from './rail/types';
 
 export interface PanelOptions {
   backgroundColor: string;
@@ -336,6 +337,13 @@ export interface Weathermap {
   links: Link[];
   scale: Threshold[];
   settings: WeathermapSettings;
+  // Rail Operations mode (#300). Both fields optional, same contract as
+  // settings.animation: absent mapMode means 'network' and an absent rail
+  // block means the feature is entirely off, so pre-existing maps are
+  // untouched and no migration is required. Monitoring-only — rail objects
+  // visualize read-only telemetry and never issue control commands.
+  mapMode?: MapMode;
+  rail?: RailOperationsConfig;
 }
 
 export interface SimpleOptions {
