@@ -1,20 +1,32 @@
 /**
- * Rail Operations root layer (#300, Phase 2). A self-contained SVG <g>
+ * Rail Operations root layer (#300, Phases 2-3). A self-contained SVG <g>
  * rendered inside the panel's pan/zoom transform group, so the baseline
  * background (attachToCanvas), zoom, pan, and SVG export all apply for free.
  *
  * Monitoring-only: everything here visualizes read-only telemetry. Renders
- * control points and physical track segments with layer visibility, zoom
- * gating, categorical states, tooltips, and drill-downs. Signals, switches,
- * crossovers, routes, and trains arrive in later phases.
+ * control points, physical track segments, signals, switches, crossovers,
+ * and route/incident overlays with layer visibility, zoom gating,
+ * categorical states, tooltips, and drill-downs. Trains arrive in Phase 4.
  */
 import React, { useMemo } from 'react';
 import { MeasuredPolyline } from '../../geometry/polyline';
 import { buildControlPointIndex, measureSegment } from '../geometry';
-import { RAIL_LAYER_IDS } from '../defaults';
-import { resolveRailQuery, resolveSegmentState, statusDefault } from '../queries';
-import { MapLayer, RailOperationsConfig } from '../types';
-import { RailControlPointGlyph, RailHoverTarget } from './RailControlPoint';
+import { createDefaultRailLayers, RAIL_LAYER_IDS } from '../defaults';
+import {
+  availabilityDefault,
+  overlayActive,
+  resolveRailQuery,
+  resolveSegmentState,
+  resolveSignalState,
+  resolveSwitchState,
+  statusDefault,
+} from '../queries';
+import { MapLayer, RailHoverTarget, RailOperationsConfig, RailTrackSegment } from '../types';
+import { RailControlPointGlyph } from './RailControlPoint';
+import { RailCrossoverGlyph } from './RailCrossover';
+import { RailIncidentOverlayGlyph, RailRouteOverlay } from './RailOverlays';
+import { RailSignalGlyph } from './RailSignal';
+import { RailSwitchGlyph } from './RailSwitch';
 import { RailTrackSegmentLine } from './RailTrackSegment';
 
 export interface RailLayerProps {
@@ -57,6 +69,15 @@ export const railLayerVisible = (layer: MapLayer | undefined, zoomScale: number,
   return true;
 };
 
+/** Canonical paint order fallback for layers missing from a saved config. */
+const DEFAULT_LAYER_ORDER = new Map(createDefaultRailLayers().map((l, i) => [l.id, i]));
+
+/** Sort entities by zIndex, keeping each entry's ORIGINAL index for stable keys. */
+const byZIndexIndexed = <T extends { zIndex?: number }>(entities: T[]): Array<{ entity: T; index: number }> =>
+  entities
+    .map((entity, index) => ({ entity, index }))
+    .sort((a, b) => (a.entity.zIndex ?? 0) - (b.entity.zIndex ?? 0) || a.index - b.index);
+
 export const RailLayer = ({
   config,
   frameMap,
@@ -72,40 +93,58 @@ export const RailLayer = ({
   // Static geometry: recomputed only when the rail config object changes
   // (normalizeWeathermap output is memoized upstream), not per data refresh.
   const controlPointIndex = useMemo(() => buildControlPointIndex(config.controlPoints), [config.controlPoints]);
+  // Per-index measurement: every segment renders its OWN geometry even when
+  // ids are missing ('' after normalization) or duplicated — id collisions
+  // must not make one track silently draw another's polyline.
+  const measuredByIndex = useMemo(
+    () => config.trackSegments.map((segment) => measureSegment(segment, controlPointIndex)),
+    [config.trackSegments, controlPointIndex]
+  );
+  // Reference lookups (signals/switches/crossovers/overlays) resolve by id,
+  // first occurrence wins — the same rule as buildControlPointIndex and the
+  // duplicate-id validation report.
   const measuredSegments = useMemo(() => {
     const measured = new Map<string, MeasuredPolyline>();
-    for (const segment of config.trackSegments) {
-      const m = measureSegment(segment, controlPointIndex);
-      if (m) {
+    config.trackSegments.forEach((segment, i) => {
+      const m = measuredByIndex[i];
+      if (m && segment.id && !measured.has(segment.id)) {
         measured.set(segment.id, m);
       }
       // Dangling/degenerate segments are skipped; validation reports them.
-    }
+    });
     return measured;
-  }, [config.trackSegments, controlPointIndex]);
+  }, [config.trackSegments, measuredByIndex]);
+  const segmentById = useMemo(() => {
+    const map = new Map<string, RailTrackSegment>();
+    for (const s of config.trackSegments) {
+      if (s.id && !map.has(s.id)) {
+        map.set(s.id, s);
+      }
+    }
+    return map;
+  }, [config.trackSegments]);
 
   const layerById = useMemo(() => new Map(config.layers.map((l) => [l.id, l])), [config.layers]);
   const visible = (layerId: string) => railLayerVisible(layerById.get(layerId), zoomScale, isEditMode);
-
-  const tracksVisible = visible(RAIL_LAYER_IDS.tracks);
-  const controlPointsVisible = visible(RAIL_LAYER_IDS.controlPoints);
   const labelsVisible = visible(RAIL_LAYER_IDS.labels);
 
-  const byZIndex = <T extends { zIndex?: number }>(entities: T[]): T[] =>
-    [...entities].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+  // Each populated layer becomes one <g>, painted in layer zIndex order so a
+  // user-reordered layer stack is honored (canonical order as fallback).
+  const layerGroups: Array<{ layerId: string; render: () => JSX.Element }> = [];
 
-  return (
-    <g data-testid="rail-layer">
-      {tracksVisible ? (
-        <g data-testid="rail-tracks-layer">
-          {byZIndex(config.trackSegments).map((segment) => {
-            const measured = measuredSegments.get(segment.id);
+  if (visible(RAIL_LAYER_IDS.tracks)) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.tracks,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.tracks} data-testid="rail-tracks-layer">
+          {byZIndexIndexed(config.trackSegments).map(({ entity: segment, index }) => {
+            const measured = measuredByIndex[index];
             if (!measured) {
               return null;
             }
             return (
               <RailTrackSegmentLine
-                key={segment.id || `segment-${config.trackSegments.indexOf(segment)}`}
+                key={`${segment.id || 'segment'}-${index}`}
                 segment={segment}
                 measured={measured}
                 state={resolveSegmentState(segment, frameMap)}
@@ -118,28 +157,154 @@ export const RailLayer = ({
             );
           })}
         </g>
-      ) : null}
-      {controlPointsVisible ? (
-        <g data-testid="rail-control-points-layer">
-          {byZIndex(config.controlPoints).map((cp, i) => (
+      ),
+    });
+  }
+
+  if (visible(RAIL_LAYER_IDS.routes) && config.routes.length > 0) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.routes,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.routes} data-testid="rail-routes-layer">
+          {byZIndexIndexed(config.routes).map(({ entity: route, index }) =>
+            overlayActive(route.stateQuery, frameMap) ? (
+              <RailRouteOverlay
+                key={`${route.id || 'route'}-${index}`}
+                route={route}
+                measuredSegments={measuredSegments}
+                onHover={onHover}
+                onHoverLoss={onHoverLoss}
+              />
+            ) : null
+          )}
+        </g>
+      ),
+    });
+  }
+
+  if (visible(RAIL_LAYER_IDS.incidents) && config.incidents.length > 0) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.incidents,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.incidents} data-testid="rail-incidents-layer">
+          {byZIndexIndexed(config.incidents).map(({ entity: incident, index }) =>
+            overlayActive(incident.stateQuery, frameMap) ? (
+              <RailIncidentOverlayGlyph
+                key={`${incident.id || 'incident'}-${index}`}
+                incident={incident}
+                measuredSegments={measuredSegments}
+                labelColor={labelColor}
+                onHover={onHover}
+                onHoverLoss={onHoverLoss}
+              />
+            ) : null
+          )}
+        </g>
+      ),
+    });
+  }
+
+  if (visible(RAIL_LAYER_IDS.switches) && (config.switches.length > 0 || config.crossovers.length > 0)) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.switches,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.switches} data-testid="rail-switches-layer">
+          {byZIndexIndexed(config.crossovers).map(({ entity: crossover, index }) => (
+            <RailCrossoverGlyph
+              key={`${crossover.id || 'crossover'}-${index}`}
+              crossover={crossover}
+              measuredSegments={measuredSegments}
+              state={
+                resolveRailQuery(crossover.stateQuery, undefined, frameMap, availabilityDefault) ?? {
+                  state: 'normal',
+                  color: neutralColor,
+                }
+              }
+              onHover={onHover}
+              onHoverLoss={onHoverLoss}
+            />
+          ))}
+          {byZIndexIndexed(config.switches).map(({ entity: railSwitch, index }) => (
+            <RailSwitchGlyph
+              key={`${railSwitch.id || 'switch'}-${index}`}
+              railSwitch={railSwitch}
+              normalSegment={segmentById.get(railSwitch.normalSegmentId)}
+              reverseSegment={segmentById.get(railSwitch.reverseSegmentId)}
+              measuredSegments={measuredSegments}
+              controlPointIndex={controlPointIndex}
+              state={resolveSwitchState(railSwitch, frameMap)}
+              labelColor={labelColor}
+              onHover={onHover}
+              onHoverLoss={onHoverLoss}
+            />
+          ))}
+        </g>
+      ),
+    });
+  }
+
+  if (visible(RAIL_LAYER_IDS.signals) && config.signals.length > 0) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.signals,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.signals} data-testid="rail-signals-layer">
+          {byZIndexIndexed(config.signals).map(({ entity: signal, index }) => {
+            const measured = signal.segmentId ? measuredSegments.get(signal.segmentId) : undefined;
+            if (!measured) {
+              return null;
+            }
+            return (
+              <RailSignalGlyph
+                key={`${signal.id || 'signal'}-${index}`}
+                signal={signal}
+                measured={measured}
+                state={resolveSignalState(signal, frameMap)}
+                labelColor={labelColor}
+                onHover={onHover}
+                onHoverLoss={onHoverLoss}
+              />
+            );
+          })}
+        </g>
+      ),
+    });
+  }
+
+  if (visible(RAIL_LAYER_IDS.controlPoints)) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.controlPoints,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.controlPoints} data-testid="rail-control-points-layer">
+          {byZIndexIndexed(config.controlPoints).map(({ entity: cp, index }) => (
             <RailControlPointGlyph
-              key={cp.id || `cp-${i}`}
+              key={`${cp.id || 'cp'}-${index}`}
               controlPoint={cp}
               state={resolveRailQuery(cp.statusQuery, undefined, frameMap, statusDefault)}
               fontSize={fontSizing.node}
               showLabel={labelsVisible}
               neutralColor={neutralColor}
               labelColor={labelColor}
+              allowDrillDown={!isEditMode}
               onHover={onHover}
               onHoverLoss={onHoverLoss}
               onDrillDown={onDrillDown}
             />
           ))}
         </g>
-      ) : null}
+      ),
+    });
+  }
+
+  const layerOrder = (layerId: string) =>
+    layerById.get(layerId)?.zIndex ?? DEFAULT_LAYER_ORDER.get(layerId) ?? 0;
+  layerGroups.sort((a, b) => layerOrder(a.layerId) - layerOrder(b.layerId));
+
+  return (
+    <g data-testid="rail-layer">
+      {layerGroups.map((group) => group.render())}
       {/* The editor-guides layer gates baseline alignment helpers; the
           bundled background SVG carries the actual guide artwork, so nothing
-          renders here yet. Signals/switches/trains: Phases 3-4. */}
+          renders here yet. Trains: Phase 4. */}
     </g>
   );
 };

@@ -895,6 +895,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // positioning conventions but carry categorical rail state lines.
   const [hoveredRail, setHoveredRail] = useState<(RailHoverTarget & { mouseX: number; mouseY: number }) | null>(null);
   const handleRailHover = (target: RailHoverTarget, e: React.MouseEvent<SVGElement>) => {
+    // Same shift-drag suppression as node/link hover: tooltips stay out of
+    // the way while the user pans.
+    if (e.shiftKey) {
+      setHoveredRail(null);
+      return;
+    }
     let mouseX = e.clientX;
     let mouseY = e.clientY;
     if (wrapperRef.current) {
@@ -905,6 +911,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     setHoveredRail({ ...target, mouseX, mouseY });
   };
   const handleRailHoverLoss = () => setHoveredRail(null);
+
+  // Hover targets unmount without a mouseout when the mode flips or a layer
+  // hides, so mode changes clear the cross-mode tooltips explicitly.
+  useEffect(() => {
+    if (isRailMode) {
+      setHoveredNode(null as unknown as HoveredNode);
+      setHoveredLink(null as unknown as HoveredLink);
+    } else {
+      setHoveredRail(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRailMode]);
 
   const handleNodeHover = (d: DrawnNode, e: React.MouseEvent<SVGElement>) => {
     // Only show a tooltip when the node actually has metrics configured, and
@@ -1006,6 +1024,21 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   })();
 
   if (wm) {
+    // Shared hover-tooltip positioning (mouse anchor, edge flip, tooltip
+    // colors) used by both the node and rail tooltips so their placement
+    // heuristics cannot drift apart.
+    const hoverTooltipPositionCss = (mouseX: number, mouseY: number) => css`
+      position: absolute;
+      top: ${mouseY - 10}px;
+      left: ${mouseX + 14}px;
+      transform: translate(${mouseX > width2 * 0.65 ? '-100%' : '0%'}, ${mouseY < 120 ? '0%' : '-100%'});
+      pointer-events: none;
+      background-color: ${wm.settings.tooltip.backgroundColor};
+      color: ${wm.settings.tooltip.textColor} !important;
+      font-size: ${wm.settings.tooltip.fontSize}px !important;
+      z-index: 10000;
+    `;
+
     // Whether traffic-flow particles/down-markers are actually being painted
     // this render — the same gates the particle layer applies below. The
     // built-in legend keys off this so it never advertises "moving dots" while
@@ -1274,22 +1307,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         {hoveredRail ? (
           <div
             data-testid="weathermap-rail-tooltip"
-            className={css`
-              position: absolute;
-              top: ${hoveredRail.mouseY - 10}px;
-              left: ${hoveredRail.mouseX + 14}px;
-              transform: translate(
-                ${hoveredRail.mouseX > width2 * 0.65 ? '-100%' : '0%'},
-                ${hoveredRail.mouseY < 120 ? '0%' : '-100%'}
-              );
-              pointer-events: none;
-              background-color: ${wm.settings.tooltip.backgroundColor};
-              color: ${wm.settings.tooltip.textColor} !important;
-              font-size: ${wm.settings.tooltip.fontSize}px !important;
-              z-index: 10000;
-              padding: 6px 8px;
-              border-radius: 4px;
-            `}
+            className={cx(
+              hoverTooltipPositionCss(hoveredRail.mouseX, hoveredRail.mouseY),
+              css`
+                padding: 6px 8px;
+                border-radius: 4px;
+              `
+            )}
           >
             <strong>{hoveredRail.title}</strong>
             {hoveredRail.lines.map((line, i) => (
@@ -1300,25 +1324,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         {hoveredNode && hoveredNode.node.tooltipMetrics && hoveredNode.node.tooltipMetrics.length > 0 ? (
           <div
             data-testid="weathermap-node-tooltip"
-            className={css`
-              position: absolute;
-              top: ${hoveredNode.mouseY - 10}px;
-              left: ${hoveredNode.mouseX + 14}px;
-              transform: translate(
-                ${hoveredNode.mouseX > width2 * 0.65 ? '-100%' : '0%'},
-                ${hoveredNode.mouseY < 120 ? '0%' : '-100%'}
-              );
-              pointer-events: none;
-              background-color: ${wm.settings.tooltip.backgroundColor};
-              color: ${wm.settings.tooltip.textColor} !important;
-              font-size: ${wm.settings.tooltip.fontSize} !important;
-              z-index: 10000;
-              display: flex;
-              flex-direction: column;
-              padding: ${wm.settings.tooltip.fontSize}px;
-              border-radius: 4px;
-              border: 1px solid ${theme.colors.border.medium};
-            `}
+            className={cx(
+              hoverTooltipPositionCss(hoveredNode.mouseX, hoveredNode.mouseY),
+              css`
+                display: flex;
+                flex-direction: column;
+                padding: ${wm.settings.tooltip.fontSize}px;
+                border-radius: 4px;
+                border: 1px solid ${theme.colors.border.medium};
+              `
+            )}
           >
             <div
               style={{
@@ -1350,14 +1365,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         ) : (
           ''
         )}
-        <ColorScale thresholds={wm.scale} settings={wm.settings} />
+        {/* The utilization scale legend is bandwidth-percentage semantics —
+            meaningless (and misleading) against rail's categorical states. */}
+        {!isRailMode ? <ColorScale thresholds={wm.scale} settings={wm.settings} /> : null}
         {/*
           Built-in animation legend (#273): explains the animation glyphs and
           renders ONLY while animation is active on this panel, so maps
           without animation never show it (and it cannot be confused with the
           utilization scale).
         */}
-        {(wm.settings.animation?.showLegend ?? true) && animationActive ? (
+        {!isRailMode && (wm.settings.animation?.showLegend ?? true) && animationActive ? (
           <div
             className={css`
               position: absolute;
@@ -1463,6 +1480,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 : wm.settings.panel.backgroundColor,
           }}
           id={`nw-${wm.id}${isEditMode ? '_' : ''}`}
+          onMouseLeave={() => setHoveredRail(null)}
           width={width2}
           height={height2}
           xmlns="http://www.w3.org/2000/svg"

@@ -13,9 +13,8 @@ import {
   getTangentAtProgressMeasured,
   MeasuredPolyline,
 } from '../../geometry/polyline';
-import { RailTrackSegment as RailTrackSegmentModel } from '../types';
+import { RailEntityState, RailHoverTarget, RailTrackSegment as RailTrackSegmentModel } from '../types';
 import { ResolvedRailState } from '../queries';
-import { RailHoverTarget } from './RailControlPoint';
 
 interface Props {
   segment: RailTrackSegmentModel;
@@ -29,8 +28,16 @@ interface Props {
 }
 
 const DEFAULT_STROKE = 4;
-/** States rendered with a dashed pattern in addition to their color. */
-const DASHED_STATES = new Set(['blocked', 'failed', 'maintenance', 'stale', 'unknown', 'no_data']);
+/** States rendered with a dashed pattern in addition to their color. Typed
+ * against the state union so a renamed member cannot silently lose its dash. */
+const DASHED_STATES: ReadonlySet<RailEntityState> = new Set<RailEntityState>([
+  'blocked',
+  'failed',
+  'maintenance',
+  'stale',
+  'unknown',
+  'no_data',
+]);
 const CHEVRON_POSITIONS = [0.25, 0.5, 0.75];
 
 export const RailTrackSegmentLine = ({

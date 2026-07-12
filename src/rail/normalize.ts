@@ -20,8 +20,10 @@ import {
   MapLayer,
   MapMode,
   RailControlPointType,
+  RailEntityState,
   RailOperationsConfig,
   RailTrainMarker,
+  RailValueMapping,
   TrackDirection,
 } from './types';
 
@@ -127,6 +129,49 @@ function normalizeStringArray(raw: unknown): string[] {
   return raw.filter((v): v is string => typeof v === 'string');
 }
 
+const ENTITY_STATES: readonly RailEntityState[] = [
+  'normal',
+  'clear',
+  'occupied',
+  'approach',
+  'stop',
+  'caution',
+  'blocked',
+  'degraded',
+  'maintenance',
+  'failed',
+  'stale',
+  'unknown',
+  'no_data',
+];
+
+/**
+ * Value mappings are dereferenced at render time (state resolution), so
+ * garbage here could crash the panel. Non-array input strips the key;
+ * entries must be objects with a usable value and a valid state; color and
+ * label survive only as strings.
+ */
+function normalizeValueMappings(raw: unknown): RailValueMapping[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  return raw.filter(isRecord).flatMap((m): RailValueMapping[] => {
+    const value = typeof m.value === 'number' || (typeof m.value === 'string' && m.value !== '') ? m.value : undefined;
+    const state = asOptionalMember(m.state, ENTITY_STATES);
+    if (value === undefined || state === undefined) {
+      return [];
+    }
+    return [
+      {
+        value,
+        state,
+        ...(typeof m.color === 'string' ? { color: m.color } : {}),
+        ...(typeof m.label === 'string' ? { label: m.label } : {}),
+      },
+    ];
+  });
+}
+
 /**
  * Layers: keep the user's saved layer states, repair each entry, and append
  * any missing default layers so renderers can rely on the well-known set
@@ -173,6 +218,10 @@ export function normalizeRailConfig(raw: unknown): RailOperationsConfig {
         ? ([cp.position[0], cp.position[1]] as [number, number])
         : // Reported by validation (non-finite-position), never rendered.
           ([NaN, NaN] as [number, number]),
+      shortLabel: asOptionalString(cp.shortLabel),
+      statusQuery: asOptionalString(cp.statusQuery),
+      dashboardLink: asOptionalString(cp.dashboardLink),
+      zIndex: asOptionalNumber(cp.zIndex),
     })),
     trackSegments: normalizeEntities(source.trackSegments, (seg) => ({
       fromControlPointId: asString(seg.fromControlPointId, ''),
@@ -182,20 +231,42 @@ export function normalizeRailConfig(raw: unknown): RailOperationsConfig {
       // Non-array garbage resolves to undefined, which normalizeEntities
       // strips — the key ends up absent rather than passed through.
       viaPoints: Array.isArray(seg.viaPoints) ? normalizePointArray(seg.viaPoints) : undefined,
+      blockId: asOptionalString(seg.blockId),
+      occupancyQuery: asOptionalString(seg.occupancyQuery),
+      availabilityQuery: asOptionalString(seg.availabilityQuery),
+      statusQuery: asOptionalString(seg.statusQuery),
+      valueMappings: normalizeValueMappings(seg.valueMappings),
+      strokeWidth: asOptionalNumber(seg.strokeWidth),
+      showLabel: typeof seg.showLabel === 'boolean' ? seg.showLabel : undefined,
+      zIndex: asOptionalNumber(seg.zIndex),
     })),
     signals: normalizeEntities(source.signals, (sig) => ({
       segmentId: asString(sig.segmentId, ''),
       positionPercent: typeof sig.positionPercent === 'number' ? sig.positionPercent : NaN,
       facingDirection: asMember(sig.facingDirection, TRACK_DIRECTIONS, 'bidirectional'),
+      stateQuery: asOptionalString(sig.stateQuery),
+      healthQuery: asOptionalString(sig.healthQuery),
+      valueMappings: normalizeValueMappings(sig.valueMappings),
+      label: asOptionalString(sig.label),
+      zIndex: asOptionalNumber(sig.zIndex),
     })),
     switches: normalizeEntities(source.switches, (sw) => ({
       normalSegmentId: asString(sw.normalSegmentId, ''),
       reverseSegmentId: asString(sw.reverseSegmentId, ''),
       controlPointId: asOptionalString(sw.controlPointId),
+      positionQuery: asOptionalString(sw.positionQuery),
+      detectedQuery: asOptionalString(sw.detectedQuery),
+      lockedQuery: asOptionalString(sw.lockedQuery),
+      healthQuery: asOptionalString(sw.healthQuery),
+      label: asOptionalString(sw.label),
+      zIndex: asOptionalNumber(sw.zIndex),
     })),
     crossovers: normalizeEntities(source.crossovers, (co) => ({
       trackSegmentIds: normalizeStringArray(co.trackSegmentIds),
       geometry: co.geometry === 'double' || co.geometry === 'scissors' ? co.geometry : ('single' as const),
+      stateQuery: asOptionalString(co.stateQuery),
+      label: asOptionalString(co.label),
+      zIndex: asOptionalNumber(co.zIndex),
     })),
     trains: normalizeEntities<RailTrainMarker>(source.trains, (train) => ({
       label: asOptionalString(train.label),
@@ -215,10 +286,17 @@ export function normalizeRailConfig(raw: unknown): RailOperationsConfig {
     })),
     routes: normalizeEntities(source.routes, (r) => ({
       segmentIds: normalizeStringArray(r.segmentIds),
+      label: asOptionalString(r.label),
+      stateQuery: asOptionalString(r.stateQuery),
+      color: asOptionalString(r.color),
+      zIndex: asOptionalNumber(r.zIndex),
     })),
     incidents: normalizeEntities(source.incidents, (inc) => ({
       kind: inc.kind === 'maintenance' || inc.kind === 'possession' ? inc.kind : ('incident' as const),
       segmentIds: normalizeStringArray(inc.segmentIds),
+      label: asOptionalString(inc.label),
+      stateQuery: asOptionalString(inc.stateQuery),
+      zIndex: asOptionalNumber(inc.zIndex),
     })),
     layers: normalizeLayers(source.layers),
   };

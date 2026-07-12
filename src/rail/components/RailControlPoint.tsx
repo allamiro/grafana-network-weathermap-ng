@@ -6,13 +6,11 @@
  * dashboard, nothing more.
  */
 import React from 'react';
-import { RailControlPoint as RailControlPointModel } from '../types';
+import { RailControlPoint as RailControlPointModel, RailHoverTarget } from '../types';
 import { ResolvedRailState } from '../queries';
 
-export interface RailHoverTarget {
-  title: string;
-  lines: string[];
-}
+// Re-export for existing importers; the contract lives in ../types.
+export type { RailHoverTarget };
 
 interface Props {
   controlPoint: RailControlPointModel;
@@ -21,6 +19,8 @@ interface Props {
   showLabel: boolean;
   neutralColor: string;
   labelColor: string;
+  /** Drill-downs are disabled in the panel editor, matching node/link behavior. */
+  allowDrillDown: boolean;
   onHover: (target: RailHoverTarget, e: React.MouseEvent<SVGElement>) => void;
   onHoverLoss: (e: React.MouseEvent<SVGElement>) => void;
   onDrillDown: (rawLink: string) => void;
@@ -35,6 +35,7 @@ export const RailControlPointGlyph = ({
   showLabel,
   neutralColor,
   labelColor,
+  allowDrillDown,
   onHover,
   onHoverLoss,
   onDrillDown,
@@ -55,11 +56,12 @@ export const RailControlPointGlyph = ({
     ],
   };
 
+  const drillDown = allowDrillDown && controlPoint.dashboardLink;
   const interactionProps = {
     onMouseMove: (e: React.MouseEvent<SVGElement>) => onHover(hoverTarget, e),
     onMouseOut: onHoverLoss,
-    onClick: controlPoint.dashboardLink ? () => onDrillDown(controlPoint.dashboardLink!) : undefined,
-    cursor: controlPoint.dashboardLink ? 'pointer' : undefined,
+    onClick: drillDown ? () => onDrillDown(controlPoint.dashboardLink!) : undefined,
+    cursor: drillDown ? 'pointer' : undefined,
     'data-testid': 'rail-control-point',
     'data-rail-id': controlPoint.id,
   };

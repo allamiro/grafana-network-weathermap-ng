@@ -87,8 +87,21 @@ describe('resolveSegmentState', () => {
 
   it('a missing series on one query does not mask live data on another', () => {
     const state = resolveSegmentState(seg({ statusQuery: 'GONE', occupancyQuery: 'OCC' }), frames({ OCC: 1 }));
-    // occupied (severity 4) outranks no_data (severity 1).
     expect(state.state).toBe('occupied');
+    // Even a live CLEAR beats a data-quality state: one flapping secondary
+    // series must not repaint a healthy corridor gray (#300 review fix).
+    const clear = resolveSegmentState(seg({ statusQuery: 'GONE', occupancyQuery: 'OCC' }), frames({ OCC: 0 }));
+    expect(clear.state).toBe('clear');
+  });
+
+  it('malformed value mappings can never crash resolution', () => {
+    const hostileMappings = [null, 42, { value: null, state: 'failed' }, { value: '', state: 'failed' }] as never;
+    const state = resolveSegmentState(
+      seg({ occupancyQuery: 'OCC', valueMappings: hostileMappings }),
+      frames({ OCC: 0 })
+    );
+    // null/'' mapping values must not match raw 0 via Number() coercion.
+    expect(state.state).toBe('clear');
   });
 
   it('reports no_data when every configured query is unresolved', () => {
