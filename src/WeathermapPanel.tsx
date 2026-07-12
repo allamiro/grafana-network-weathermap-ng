@@ -61,7 +61,9 @@ import {
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
-import { normalizeRailConfig } from './rail/normalize';
+import { normalizeMapMode, normalizeRailConfig } from './rail/normalize';
+import { RailLayer } from './rail/components/RailLayer';
+import { RailHoverTarget } from './rail/components/RailControlPoint';
 
 // Calculate node position, width, etc.
 function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
@@ -164,6 +166,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   // Check for editing-related feature set
   const isEditMode = locationService.getSearch().has('editPanel');
+
+  // Rail Operations mode (#300): absent/unknown mapMode is always network.
+  // Rail replaces the network link/label/particle layers with the rail layer;
+  // nodes, background, zoom/pan, and the timeline stay shared.
+  const isRailMode = wm ? normalizeMapMode(wm.mapMode) === 'rail' : false;
 
   const [draggedNode, setDraggedNode] = useState(null as unknown as DrawnNode);
   const [selectedNodes, setSelectedNodes] = useState([] as DrawnNode[]);
@@ -884,6 +891,21 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const [hoveredNode, setHoveredNode] = useState(null as unknown as HoveredNode);
 
+  // Rail Operations mode (#300): rail hover tooltips share the node-tooltip
+  // positioning conventions but carry categorical rail state lines.
+  const [hoveredRail, setHoveredRail] = useState<(RailHoverTarget & { mouseX: number; mouseY: number }) | null>(null);
+  const handleRailHover = (target: RailHoverTarget, e: React.MouseEvent<SVGElement>) => {
+    let mouseX = e.clientX;
+    let mouseY = e.clientY;
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    }
+    setHoveredRail({ ...target, mouseX, mouseY });
+  };
+  const handleRailHoverLoss = () => setHoveredRail(null);
+
   const handleNodeHover = (d: DrawnNode, e: React.MouseEvent<SVGElement>) => {
     // Only show a tooltip when the node actually has metrics configured, and
     // never while a node is being dragged in edit mode. Clear any stale tooltip
@@ -1249,6 +1271,32 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         ) : (
           ''
         )}
+        {hoveredRail ? (
+          <div
+            data-testid="weathermap-rail-tooltip"
+            className={css`
+              position: absolute;
+              top: ${hoveredRail.mouseY - 10}px;
+              left: ${hoveredRail.mouseX + 14}px;
+              transform: translate(
+                ${hoveredRail.mouseX > width2 * 0.65 ? '-100%' : '0%'},
+                ${hoveredRail.mouseY < 120 ? '0%' : '-100%'}
+              );
+              pointer-events: none;
+              background-color: ${wm.settings.tooltip.backgroundColor};
+              color: ${wm.settings.tooltip.textColor} !important;
+              font-size: ${wm.settings.tooltip.fontSize}px !important;
+              z-index: 10000;
+              padding: 6px 8px;
+              border-radius: 4px;
+            `}
+          >
+            <strong>{hoveredRail.title}</strong>
+            {hoveredRail.lines.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+        ) : null}
         {hoveredNode && hoveredNode.node.tooltipMetrics && hoveredNode.node.tooltipMetrics.length > 0 ? (
           <div
             data-testid="weathermap-node-tooltip"
@@ -1589,6 +1637,10 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               offset.y
             })`}
           >
+            {/* Network-mode layers (links, value/port labels, particles).
+                Rail mode (#300) replaces them below; nodes stay shared. */}
+            {!isRailMode ? (
+              <React.Fragment>
             <g>
               {resolvedLinks.map((d, i) => {
                 if (d.nodes[0].id === d.nodes[1].id) {
@@ -2063,6 +2115,22 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 });
               })()}
             </g>
+              </React.Fragment>
+            ) : null}
+            {isRailMode && wm.rail ? (
+              <RailLayer
+                config={wm.rail}
+                frameMap={dataFrameMap}
+                zoomScale={wm.settings.panel.zoomScale}
+                isEditMode={isEditMode}
+                fontSizing={wm.settings.fontSizing}
+                neutralColor={theme.colors.secondary.main}
+                labelColor={theme.colors.text.primary}
+                onHover={handleRailHover}
+                onHoverLoss={handleRailHoverLoss}
+                onDrillDown={openDashboardLink}
+              />
+            ) : null}
             <g>
               {/*
                 Paint nodes in z-index order (#280): higher zIndex renders later,

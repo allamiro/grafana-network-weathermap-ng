@@ -63,7 +63,10 @@ test('rail mode without a rail config renders without crashing', () => {
   wm.mapMode = 'rail';
   expect(wm.rail).toBeUndefined();
   renderPanel(wm);
-  expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
+  // Rail mode replaces the network link layers (Phase 2); shared node
+  // rendering still works and nothing crashes with the feature off.
+  expect(screen.queryAllByTestId('link')).toHaveLength(0);
+  expect(screen.getAllByText('Node A').length).toBeGreaterThan(0);
 });
 
 test('rail config present while mapMode is absent renders as network, unchanged', () => {
@@ -82,7 +85,10 @@ test('hostile rail JSON is normalized at the render choke point and never crashe
     layers: { not: 'an array' },
   } as unknown as Weathermap['rail'];
   renderPanel(wm);
-  expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
+  // The rail layer mounts on the normalized config and renders degraded
+  // (the malformed segment has no resolvable endpoints), never thrown.
+  expect(screen.getByTestId('rail-layer')).toBeInTheDocument();
+  expect(screen.queryAllByTestId('rail-track')).toHaveLength(0);
 });
 
 test('old dashboards migrate without gaining mapMode or rail', () => {
