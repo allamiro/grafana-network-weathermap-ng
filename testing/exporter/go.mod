@@ -2,6 +2,8 @@ module github.com/allamiro/wm-prometheus
 
 go 1.25.12
 
+toolchain go1.26.5
+
 require (
 	github.com/aquilax/go-perlin v1.1.0
 	github.com/prometheus/client_golang v1.23.2
