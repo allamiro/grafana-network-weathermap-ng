@@ -2,93 +2,17 @@
 // control-point + via geometry, independent parallel tracks, layer
 // visibility/zoom gating, categorical states, tooltips, drill-downs, and the
 // no-NaN SVG contract — all through the real panel, as a dashboard would.
-import React from 'react';
-import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { WeathermapPanel } from 'WeathermapPanel';
-import { SimpleOptions, Weathermap } from 'types';
-import { getData, theme } from 'testData';
-import { createDefaultRailConfig, RAIL_LAYER_IDS } from './defaults';
-import { RAIL_STATE_COLORS, RailOperationsConfig } from './types';
-
-const railTopology = (): RailOperationsConfig => ({
-  ...createDefaultRailConfig(),
-  controlPoints: [
-    { id: 'cp-a', type: 'station', position: [100, 100], label: 'Station A', dashboardLink: '/d/abc/station-a' },
-    { id: 'cp-b', type: 'junction', position: [400, 100], label: 'Junction B' },
-  ],
-  trackSegments: [
-    {
-      id: 't1',
-      fromControlPointId: 'cp-a',
-      toControlPointId: 'cp-b',
-      trackNumber: '1',
-      direction: 'eastbound',
-      blockId: 'B01',
-      occupancyQuery: 'TRACK 1 OCC',
-      viaPoints: [[250, 60]],
-    },
-    {
-      id: 't2',
-      fromControlPointId: 'cp-b',
-      toControlPointId: 'cp-a',
-      trackNumber: '2',
-      direction: 'westbound',
-      blockId: 'B01W',
-      occupancyQuery: 'TRACK 2 OCC',
-    },
-  ],
-});
-
-const frame = (name: string, values: number[]) =>
-  toDataFrame({
-    refId: 'A',
-    fields: [
-      { name: 'Time', values: values.map((_, i) => i * 1000) },
-      { name: 'Value', values, config: { displayNameFromDS: name } },
-    ],
-  });
+import { fireEvent, screen } from '@testing-library/react';
+import { RAIL_LAYER_IDS } from './defaults';
+import { RAIL_STATE_COLORS } from './types';
+import { frame, noNaNInSvg, renderRail } from './railTestHarness';
 
 const openSpy = jest.fn();
-
-const renderRail = (mutate?: (wm: Weathermap) => void, series: unknown[] = []) => {
-  const wm = getData(theme);
-  wm.mapMode = 'rail';
-  wm.rail = railTopology();
-  if (mutate) {
-    mutate(wm);
-  }
-  const props = {
-    id: 1,
-    data: { state: LoadingState.Done, series, timeRange: getDefaultRelativeTimeRange() },
-    timeRange: getDefaultRelativeTimeRange(),
-    timeZone: getTimeZone(),
-    options: { weathermap: wm },
-    transparent: false,
-    width: 600,
-    height: 400,
-    fieldConfig: {},
-    renderCounter: 1,
-    title: 'T',
-    eventBus: {},
-    onOptionsChange: () => {},
-  } as unknown as PanelProps<SimpleOptions>;
-  return render(<WeathermapPanel {...props} />);
-};
 
 beforeEach(() => {
   openSpy.mockReset();
   window.open = openSpy;
 });
-
-const noNaNInSvg = (container: HTMLElement) => {
-  for (const el of Array.from(container.querySelectorAll('*'))) {
-    for (const attr of Array.from(el.attributes ?? [])) {
-      expect(attr.value.includes('NaN')).toBe(false);
-      expect(attr.value.includes('Infinity')).toBe(false);
-    }
-  }
-};
 
 describe('rail rendering (#300 Phase 2)', () => {
   test('renders two independent physical tracks and both control points', () => {

@@ -21,16 +21,20 @@ export const RAIL_LAYER_IDS = {
   editorGuides: 'rail-editor-guides',
 } as const;
 
+// Order = paint order (zIndex): route overlays wash over the tracks they
+// highlight, incidents over routes, pointwork and signals over all track
+// paint, control points and trains on top of the infrastructure, labels and
+// editor guides last.
 const LAYER_DEFS: Array<Pick<MapLayer, 'id' | 'label'>> = [
   { id: RAIL_LAYER_IDS.infrastructure, label: 'Infrastructure' },
-  { id: RAIL_LAYER_IDS.controlPoints, label: 'Control points' },
-  { id: RAIL_LAYER_IDS.tracks, label: 'Tracks' },
   { id: RAIL_LAYER_IDS.blocks, label: 'Block boundaries' },
+  { id: RAIL_LAYER_IDS.tracks, label: 'Tracks' },
   { id: RAIL_LAYER_IDS.routes, label: 'Routes' },
+  { id: RAIL_LAYER_IDS.incidents, label: 'Incidents & maintenance' },
   { id: RAIL_LAYER_IDS.switches, label: 'Switches & crossovers' },
   { id: RAIL_LAYER_IDS.signals, label: 'Signals' },
+  { id: RAIL_LAYER_IDS.controlPoints, label: 'Control points' },
   { id: RAIL_LAYER_IDS.trains, label: 'Trains' },
-  { id: RAIL_LAYER_IDS.incidents, label: 'Incidents & maintenance' },
   { id: RAIL_LAYER_IDS.labels, label: 'Labels' },
   { id: RAIL_LAYER_IDS.editorGuides, label: 'Editor guides' },
 ];

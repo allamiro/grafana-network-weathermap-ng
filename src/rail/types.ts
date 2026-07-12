@@ -130,6 +130,8 @@ export interface RailSignal {
   facingDirection: TrackDirection;
   stateQuery?: string;
   healthQuery?: string;
+  /** Overrides the default aspect convention (0=stop, 1=caution, 2=clear). */
+  valueMappings?: RailValueMapping[];
   label?: string;
   layerId?: string;
   zIndex?: number;
@@ -226,6 +228,16 @@ export interface RailOperationsConfig {
   routes: RailRoute[];
   incidents: RailIncidentOverlay[];
   layers: MapLayer[];
+}
+
+/**
+ * Hover-tooltip contract shared by every rail renderer: a title plus plain
+ * text lines. Neutral here (not in a glyph component) because control points,
+ * tracks, signals, switches, crossovers, overlays, and trains all emit it.
+ */
+export interface RailHoverTarget {
+  title: string;
+  lines: string[];
 }
 
 /**
