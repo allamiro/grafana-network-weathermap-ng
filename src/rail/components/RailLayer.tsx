@@ -19,6 +19,7 @@ import {
   resolveSegmentState,
   resolveSignalState,
   resolveSwitchState,
+  resolveTrainTelemetry,
   statusDefault,
 } from '../queries';
 import { MapLayer, RailHoverTarget, RailOperationsConfig, RailTrackSegment } from '../types';
@@ -28,6 +29,7 @@ import { RailIncidentOverlayGlyph, RailRouteOverlay } from './RailOverlays';
 import { RailSignalGlyph } from './RailSignal';
 import { RailSwitchGlyph } from './RailSwitch';
 import { RailTrackSegmentLine } from './RailTrackSegment';
+import { RailTrainMarkerGlyph } from './RailTrainMarker';
 
 export interface RailLayerProps {
   config: RailOperationsConfig;
@@ -35,6 +37,13 @@ export interface RailLayerProps {
   /** Current wheel-step zoom (higher = zoomed out), for layer min/max gating. */
   zoomScale: number;
   isEditMode: boolean;
+  /**
+   * Whether smooth train motion is allowed — the panel's animationActive
+   * gate (master switch, reduced motion, edit-mode pause, timeline scrub).
+   */
+  motionEnabled: boolean;
+  /** Cap on smoothly-animated train markers (shares settings.animation.maxAnimatedLinks). */
+  maxAnimated: number;
   fontSizing: { node: number; link: number };
   neutralColor: string;
   labelColor: string;
@@ -83,6 +92,8 @@ export const RailLayer = ({
   frameMap,
   zoomScale,
   isEditMode,
+  motionEnabled,
+  maxAnimated,
   fontSizing,
   neutralColor,
   labelColor,
@@ -270,6 +281,43 @@ export const RailLayer = ({
     });
   }
 
+  if (visible(RAIL_LAYER_IDS.trains) && config.trains.length > 0) {
+    layerGroups.push({
+      layerId: RAIL_LAYER_IDS.trains,
+      render: () => (
+        <g key={RAIL_LAYER_IDS.trains} data-testid="rail-trains-layer">
+          {byZIndexIndexed(config.trains).map(({ entity: train, index }, animIndex) => {
+            const telemetry = resolveTrainTelemetry(train, frameMap);
+            const measured = telemetry.segmentId ? measuredSegments.get(telemetry.segmentId) : undefined;
+            if (!measured) {
+              // Missing/deleted segment or no position: never a crash, never
+              // a guessed placement. Validation reports static dangling refs.
+              return null;
+            }
+            return (
+              <RailTrainMarkerGlyph
+                // Keyed by train + segment: a segment change REMOUNTS the
+                // marker, so motion transitions never teleport across the map.
+                key={`${train.id || 'train'}-${index}-${telemetry.segmentId}`}
+                train={train}
+                telemetry={telemetry}
+                measured={measured}
+                fontSize={fontSizing.node}
+                showLabel={labelsVisible}
+                labelColor={labelColor}
+                motionEnabled={motionEnabled && animIndex < maxAnimated}
+                allowDrillDown={!isEditMode}
+                onHover={onHover}
+                onHoverLoss={onHoverLoss}
+                onDrillDown={onDrillDown}
+              />
+            );
+          })}
+        </g>
+      ),
+    });
+  }
+
   if (visible(RAIL_LAYER_IDS.controlPoints)) {
     layerGroups.push({
       layerId: RAIL_LAYER_IDS.controlPoints,
@@ -304,7 +352,7 @@ export const RailLayer = ({
       {layerGroups.map((group) => group.render())}
       {/* The editor-guides layer gates baseline alignment helpers; the
           bundled background SVG carries the actual guide artwork, so nothing
-          renders here yet. Trains: Phase 4. */}
+          renders here yet. */}
     </g>
   );
 };

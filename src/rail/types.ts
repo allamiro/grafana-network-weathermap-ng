@@ -184,6 +184,8 @@ export interface RailTrainMarker {
   statusQuery?: string;
   staleQuery?: string;
   dashboardLink?: string;
+  /** Rotate the marker to the local track tangent. Default true. */
+  rotate?: boolean;
   layerId?: string;
   zIndex?: number;
 }

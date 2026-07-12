@@ -283,6 +283,8 @@ export function normalizeRailConfig(raw: unknown): RailOperationsConfig {
       statusQuery: asOptionalString(train.statusQuery),
       staleQuery: asOptionalString(train.staleQuery),
       dashboardLink: asOptionalString(train.dashboardLink),
+      rotate: typeof train.rotate === 'boolean' ? train.rotate : undefined,
+      zIndex: asOptionalNumber(train.zIndex),
     })),
     routes: normalizeEntities(source.routes, (r) => ({
       segmentIds: normalizeStringArray(r.segmentIds),
