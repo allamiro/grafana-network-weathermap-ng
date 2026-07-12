@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
 import { finiteOrFallback, sanitizeUrl } from 'utils';
+import { createRailBaselineBackground, RAIL_BASELINE_BACKGROUND_URL } from '../rail/defaults';
 
 interface Settings {}
 
@@ -1024,6 +1025,68 @@ export const PanelForm = ({ value, onChange }: Props) => {
             }}
           />
         </InlineField>
+        <FormDivider title="Rail Operations" />
+        {/* Rail Operations mode (#300), Phase 1: schema + baseline preset only.
+            Monitoring-only visualization; rail rendering and editor tools ship
+            in later phases. Absent mapMode always means 'network'. */}
+        <InlineField
+          grow
+          label="Map Mode"
+          className={styles.inlineField}
+          tooltip="Experimental. 'Rail' enables the monitoring-only Rail Operations mode (visualization of read-only rail telemetry). Rendering for rail objects arrives in a later release; existing network maps are unaffected."
+        >
+          <Select
+            data-testid="nwm-map-mode"
+            value={value.mapMode ?? 'network'}
+            options={[
+              { label: 'Network', value: 'network' },
+              { label: 'Rail (experimental)', value: 'rail' },
+            ]}
+            onChange={(v) => {
+              let options = structuredClone(value);
+              if (v.value === 'rail') {
+                options.mapMode = 'rail';
+              } else {
+                // Plain network maps stay byte-identical to pre-rail saves:
+                // no mapMode key is persisted for the default mode.
+                delete options.mapMode;
+              }
+              onChange(options);
+            }}
+          ></Select>
+        </InlineField>
+        {(value.mapMode ?? 'network') === 'rail' ? (
+          <InlineField
+            grow
+            label="Baseline Background"
+            className={styles.inlineField}
+            tooltip="Applies the bundled rail baseline background (dark canvas, grid, corridor and alignment guides — static context only) attached to the map canvas so it pans and zooms with the railway."
+          >
+            <Button
+              data-testid="nwm-rail-baseline"
+              variant="secondary"
+              size="md"
+              onClick={() => {
+                const existing = value.settings.panel.backgroundImage?.url;
+                if (
+                  existing &&
+                  existing !== RAIL_BASELINE_BACKGROUND_URL &&
+                  !confirm('Replace the existing background image with the rail baseline?')
+                ) {
+                  return;
+                }
+                let options = structuredClone(value);
+                options.settings.panel.backgroundImage = createRailBaselineBackground();
+                onChange(options);
+              }}
+              style={{ justifyContent: 'center' }}
+            >
+              Load rail baseline
+            </Button>
+          </InlineField>
+        ) : (
+          ''
+        )}
       </React.Fragment>
     );
   } else {
