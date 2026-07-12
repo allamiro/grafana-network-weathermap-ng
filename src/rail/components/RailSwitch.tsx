@@ -26,25 +26,33 @@ interface Props {
 const LEG_LENGTH = 14;
 const BASE_RADIUS = 3.5;
 
-/** The switch sits at its control point, or at the endpoint the two paths share. */
-export function findSwitchPoint(
+/**
+ * The switch sits at its control point, or at the endpoint the two paths
+ * share. Point and anchor id are resolved TOGETHER — leg directions must be
+ * computed relative to the same control point the glyph is drawn at, even
+ * when the configured controlPointId is dangling and the shared-endpoint
+ * fallback engages (review fix: a mismatched pair pointed both legs ~180°
+ * away from the pointwork).
+ */
+export function findSwitchAnchor(
   railSwitch: RailSwitchModel,
   normalSegment: RailTrackSegment | undefined,
   reverseSegment: RailTrackSegment | undefined,
   controlPointIndex: Map<string, RailControlPoint>
-): PolylinePoint | undefined {
+): { point: PolylinePoint; anchorId: string } | undefined {
   if (railSwitch.controlPointId) {
     const cp = controlPointIndex.get(railSwitch.controlPointId);
     if (cp && Number.isFinite(cp.position[0]) && Number.isFinite(cp.position[1])) {
-      return [cp.position[0], cp.position[1]];
+      return { point: [cp.position[0], cp.position[1]], anchorId: railSwitch.controlPointId };
     }
+    // Dangling/NaN control point: fall through to the shared endpoint.
   }
   if (!normalSegment || !reverseSegment) {
     return undefined;
   }
-  const nEnds = [normalSegment.fromControlPointId, normalSegment.toControlPointId];
-  const shared = [reverseSegment.fromControlPointId, reverseSegment.toControlPointId].find(
-    (id) => id && nEnds.includes(id)
+  const reverseEnds = [reverseSegment.fromControlPointId, reverseSegment.toControlPointId];
+  const shared = [normalSegment.fromControlPointId, normalSegment.toControlPointId].find(
+    (id) => id && reverseEnds.includes(id)
   );
   if (!shared) {
     return undefined;
@@ -53,7 +61,7 @@ export function findSwitchPoint(
   if (!cp || !Number.isFinite(cp.position[0]) || !Number.isFinite(cp.position[1])) {
     return undefined;
   }
-  return [cp.position[0], cp.position[1]];
+  return { point: [cp.position[0], cp.position[1]], anchorId: shared };
 }
 
 /** Unit direction pointing away from the switch along a segment. */
@@ -88,18 +96,13 @@ export const RailSwitchGlyph = ({
   onHover,
   onHoverLoss,
 }: Props) => {
-  const point = findSwitchPoint(railSwitch, normalSegment, reverseSegment, controlPointIndex);
-  if (!point) {
+  const anchor = findSwitchAnchor(railSwitch, normalSegment, reverseSegment, controlPointIndex);
+  if (!anchor) {
     // Dangling references: validation reports, renderer skips.
     return null;
   }
-  const [x, y] = point;
-  // Which control point anchors the legs (for direction math).
-  const anchorId =
-    railSwitch.controlPointId ??
-    [normalSegment?.fromControlPointId, normalSegment?.toControlPointId].find((id) =>
-      [reverseSegment?.fromControlPointId, reverseSegment?.toControlPointId].includes(id)
-    );
+  const [x, y] = anchor.point;
+  const anchorId = anchor.anchorId;
 
   const legs: Array<{ segment: RailTrackSegment | undefined; active: boolean; testid: string }> = [
     { segment: normalSegment, active: state.position === 'normal', testid: 'rail-switch-leg-normal' },

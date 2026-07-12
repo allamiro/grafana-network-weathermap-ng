@@ -20,7 +20,9 @@ interface CommonProps {
 const OVERLAY_WIDTH = 10;
 
 const coveredPolylines = (segmentIds: string[], measuredSegments: Map<string, MeasuredPolyline>) =>
-  segmentIds
+  // Dedupe: a hand-authored list can repeat a segment, which would produce
+  // duplicate React keys and double-count the tooltip's segment total.
+  [...new Set(segmentIds)]
     .map((id) => ({ id, measured: measuredSegments.get(id) }))
     .filter((entry): entry is { id: string; measured: MeasuredPolyline } => entry.measured !== undefined);
 

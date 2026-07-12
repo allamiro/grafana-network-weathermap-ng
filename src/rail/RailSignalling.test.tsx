@@ -103,6 +103,18 @@ describe('signals (#300 Phase 3)', () => {
     expect(head.getAttribute('stroke')).toBe(RAIL_STATE_COLORS.no_data);
   });
 
+  test('a vanished aspect series is never masked by live-healthy machine health (review fix)', () => {
+    renderRail(
+      (wm) => {
+        wm.rail!.signals = [signal('s1', 0.5, { healthQuery: 'SIG HEALTH' })];
+      },
+      [frame('SIG HEALTH', [1, 1])] // aspect series gone, health fine
+    );
+    const el = screen.getByTestId('rail-signal');
+    expect(el.getAttribute('data-rail-state')).toBe('no_data');
+    expect(el.querySelector('circle')!.getAttribute('fill')).toBe('none'); // hollow, not a confident head
+  });
+
   test('signals layer visibility removes signals only', () => {
     renderRail((wm) => {
       wm.rail!.signals = [signal('s1', 0.5)];
@@ -162,6 +174,53 @@ describe('switches (#300 Phase 3)', () => {
     expect(screen.getByTestId('rail-switch-lock')).toBeInTheDocument();
     expect(screen.getByTestId('rail-switch-failed-mark')).toBeInTheDocument();
     expect(screen.getByTestId('rail-switch').getAttribute('data-rail-state')).toBe('failed');
+  });
+
+  test('glyph and legs anchor to the SAME shared endpoint when paths share both ends (review fix)', () => {
+    renderRail(
+      (wm) => {
+        // t1 (a->b) and t2 (b->a) share BOTH endpoints; anchor resolution
+        // must use one id for the base circle AND both leg directions.
+        wm.rail!.switches = [sw({ normalSegmentId: 't1', reverseSegmentId: 't2' })];
+      },
+      [frame('SW POS', [0, 0]), frame('SW DET', [1, 1])]
+    );
+    const base = screen.getByTestId('rail-switch').querySelector('circle')!;
+    expect(base.getAttribute('cx')).toBe('100'); // cp-a
+    expect(base.getAttribute('cy')).toBe('100');
+    for (const legId of ['rail-switch-leg-normal', 'rail-switch-leg-reverse']) {
+      const leg = screen.getByTestId(legId);
+      expect(Number(leg.getAttribute('x1'))).toBe(100);
+      // Both tracks leave cp-a to the right; legs must point along them,
+      // never 180° away from the pointwork.
+      expect(Number(leg.getAttribute('x2'))).toBeGreaterThan(100);
+    }
+  });
+
+  test('a dangling controlPointId falls back to the shared endpoint for point AND legs (review fix)', () => {
+    renderRail(
+      (wm) => {
+        addBranch(wm);
+        wm.rail!.switches = [sw({ controlPointId: 'ghost' })];
+      },
+      [frame('SW POS', [0, 0]), frame('SW DET', [1, 1])]
+    );
+    const base = screen.getByTestId('rail-switch').querySelector('circle')!;
+    expect(base.getAttribute('cx')).toBe('100'); // cp-a, shared by t1/t3
+    const normalLeg = screen.getByTestId('rail-switch-leg-normal');
+    expect(Number(normalLeg.getAttribute('x2'))).toBeGreaterThan(100); // along t1, away from cp-a
+  });
+
+  test('a missing position series cannot read as a confidently normal switch (review fix)', () => {
+    renderRail(
+      (wm) => {
+        addBranch(wm);
+        wm.rail!.switches = [sw()];
+      },
+      [frame('SW DET', [1, 1])] // position series vanished, detection live-healthy
+    );
+    expect(screen.getByTestId('rail-switch').getAttribute('data-rail-state')).toBe('no_data');
+    expect(screen.getByTestId('rail-switch').getAttribute('data-rail-position')).toBe('unknown');
   });
 
   test('a switch with dangling segment references is skipped without crashing', () => {
@@ -277,7 +336,11 @@ describe('routes and incident overlays (#300 Phase 3)', () => {
 });
 
 describe('cross-mode tooltip lifecycle (#300 review fix)', () => {
-  test('a rail tooltip cannot linger after the rail element unmounts via layer hide', () => {
+  // Known limitation: an element unmounting under a STATIONARY pointer (e.g.
+  // a route wash deactivating on data refresh) keeps its tooltip until the
+  // pointer moves off the SVG or over another hover target — clearing on
+  // every data refresh would kill tooltips mid-read, which is worse.
+  test('the svg-leave handler clears a rail tooltip whose target vanished', () => {
     const { rerender: _r } = renderRail(undefined, [frame('TRACK 1 OCC', [1, 1])]);
     const t1 = screen.getAllByTestId('rail-track').find((el) => el.getAttribute('data-rail-id') === 't1')!;
     fireEvent.mouseMove(t1);

@@ -3,6 +3,7 @@
  * categorical RailEntityState vocabulary. Never bandwidth-percentage
  * semantics — occupancy, availability, and status are discrete.
  */
+import { clampProgress } from '../geometry/polyline';
 import { RAIL_STATE_COLORS, RailEntityState, RailTrackSegment, RailValueMapping } from './types';
 
 export interface ResolvedRailState {
@@ -151,9 +152,15 @@ export function resolveSwitchState(
         ? resolved('normal', detectedValue)
         : resolved('caution', detectedValue)
       : undefined,
-    sw.positionQuery && positionValue === undefined ? resolved('no_data') : undefined,
   ].filter((c): c is ResolvedRailState => c !== undefined);
-  const worst = candidates.length === 0 ? resolved('normal') : worstState(candidates);
+  let worst = candidates.length === 0 ? resolved('normal') : worstState(candidates);
+  // The position is the switch's PRIMARY datum: when its series is missing
+  // or non-finite, a live-healthy secondary (detection/health) must not make
+  // the glyph read as confidently normal. Real alarms still win.
+  const positionMissing = sw.positionQuery && (positionValue === undefined || !Number.isFinite(positionValue));
+  if (positionMissing && (worst.state === 'normal' || worst.state === 'clear')) {
+    worst = resolved('no_data');
+  }
   return { position, state: worst.state, color: worst.color, detected, locked };
 }
 
@@ -167,14 +174,20 @@ export function resolveSignalState(
   signal: { stateQuery?: string; healthQuery?: string; valueMappings?: RailValueMapping[] },
   frameMap: Map<string, number>
 ): ResolvedRailState {
-  const candidates = [
-    resolveRailQuery(signal.stateQuery, signal.valueMappings, frameMap, signalAspectDefault),
-    resolveRailQuery(signal.healthQuery, undefined, frameMap, statusDefault),
-  ].filter((c): c is ResolvedRailState => c !== undefined);
+  const aspect = resolveRailQuery(signal.stateQuery, signal.valueMappings, frameMap, signalAspectDefault);
+  const health = resolveRailQuery(signal.healthQuery, undefined, frameMap, statusDefault);
+  const candidates = [aspect, health].filter((c): c is ResolvedRailState => c !== undefined);
   if (candidates.length === 0) {
     return resolved('unknown');
   }
-  return worstState(candidates);
+  let worst = worstState(candidates);
+  // The aspect is the signal's PRIMARY datum: when its series vanished, a
+  // live-healthy machine-health reading must not paint a confident aspect —
+  // the head renders hollow no_data. A worse live state (failed) still wins.
+  if (aspect && aspect.state === 'no_data' && (worst.state === 'normal' || worst.state === 'clear')) {
+    worst = aspect;
+  }
+  return worst;
 }
 
 /**
@@ -207,4 +220,99 @@ export function resolveSegmentState(segment: RailTrackSegment, frameMap: Map<str
     return resolved('normal');
   }
   return worstState(candidates);
+}
+
+/** Resolved live telemetry for one train marker (#300 Phase 4). */
+export interface ResolvedTrainTelemetry {
+  /** Segment the train is on (static or data-driven); undefined = not placeable. */
+  segmentId?: string;
+  /** Clamped 0..1 progress along that segment; undefined = not placeable. */
+  progress?: number;
+  speed?: number;
+  delay?: number;
+  destination?: number;
+  stale: boolean;
+  state: ResolvedRailState;
+}
+
+/**
+ * Resolve a train's position and telemetry. A train is an individually
+ * identified object located by segment + normalized progress — never a
+ * traffic-flow particle.
+ *
+ * Data-driven position uses a series-name prefix convention: with
+ * segmentQuery = "TRAIN RD-218", a series named "TRAIN RD-218 t1-b03" with
+ * value 0.63 places the train 63% along segment "t1-b03". One gauge per
+ * (train, current segment) — exactly what a Prometheus exporter publishes as
+ * rail_train_progress{train_id, segment_id} — so when the train advances to
+ * the next block the old series vanishes and the new one takes over. Static
+ * segmentId + progress/progressQuery remain available for authored demos.
+ */
+export function resolveTrainTelemetry(
+  train: {
+    segmentId?: string;
+    segmentQuery?: string;
+    progress?: number;
+    progressQuery?: string;
+    speedQuery?: string;
+    delayQuery?: string;
+    destinationQuery?: string;
+    statusQuery?: string;
+    staleQuery?: string;
+  },
+  frameMap: Map<string, number>
+): ResolvedTrainTelemetry {
+  let segmentId = train.segmentId;
+  let progress: number | undefined;
+
+  if (train.segmentQuery) {
+    const prefix = `${train.segmentQuery} `;
+    for (const [name, value] of frameMap) {
+      if (name.startsWith(prefix) && Number.isFinite(value)) {
+        segmentId = name.slice(prefix.length).trim();
+        progress = clampProgress(value);
+        break; // first match wins, consistent with duplicate-name handling
+      }
+    }
+  }
+
+  if (progress === undefined && train.progressQuery) {
+    const raw = frameMap.get(train.progressQuery);
+    if (raw !== undefined && Number.isFinite(raw)) {
+      progress = clampProgress(raw);
+    }
+  }
+  if (progress === undefined && typeof train.progress === 'number' && Number.isFinite(train.progress)) {
+    progress = clampProgress(train.progress);
+  }
+
+  const numeric = (query: string | undefined): number | undefined => {
+    if (!query) {
+      return undefined;
+    }
+    const value = frameMap.get(query);
+    return value !== undefined && Number.isFinite(value) ? value : undefined;
+  };
+
+  const staleValue = numeric(train.staleQuery);
+  // Explicit stale flag, or a configured data-driven position that resolved
+  // nothing (the series vanished): the marker must read as stale, never as a
+  // confidently-placed train.
+  const positionConfigured = Boolean(train.segmentQuery || train.progressQuery);
+  const stale = (staleValue !== undefined && staleValue !== 0) || (positionConfigured && progress === undefined);
+
+  const status = resolveRailQuery(train.statusQuery, undefined, frameMap, statusDefault);
+  const state: ResolvedRailState = stale
+    ? { state: 'stale', color: railStateColor('stale') }
+    : status ?? { state: 'normal', color: railStateColor('normal') };
+
+  return {
+    segmentId,
+    progress,
+    speed: numeric(train.speedQuery),
+    delay: numeric(train.delayQuery),
+    destination: numeric(train.destinationQuery),
+    stale,
+    state,
+  };
 }
