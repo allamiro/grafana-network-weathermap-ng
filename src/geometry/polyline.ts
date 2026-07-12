@@ -11,7 +11,8 @@
 
 export type PolylinePoint = [number, number];
 
-function isFinitePoint(p: unknown): p is PolylinePoint {
+/** Whether a value is a coordinate pair a renderer could actually place. */
+export function isFinitePoint(p: unknown): p is PolylinePoint {
   return Array.isArray(p) && p.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]);
 }
 
@@ -31,39 +32,48 @@ export function clampProgress(progress: number): number {
   return Math.min(1, progress);
 }
 
-/** Total length of a polyline; 0 for empty, single-point, or fully malformed input. */
-export function getPolylineLength(points: readonly PolylinePoint[]): number {
-  const pts = sanitizePolyline(points);
-  let length = 0;
-  for (let i = 1; i < pts.length; i++) {
-    length += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-  }
-  return length;
+/**
+ * Measure once, query many: sanitized points, per-segment lengths, and the
+ * total. Every public helper (and later per-train render code) derives from
+ * this single pass instead of re-walking the polyline.
+ */
+export interface MeasuredPolyline {
+  points: PolylinePoint[];
+  segmentLengths: number[];
+  totalLength: number;
 }
 
-/**
- * Point at a normalized progress (0..1 of total length) along a polyline.
- * Fallbacks: empty input -> [0, 0]; single point or zero total length -> that
- * point. Progress is clamped, so callers can pass raw query values.
- */
-export function getPointAtProgress(points: readonly PolylinePoint[], progress: number): PolylinePoint {
+export function measurePolyline(points: ReadonlyArray<PolylinePoint | undefined | null>): MeasuredPolyline {
   const pts = sanitizePolyline(points);
+  const segmentLengths: number[] = [];
+  let totalLength = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const length = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+    segmentLengths.push(length);
+    totalLength += length;
+  }
+  return { points: pts, segmentLengths, totalLength };
+}
+
+/** Total length of a polyline; 0 for empty, single-point, or fully malformed input. */
+export function getPolylineLength(points: readonly PolylinePoint[]): number {
+  return measurePolyline(points).totalLength;
+}
+
+function pointAtProgressMeasured(measured: MeasuredPolyline, progress: number): PolylinePoint {
+  const { points: pts, segmentLengths, totalLength } = measured;
   if (pts.length === 0) {
     return [0, 0];
   }
-  if (pts.length === 1) {
+  if (pts.length === 1 || totalLength === 0) {
     return [pts[0][0], pts[0][1]];
   }
-  const total = getPolylineLength(pts);
-  if (total === 0) {
-    return [pts[0][0], pts[0][1]];
-  }
-  let remaining = clampProgress(progress) * total;
-  for (let i = 1; i < pts.length; i++) {
-    const segment = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  let remaining = clampProgress(progress) * totalLength;
+  for (let i = 0; i < segmentLengths.length; i++) {
+    const segment = segmentLengths[i];
     if (segment >= remaining) {
       const t = segment === 0 ? 0 : remaining / segment;
-      return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t];
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t];
     }
     remaining -= segment;
   }
@@ -71,27 +81,29 @@ export function getPointAtProgress(points: readonly PolylinePoint[], progress: n
 }
 
 /**
- * Unit tangent (direction of travel) at a normalized progress. Zero-length
- * segments are skipped; a degenerate polyline (no usable direction) falls back
- * to [1, 0] so rotation math stays finite.
+ * Point at a normalized progress (0..1 of total length) along a polyline.
+ * Fallbacks: empty input -> [0, 0]; single point or zero total length -> that
+ * point. Progress is clamped, so callers can pass raw query values. Callers
+ * placing many objects on one path should measurePolyline once and use
+ * getPointAtProgressMeasured/getTangentAtProgressMeasured instead.
  */
-export function getTangentAtProgress(points: readonly PolylinePoint[], progress: number): PolylinePoint {
-  const pts = sanitizePolyline(points);
-  if (pts.length < 2) {
+export function getPointAtProgress(points: readonly PolylinePoint[], progress: number): PolylinePoint {
+  return pointAtProgressMeasured(measurePolyline(points), progress);
+}
+
+export const getPointAtProgressMeasured = pointAtProgressMeasured;
+
+function tangentAtProgressMeasured(measured: MeasuredPolyline, progress: number): PolylinePoint {
+  const { points: pts, segmentLengths, totalLength } = measured;
+  if (pts.length < 2 || totalLength === 0) {
     return [1, 0];
   }
-  const total = getPolylineLength(pts);
-  if (total === 0) {
-    return [1, 0];
-  }
-  let remaining = clampProgress(progress) * total;
+  let remaining = clampProgress(progress) * totalLength;
   let lastDirection: PolylinePoint | undefined;
-  for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i][0] - pts[i - 1][0];
-    const dy = pts[i][1] - pts[i - 1][1];
-    const segment = Math.hypot(dx, dy);
+  for (let i = 0; i < segmentLengths.length; i++) {
+    const segment = segmentLengths[i];
     if (segment > 0) {
-      lastDirection = [dx / segment, dy / segment];
+      lastDirection = [(pts[i + 1][0] - pts[i][0]) / segment, (pts[i + 1][1] - pts[i][1]) / segment];
       if (segment >= remaining) {
         return lastDirection;
       }
@@ -102,10 +114,30 @@ export function getTangentAtProgress(points: readonly PolylinePoint[], progress:
 }
 
 /**
+ * Unit tangent (direction of travel) at a normalized progress. Zero-length
+ * segments are skipped; a degenerate polyline (no usable direction) falls back
+ * to [1, 0] so rotation math stays finite.
+ */
+export function getTangentAtProgress(points: readonly PolylinePoint[], progress: number): PolylinePoint {
+  return tangentAtProgressMeasured(measurePolyline(points), progress);
+}
+
+export const getTangentAtProgressMeasured = tangentAtProgressMeasured;
+
+/**
+ * At sharp bends the true parallel corner (the miter point) lies further from
+ * the vertex than the offset distance; cap that growth so a near-reversal
+ * cannot throw the corner to infinity. 4x is the conventional miter limit.
+ */
+const MITER_LIMIT = 4;
+
+/**
  * Offset a polyline sideways by a signed distance (positive = left of travel
- * direction). Vertex normals are averaged between adjacent segments so joints
- * stay continuous; zero-length segments are skipped. Used to draw parallel
- * physical tracks from one centerline.
+ * direction). Corner vertices are placed at the miter point — the intersection
+ * of the two adjacent offset segments — so the offset path stays a true
+ * parallel at bends instead of pinching toward the centerline. Zero-length
+ * segments are skipped. Used to draw parallel physical tracks from one
+ * centerline.
  */
 export function getParallelOffsetPath(points: readonly PolylinePoint[], offset: number): PolylinePoint[] {
   const pts = sanitizePolyline(points);
@@ -131,13 +163,18 @@ export function getParallelOffsetPath(points: readonly PolylinePoint[], offset: 
     let ny = before[1] + after[1];
     const norm = Math.hypot(nx, ny);
     if (norm === 0) {
-      // 180° reversal: adjacent normals cancel; fall back to one side.
+      // 180° reversal: adjacent normals cancel; fall back to one side at the
+      // plain offset distance (no meaningful miter exists).
       nx = after[0];
       ny = after[1];
-    } else {
-      nx /= norm;
-      ny /= norm;
+      return [p[0] + nx * offset, p[1] + ny * offset];
     }
-    return [p[0] + nx * offset, p[1] + ny * offset];
+    nx /= norm;
+    ny /= norm;
+    // Miter compensation: the averaged unit normal must be scaled by
+    // 1/cos(theta/2) = 2/|n1+n2| to land on the intersection of the two
+    // offset segments; capped by MITER_LIMIT for near-reversals.
+    const miterScale = Math.min(2 / norm, MITER_LIMIT);
+    return [p[0] + nx * offset * miterScale, p[1] + ny * offset * miterScale];
   });
 }

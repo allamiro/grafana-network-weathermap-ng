@@ -2,8 +2,17 @@ import { DataFrame, Field, FieldType, GrafanaTheme2, getFieldDisplayName } from 
 import merge from 'lodash.merge';
 import { Anchor, DrawnNode, Link, Node, ValueMappingMode, Weathermap } from 'types';
 import { v4 as uuidv4 } from 'uuid';
+import { clampProgress } from './geometry/polyline';
 
 export const CURRENT_VERSION = 14;
+
+/**
+ * Base path Grafana serves the plugin's dist/ files from. The single source
+ * for building bundled-asset URLs (node icons, rail baseline background) so a
+ * plugin-id change cannot silently 404 one asset family (#300 review). Must
+ * match the id in src/plugin.json.
+ */
+export const PLUGIN_ASSET_BASE = 'public/plugins/tamirsuliman-weathermap-panel';
 
 let colorsCalculatedCache: { [colors: string]: string } = {};
 
@@ -438,10 +447,9 @@ export const ANIMATION_MAX_EXTRA_DOTS = 7;
 
 /** Clamp a utilization ratio into [0, 1]; non-finite resolves to 0. */
 export function clampUtilization(utilization: number): number {
-  if (!Number.isFinite(utilization) || utilization <= 0) {
-    return 0;
-  }
-  return Math.min(1, utilization);
+  // Same semantics as progress clamping — one implementation, one behavior
+  // for identical malformed inputs (#300 review).
+  return clampProgress(utilization);
 }
 
 /** Dot speed in px/s for a utilization ratio. 0 = do not animate. */

@@ -172,7 +172,7 @@ describe('getParallelOffsetPath', () => {
     ]);
   });
 
-  it('keeps joints continuous on a right-angle corner', () => {
+  it('places the corner vertex at the true miter point on a right-angle bend', () => {
     const corner: PolylinePoint[] = [
       [0, 0],
       [100, 0],
@@ -180,9 +180,26 @@ describe('getParallelOffsetPath', () => {
     ];
     const off = getParallelOffsetPath(corner, 10);
     expect(off).toHaveLength(3);
-    // Endpoints use their segment normal; corner uses the averaged normal.
+    // Endpoints use their segment normal.
     expect(off[0]).toEqual([0, -10]);
     expect(off[2]).toEqual([110, 100]);
+    // The corner must sit on the intersection of the two offset lines
+    // (y = -10 and x = 110), NOT at the pinched averaged-normal point
+    // (~[107.07, -7.07]) — otherwise parallel tracks converge at bends.
+    expect(off[1][0]).toBeCloseTo(110, 10);
+    expect(off[1][1]).toBeCloseTo(-10, 10);
+  });
+
+  it('caps the miter at sharp bends instead of shooting toward infinity', () => {
+    const hairpin: PolylinePoint[] = [
+      [0, 0],
+      [100, 0],
+      [0, 1], // ~179° turn
+    ];
+    const off = getParallelOffsetPath(hairpin, 10);
+    // Miter limit 4: the corner may extend to at most 4x the offset distance.
+    const dist = Math.hypot(off[1][0] - 100, off[1][1] - 0);
+    expect(dist).toBeLessThanOrEqual(40 + 1e-9);
     for (const p of off) {
       expect(Number.isFinite(p[0])).toBe(true);
       expect(Number.isFinite(p[1])).toBe(true);
