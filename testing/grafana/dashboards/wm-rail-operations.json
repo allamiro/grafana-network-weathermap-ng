@@ -18,6 +18,47 @@
   },
   "panels": [
     {
+      "id": 50,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 18,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "## RAIL OPERATIONS \u2014 NETWORK OVERVIEW\n**Simulated demo** \u00b7 monitoring only \u00b7 no control commands"
+      }
+    },
+    {
+      "id": 51,
+      "type": "grafana-clock-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "transparent": true,
+      "options": {
+        "mode": "time",
+        "clockType": "24 hour",
+        "timeSettings": {
+          "fontSize": "42px",
+          "fontWeight": "bold"
+        },
+        "dateSettings": {
+          "showDate": true,
+          "dateFormat": "ddd. MMM D, YYYY",
+          "fontSize": "16px"
+        }
+      }
+    },
+    {
       "id": 1,
       "type": "tamirsuliman-weathermap-panel",
       "title": "Rail Operations \u2014 Simulated (monitoring only)",
@@ -25,7 +66,7 @@
         "h": 21,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 3
       },
       "datasource": "Prometheus",
       "targets": [
@@ -648,7 +689,7 @@
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 63
+        "y": 66
       },
       "options": {
         "mode": "markdown",
@@ -663,7 +704,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 34
+        "y": 37
       },
       "datasource": "Prometheus",
       "targets": [
@@ -696,7 +737,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 34
+        "y": 37
       },
       "datasource": "Prometheus",
       "targets": [
@@ -729,7 +770,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 24
+        "y": 27
       },
       "datasource": "Prometheus",
       "targets": [
@@ -762,7 +803,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 42
+        "y": 45
       },
       "datasource": "Prometheus",
       "targets": [
@@ -816,7 +857,7 @@
         "h": 5,
         "w": 4,
         "x": 6,
-        "y": 42
+        "y": 45
       },
       "datasource": "Prometheus",
       "targets": [
@@ -866,7 +907,7 @@
         "h": 5,
         "w": 4,
         "x": 10,
-        "y": 42
+        "y": 45
       },
       "datasource": "Prometheus",
       "targets": [
@@ -920,7 +961,7 @@
         "h": 5,
         "w": 4,
         "x": 14,
-        "y": 42
+        "y": 45
       },
       "datasource": "Prometheus",
       "targets": [
@@ -970,7 +1011,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 42
+        "y": 45
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1020,7 +1061,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 47
+        "y": 50
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1068,7 +1109,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 47
+        "y": 50
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1116,7 +1157,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 58
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1149,7 +1190,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 58
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1181,7 +1222,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 21
+        "y": 24
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1229,7 +1270,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 21
+        "y": 24
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1277,7 +1318,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 21
+        "y": 24
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1325,7 +1366,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 21
+        "y": 24
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1373,7 +1414,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 21
+        "y": 24
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1421,7 +1462,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 21
+        "y": 24
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1469,7 +1510,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 28
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1528,7 +1569,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 28
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1647,7 +1688,7 @@
         "h": 8,
         "w": 4,
         "x": 16,
-        "y": 25
+        "y": 28
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1697,7 +1738,7 @@
         "h": 8,
         "w": 4,
         "x": 20,
-        "y": 25
+        "y": 28
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1750,7 +1791,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 55
+        "y": 58
       },
       "options": {
         "mode": "markdown",

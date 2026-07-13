@@ -99,7 +99,8 @@ var track2Blocks = []string{"t2-b01", "t2-b02", "t2-b03", "t2-b04", "t2-b05"}
 type simRailTrain struct {
 	id     string
 	blocks []string
-	// Seconds to traverse one block; also offsets so trains never collide.
+	// Seconds to traverse one block (demo pace, deliberately slow and
+	// independent of the DISPLAYED speed); offsets so trains never collide.
 	blockPeriod float64
 	phaseOffset float64
 	speedKmh    float64
@@ -109,11 +110,11 @@ type simRailTrain struct {
 }
 
 var simRailTrains = []simRailTrain{
-	{id: "RD-218", blocks: track1Blocks, blockPeriod: 45, phaseOffset: 0, speedKmh: 62, delaySec: 0},
-	{id: "RD-221", blocks: track1Blocks, blockPeriod: 45, phaseOffset: 110, speedKmh: 58, delaySec: 120},
-	{id: "RD-305", blocks: track2Blocks, blockPeriod: 55, phaseOffset: 30, speedKmh: 47, delaySec: 45},
+	{id: "RD-218", blocks: track1Blocks, blockPeriod: 150, phaseOffset: 0, speedKmh: 62, delaySec: 0},
+	{id: "RD-221", blocks: track1Blocks, blockPeriod: 150, phaseOffset: 370, speedKmh: 58, delaySec: 120},
+	{id: "RD-305", blocks: track2Blocks, blockPeriod: 170, phaseOffset: 90, speedKmh: 47, delaySec: 45},
 	// Deliberately stale: telemetry frozen mid-route to demo data-quality UX.
-	{id: "RD-999", blocks: track2Blocks, blockPeriod: 55, phaseOffset: 200, speedKmh: 0, delaySec: 600, stale: true},
+	{id: "RD-999", blocks: track2Blocks, blockPeriod: 170, phaseOffset: 600, speedKmh: 0, delaySec: 600, stale: true},
 }
 
 // simulateRail derives every value from wall-clock time, so restarts and

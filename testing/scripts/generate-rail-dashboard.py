@@ -562,6 +562,42 @@ legend_panel = {
 dashboard["panels"].extend(overview_row)
 dashboard["panels"].extend([speed_gauges, train_table, plc_status_panel, plc_latency_panel, legend_panel])
 
+# --- Header row: board title + wall clock (grafana-clock-panel, installed in
+# --- the testing image). Everything else shifts down 3 grid rows.
+for _panel in dashboard["panels"]:
+    _panel["gridPos"]["y"] += 3
+
+dashboard["panels"].insert(
+    0,
+    {
+        "id": 50,
+        "type": "text",
+        "title": "",
+        "gridPos": {"h": 3, "w": 18, "x": 0, "y": 0},
+        "transparent": True,
+        "options": {
+            "mode": "markdown",
+            "content": "## RAIL OPERATIONS — NETWORK OVERVIEW\n**Simulated demo** · monitoring only · no control commands",
+        },
+    },
+)
+dashboard["panels"].insert(
+    1,
+    {
+        "id": 51,
+        "type": "grafana-clock-panel",
+        "title": "",
+        "gridPos": {"h": 3, "w": 6, "x": 18, "y": 0},
+        "transparent": True,
+        "options": {
+            "mode": "time",
+            "clockType": "24 hour",
+            "timeSettings": {"fontSize": "42px", "fontWeight": "bold"},
+            "dateSettings": {"showDate": True, "dateFormat": "ddd. MMM D, YYYY", "fontSize": "16px"},
+        },
+    },
+)
+
 out = os.path.join(ROOT, "wm-rail-operations.json")
 with open(out, "w") as f:
     json.dump(dashboard, f, indent=2)

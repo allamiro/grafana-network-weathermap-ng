@@ -30,8 +30,20 @@ interface Props {
   onDrillDown: (rawLink: string) => void;
 }
 
-const BODY_LENGTH = 18;
-const BODY_WIDTH = 8;
+// Multi-car consist, mimic-board style: a short row of rounded cars with a
+// small direction nose on the lead car.
+const CAR_COUNT = 4;
+const CAR_LENGTH = 7;
+const CAR_GAP = 1.5;
+const CAR_WIDTH = 7;
+const BODY_LENGTH = CAR_COUNT * CAR_LENGTH + (CAR_COUNT - 1) * CAR_GAP;
+const BODY_WIDTH = CAR_WIDTH;
+/**
+ * Position glide between data refreshes. Long enough that a typical dashboard
+ * refresh cadence (5s) reads as a continuous crawl along the line rather than
+ * discrete hops (which also visibly cut corners at path bends).
+ */
+const MOTION_TRANSITION = 'transform 4.5s linear';
 
 export const RailTrainMarkerGlyph = ({
   train,
@@ -81,7 +93,7 @@ export const RailTrainMarkerGlyph = ({
       // a safe snap, never a teleport animation across the map.
       style={{
         transform: `translate(${x}px, ${y}px) rotate(${angle}deg)`,
-        ...(motionEnabled ? { transition: 'transform 0.8s linear' } : {}),
+        ...(motionEnabled ? { transition: MOTION_TRANSITION } : {}),
       }}
       onMouseMove={(e) => onHover(hoverTarget, e)}
       onMouseOut={onHoverLoss}
@@ -93,20 +105,23 @@ export const RailTrainMarkerGlyph = ({
       data-rail-state={telemetry.state.state}
       opacity={telemetry.stale ? 0.55 : 1}
     >
-      <rect
-        x={-BODY_LENGTH / 2}
-        y={-BODY_WIDTH / 2}
-        width={BODY_LENGTH}
-        height={BODY_WIDTH}
-        rx={3}
-        fill={telemetry.state.color}
-        stroke={labelColor}
-        strokeWidth={1.2}
-        strokeDasharray={telemetry.stale ? '3 2' : undefined}
-      />
-      {/* Direction nose. */}
+      {Array.from({ length: CAR_COUNT }, (_, car) => (
+        <rect
+          key={car}
+          x={-BODY_LENGTH / 2 + car * (CAR_LENGTH + CAR_GAP)}
+          y={-BODY_WIDTH / 2}
+          width={CAR_LENGTH}
+          height={BODY_WIDTH}
+          rx={2}
+          fill={telemetry.state.color}
+          stroke={labelColor}
+          strokeWidth={1}
+          strokeDasharray={telemetry.stale ? '3 2' : undefined}
+        />
+      ))}
+      {/* Direction nose on the lead car. */}
       <polygon
-        points={`${BODY_LENGTH / 2},${-BODY_WIDTH / 2} ${BODY_LENGTH / 2 + 5},0 ${BODY_LENGTH / 2},${BODY_WIDTH / 2}`}
+        points={`${BODY_LENGTH / 2},${-BODY_WIDTH / 2} ${BODY_LENGTH / 2 + 4},0 ${BODY_LENGTH / 2},${BODY_WIDTH / 2}`}
         fill={telemetry.state.color}
         stroke={labelColor}
         strokeWidth={1}
