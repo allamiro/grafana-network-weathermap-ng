@@ -1,0 +1,659 @@
+{
+  "uid": "wm-rail-operations",
+  "title": "Rail Operations Monitoring \u2014 Simulated Demo",
+  "description": "Monitoring-only Rail Operations mode demo (#300). Stations, tracks, signals, switches, crossovers, routes, and trains are plugin objects bound to SIMULATED telemetry from the demo exporter (rail.go). The static SVG background carries only grid/alignment context. This visualization issues no control commands of any kind.",
+  "tags": [
+    "weathermap",
+    "demo",
+    "rail",
+    "simulated"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "tamirsuliman-weathermap-panel",
+      "title": "Rail Operations \u2014 Simulated (monitoring only)",
+      "gridPos": {
+        "h": 21,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_rail_track_occupied",
+          "legendFormat": "OCC {{segment_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "expr": "wm_rail_track_state",
+          "legendFormat": "AVAIL {{segment_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "expr": "wm_rail_signal_state",
+          "legendFormat": "SIG {{signal_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "D",
+          "expr": "wm_rail_signal_health",
+          "legendFormat": "SIGH {{signal_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "E",
+          "expr": "wm_rail_switch_position",
+          "legendFormat": "SWPOS {{switch_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "F",
+          "expr": "wm_rail_switch_detected",
+          "legendFormat": "SWDET {{switch_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "G",
+          "expr": "wm_rail_switch_locked",
+          "legendFormat": "SWLOCK {{switch_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "H",
+          "expr": "wm_rail_train_progress",
+          "legendFormat": "TRAIN {{train_id}} {{segment_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "I",
+          "expr": "wm_rail_train_speed_kmh",
+          "legendFormat": "SPEED {{train_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "J",
+          "expr": "wm_rail_train_delay_seconds",
+          "legendFormat": "DELAY {{train_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "K",
+          "expr": "wm_rail_stale",
+          "legendFormat": "STALE {{entity_id}}",
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "refId": "L",
+          "expr": "wm_rail_route_established",
+          "legendFormat": "ROUTE {{route_id}}",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "weathermap": {
+          "version": 14,
+          "id": "wm-rail-operations",
+          "mapMode": "rail",
+          "nodes": [],
+          "links": [],
+          "scale": [],
+          "rail": {
+            "controlPoints": [
+              {
+                "id": "yard",
+                "type": "yard",
+                "position": [
+                  90,
+                  310
+                ],
+                "label": "Yard",
+                "shortLabel": "YD"
+              },
+              {
+                "id": "st-a",
+                "type": "station",
+                "position": [
+                  290,
+                  310
+                ],
+                "label": "Station A",
+                "shortLabel": "A"
+              },
+              {
+                "id": "st-b",
+                "type": "station",
+                "position": [
+                  490,
+                  310
+                ],
+                "label": "Station B",
+                "shortLabel": "B"
+              },
+              {
+                "id": "jct",
+                "type": "junction",
+                "position": [
+                  690,
+                  310
+                ],
+                "label": "Junction",
+                "shortLabel": "JCT"
+              },
+              {
+                "id": "st-c",
+                "type": "station",
+                "position": [
+                  890,
+                  310
+                ],
+                "label": "Station C",
+                "shortLabel": "C"
+              },
+              {
+                "id": "term",
+                "type": "terminal",
+                "position": [
+                  1090,
+                  310
+                ],
+                "label": "East Terminal",
+                "shortLabel": "ET"
+              },
+              {
+                "id": "depot",
+                "type": "depot",
+                "position": [
+                  840,
+                  480
+                ],
+                "label": "Depot",
+                "shortLabel": "DEP"
+              }
+            ],
+            "trackSegments": [
+              {
+                "id": "t1-b01",
+                "fromControlPointId": "yard",
+                "toControlPointId": "st-a",
+                "trackNumber": "1",
+                "direction": "eastbound",
+                "blockId": "T1-B01",
+                "viaPoints": [
+                  [
+                    115,
+                    285
+                  ],
+                  [
+                    265,
+                    285
+                  ]
+                ],
+                "occupancyQuery": "OCC t1-b01",
+                "availabilityQuery": "AVAIL t1-b01"
+              },
+              {
+                "id": "t1-b02",
+                "fromControlPointId": "st-a",
+                "toControlPointId": "st-b",
+                "trackNumber": "1",
+                "direction": "eastbound",
+                "blockId": "T1-B02",
+                "viaPoints": [
+                  [
+                    315,
+                    285
+                  ],
+                  [
+                    465,
+                    285
+                  ]
+                ],
+                "occupancyQuery": "OCC t1-b02",
+                "availabilityQuery": "AVAIL t1-b02"
+              },
+              {
+                "id": "t1-b03",
+                "fromControlPointId": "st-b",
+                "toControlPointId": "jct",
+                "trackNumber": "1",
+                "direction": "eastbound",
+                "blockId": "T1-B03",
+                "viaPoints": [
+                  [
+                    515,
+                    285
+                  ],
+                  [
+                    665,
+                    285
+                  ]
+                ],
+                "occupancyQuery": "OCC t1-b03",
+                "availabilityQuery": "AVAIL t1-b03"
+              },
+              {
+                "id": "t1-b04",
+                "fromControlPointId": "jct",
+                "toControlPointId": "st-c",
+                "trackNumber": "1",
+                "direction": "eastbound",
+                "blockId": "T1-B04",
+                "viaPoints": [
+                  [
+                    715,
+                    285
+                  ],
+                  [
+                    865,
+                    285
+                  ]
+                ],
+                "occupancyQuery": "OCC t1-b04",
+                "availabilityQuery": "AVAIL t1-b04"
+              },
+              {
+                "id": "t1-b05",
+                "fromControlPointId": "st-c",
+                "toControlPointId": "term",
+                "trackNumber": "1",
+                "direction": "eastbound",
+                "blockId": "T1-B05",
+                "viaPoints": [
+                  [
+                    915,
+                    285
+                  ],
+                  [
+                    1065,
+                    285
+                  ]
+                ],
+                "occupancyQuery": "OCC t1-b05",
+                "availabilityQuery": "AVAIL t1-b05"
+              },
+              {
+                "id": "t2-b01",
+                "fromControlPointId": "term",
+                "toControlPointId": "st-c",
+                "trackNumber": "2",
+                "direction": "westbound",
+                "blockId": "T2-B01",
+                "viaPoints": [
+                  [
+                    1115,
+                    335
+                  ],
+                  [
+                    865,
+                    335
+                  ]
+                ],
+                "occupancyQuery": "OCC t2-b01",
+                "availabilityQuery": "AVAIL t2-b01"
+              },
+              {
+                "id": "t2-b02",
+                "fromControlPointId": "st-c",
+                "toControlPointId": "jct",
+                "trackNumber": "2",
+                "direction": "westbound",
+                "blockId": "T2-B02",
+                "viaPoints": [
+                  [
+                    915,
+                    335
+                  ],
+                  [
+                    665,
+                    335
+                  ]
+                ],
+                "occupancyQuery": "OCC t2-b02",
+                "availabilityQuery": "AVAIL t2-b02"
+              },
+              {
+                "id": "t2-b03",
+                "fromControlPointId": "jct",
+                "toControlPointId": "st-b",
+                "trackNumber": "2",
+                "direction": "westbound",
+                "blockId": "T2-B03",
+                "viaPoints": [
+                  [
+                    715,
+                    335
+                  ],
+                  [
+                    465,
+                    335
+                  ]
+                ],
+                "occupancyQuery": "OCC t2-b03",
+                "availabilityQuery": "AVAIL t2-b03"
+              },
+              {
+                "id": "t2-b04",
+                "fromControlPointId": "st-b",
+                "toControlPointId": "st-a",
+                "trackNumber": "2",
+                "direction": "westbound",
+                "blockId": "T2-B04",
+                "viaPoints": [
+                  [
+                    515,
+                    335
+                  ],
+                  [
+                    265,
+                    335
+                  ]
+                ],
+                "occupancyQuery": "OCC t2-b04",
+                "availabilityQuery": "AVAIL t2-b04"
+              },
+              {
+                "id": "t2-b05",
+                "fromControlPointId": "st-a",
+                "toControlPointId": "yard",
+                "trackNumber": "2",
+                "direction": "westbound",
+                "blockId": "T2-B05",
+                "viaPoints": [
+                  [
+                    315,
+                    335
+                  ],
+                  [
+                    65,
+                    335
+                  ]
+                ],
+                "occupancyQuery": "OCC t2-b05",
+                "availabilityQuery": "AVAIL t2-b05"
+              },
+              {
+                "id": "t3-b01",
+                "fromControlPointId": "jct",
+                "toControlPointId": "depot",
+                "trackNumber": "3",
+                "direction": "bidirectional",
+                "blockId": "T3-B01",
+                "viaPoints": [
+                  [
+                    720,
+                    400
+                  ]
+                ],
+                "occupancyQuery": "OCC t3-b01",
+                "availabilityQuery": "AVAIL t3-b01"
+              }
+            ],
+            "signals": [
+              {
+                "id": "s01",
+                "segmentId": "t1-b01",
+                "positionPercent": 0.85,
+                "facingDirection": "eastbound",
+                "stateQuery": "SIG s01",
+                "healthQuery": "SIGH s01",
+                "label": "Signal s01"
+              },
+              {
+                "id": "s02",
+                "segmentId": "t1-b02",
+                "positionPercent": 0.85,
+                "facingDirection": "eastbound",
+                "stateQuery": "SIG s02",
+                "healthQuery": "SIGH s02",
+                "label": "Signal s02"
+              },
+              {
+                "id": "s03",
+                "segmentId": "t1-b03",
+                "positionPercent": 0.85,
+                "facingDirection": "eastbound",
+                "stateQuery": "SIG s03",
+                "healthQuery": "SIGH s03",
+                "label": "Signal s03"
+              },
+              {
+                "id": "s04",
+                "segmentId": "t1-b04",
+                "positionPercent": 0.85,
+                "facingDirection": "eastbound",
+                "stateQuery": "SIG s04",
+                "healthQuery": "SIGH s04",
+                "label": "Signal s04"
+              },
+              {
+                "id": "s05",
+                "segmentId": "t1-b05",
+                "positionPercent": 0.85,
+                "facingDirection": "eastbound",
+                "stateQuery": "SIG s05",
+                "healthQuery": "SIGH s05",
+                "label": "Signal s05"
+              },
+              {
+                "id": "s06",
+                "segmentId": "t2-b01",
+                "positionPercent": 0.15,
+                "facingDirection": "westbound",
+                "stateQuery": "SIG s06",
+                "healthQuery": "SIGH s06",
+                "label": "Signal s06 (failed optics \u2014 simulated)"
+              }
+            ],
+            "switches": [
+              {
+                "id": "p1",
+                "label": "P1 (crossover entry)",
+                "controlPointId": "st-b",
+                "normalSegmentId": "t1-b02",
+                "reverseSegmentId": "t2-b04",
+                "positionQuery": "SWPOS p1",
+                "detectedQuery": "SWDET p1",
+                "lockedQuery": "SWLOCK p1"
+              },
+              {
+                "id": "p2",
+                "label": "P2 (depot turnout)",
+                "controlPointId": "jct",
+                "normalSegmentId": "t1-b04",
+                "reverseSegmentId": "t3-b01",
+                "positionQuery": "SWPOS p2",
+                "detectedQuery": "SWDET p2",
+                "lockedQuery": "SWLOCK p2"
+              }
+            ],
+            "crossovers": [
+              {
+                "id": "x1",
+                "label": "Crossover A-B",
+                "trackSegmentIds": [
+                  "t1-b02",
+                  "t2-b04"
+                ],
+                "geometry": "double"
+              }
+            ],
+            "trains": [
+              {
+                "id": "RD-218",
+                "label": "RD-218",
+                "segmentQuery": "TRAIN RD-218",
+                "speedQuery": "SPEED RD-218",
+                "delayQuery": "DELAY RD-218",
+                "staleQuery": "STALE RD-218"
+              },
+              {
+                "id": "RD-221",
+                "label": "RD-221",
+                "segmentQuery": "TRAIN RD-221",
+                "speedQuery": "SPEED RD-221",
+                "delayQuery": "DELAY RD-221",
+                "staleQuery": "STALE RD-221"
+              },
+              {
+                "id": "RD-305",
+                "label": "RD-305",
+                "segmentQuery": "TRAIN RD-305",
+                "speedQuery": "SPEED RD-305",
+                "delayQuery": "DELAY RD-305",
+                "staleQuery": "STALE RD-305"
+              },
+              {
+                "id": "RD-999",
+                "label": "RD-999",
+                "segmentQuery": "TRAIN RD-999",
+                "speedQuery": "SPEED RD-999",
+                "delayQuery": "DELAY RD-999",
+                "staleQuery": "STALE RD-999"
+              }
+            ],
+            "routes": [
+              {
+                "id": "route-eb",
+                "label": "Eastbound corridor route",
+                "segmentIds": [
+                  "t1-b01",
+                  "t1-b02",
+                  "t1-b03",
+                  "t1-b04",
+                  "t1-b05"
+                ],
+                "stateQuery": "ROUTE route-eb"
+              }
+            ],
+            "incidents": [
+              {
+                "id": "maint-b04",
+                "kind": "maintenance",
+                "label": "Track possession T1-B04 (simulated)",
+                "segmentIds": [
+                  "t1-b04"
+                ]
+              }
+            ],
+            "layers": []
+          },
+          "settings": {
+            "link": {
+              "spacing": {
+                "horizontal": 10,
+                "vertical": 5
+              },
+              "stroke": {
+                "color": "#7B8087"
+              },
+              "label": {
+                "background": "#212124",
+                "border": "#2c3235",
+                "font": "#d8d9da"
+              },
+              "showAllWithPercentage": false,
+              "valueMappingMode": "last"
+            },
+            "animation": {
+              "enabled": true,
+              "respectReducedMotion": true,
+              "pauseInEditMode": true,
+              "maxAnimatedLinks": 100,
+              "showLegend": false
+            },
+            "fontSizing": {
+              "node": 10,
+              "link": 8
+            },
+            "panel": {
+              "backgroundColor": "#0b1020",
+              "backgroundImage": {
+                "url": "public/plugins/tamirsuliman-weathermap-panel/img/rail/rail-plugin-base.svg",
+                "fit": "contain",
+                "attachToCanvas": true
+              },
+              "showTimestamp": true,
+              "panelSize": {
+                "width": 1200,
+                "height": 675
+              },
+              "zoomScale": 0,
+              "offset": {
+                "x": 0,
+                "y": 0
+              },
+              "grid": {
+                "enabled": false,
+                "size": 10,
+                "guidesEnabled": false
+              }
+            },
+            "tooltip": {
+              "fontSize": 10,
+              "textColor": "white",
+              "backgroundColor": "#111217",
+              "inboundColor": "#00cf00",
+              "outboundColor": "#fade2a",
+              "scaleToBandwidth": false
+            },
+            "scale": {
+              "position": {
+                "x": 0,
+                "y": 0
+              },
+              "size": {
+                "width": 50,
+                "height": 200
+              },
+              "title": "Traffic Load",
+              "fontSizing": {
+                "title": 16,
+                "threshold": 12
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Simulated demo.** All signalling and PLC-like values come from the demo exporter (`testing/exporter/rail.go`) and are labeled simulated. Rail Operations mode is a **monitoring-only** visualization: it must not be used to issue safety-critical railway control commands. Live states: `t1-b04` is under maintenance possession, signal `s06` has failed optics, train `RD-999` publishes stale telemetry, switch `p2` drops detection periodically."
+      }
+    }
+  ]
+}
