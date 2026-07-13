@@ -24,6 +24,7 @@ package main
 //	wm_rail_train_progress{train_id,segment_id}: 0..1 along the segment;
 //	  exactly one series per train, relabelled as the train advances.
 import (
+	"math"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -99,22 +100,67 @@ var track2Blocks = []string{"t2-b01", "t2-b02", "t2-b03", "t2-b04", "t2-b05"}
 type simRailTrain struct {
 	id     string
 	blocks []string
-	// Seconds to traverse one block (demo pace, deliberately slow and
-	// independent of the DISPLAYED speed); offsets so trains never collide.
+	// Seconds per block INCLUDING the station dwell (demo pace, deliberately
+	// slow); offsets so trains never collide.
 	blockPeriod float64
 	phaseOffset float64
-	speedKmh    float64
-	delaySec    float64
+	// Seconds stopped at the block-entry station (speed 0, progress 0).
+	dwellSec float64
+	// Line speed while cruising; the displayed speed follows a real motion
+	// profile (dwell -> accelerate -> cruise with fluctuation -> brake).
+	cruiseKmh float64
+	delaySec  float64
 	// A stale train freezes: its series stop moving and wm_rail_stale = 1.
 	stale bool
 }
 
+// Fraction of the running time spent accelerating (and again braking).
+const rampFraction = 0.18
+
+// trapezoidProfile returns the speed factor (0..1) at run phase r (0..1):
+// linear acceleration, cruise, linear braking to a stand at the next station.
+func trapezoidProfile(r float64) float64 {
+	switch {
+	case r <= 0 || r >= 1:
+		return 0
+	case r < rampFraction:
+		return r / rampFraction
+	case r > 1-rampFraction:
+		return (1 - r) / rampFraction
+	default:
+		return 1
+	}
+}
+
+// trapezoidProgress integrates the profile so the marker's position matches
+// the displayed speed: slow creep out of the platform, steady mid-block,
+// easing to a stop. Normalized to 0..1 over the run.
+func trapezoidProgress(r float64) float64 {
+	a := rampFraction
+	total := 1 - a
+	var integral float64
+	switch {
+	case r <= 0:
+		return 0
+	case r >= 1:
+		return 1
+	case r < a:
+		integral = r * r / (2 * a)
+	case r <= 1-a:
+		integral = a/2 + (r - a)
+	default:
+		rem := 1 - r
+		integral = (1 - 3*a/2) + (a/2 - rem*rem/(2*a))
+	}
+	return integral / total
+}
+
 var simRailTrains = []simRailTrain{
-	{id: "RD-218", blocks: track1Blocks, blockPeriod: 150, phaseOffset: 0, speedKmh: 62, delaySec: 0},
-	{id: "RD-221", blocks: track1Blocks, blockPeriod: 150, phaseOffset: 370, speedKmh: 58, delaySec: 120},
-	{id: "RD-305", blocks: track2Blocks, blockPeriod: 170, phaseOffset: 90, speedKmh: 47, delaySec: 45},
+	{id: "RD-218", blocks: track1Blocks, blockPeriod: 150, phaseOffset: 0, dwellSec: 25, cruiseKmh: 72, delaySec: 0},
+	{id: "RD-221", blocks: track1Blocks, blockPeriod: 150, phaseOffset: 370, dwellSec: 30, cruiseKmh: 68, delaySec: 120},
+	{id: "RD-305", blocks: track2Blocks, blockPeriod: 170, phaseOffset: 90, dwellSec: 35, cruiseKmh: 55, delaySec: 45},
 	// Deliberately stale: telemetry frozen mid-route to demo data-quality UX.
-	{id: "RD-999", blocks: track2Blocks, blockPeriod: 170, phaseOffset: 600, speedKmh: 0, delaySec: 600, stale: true},
+	{id: "RD-999", blocks: track2Blocks, blockPeriod: 170, phaseOffset: 600, dwellSec: 30, cruiseKmh: 0, delaySec: 600, stale: true},
 }
 
 // simulateRail derives every value from wall-clock time, so restarts and
@@ -137,12 +183,43 @@ func simulateRail(now time.Time) {
 		total := train.blockPeriod * float64(len(train.blocks))
 		pos := clock - total*float64(int(clock/total))
 		blockIndex := int(pos / train.blockPeriod)
-		progress := (pos - float64(blockIndex)*train.blockPeriod) / train.blockPeriod
+		inBlock := pos - float64(blockIndex)*train.blockPeriod
 		block := train.blocks[blockIndex]
 
+		// Motion profile: dwell stopped at the station, then a trapezoid run
+		// (accelerate -> cruise -> brake to 0 at the next station). Progress
+		// integrates the same profile, so the marker creeps out of the
+		// platform, holds line speed mid-block, and eases to a stand.
+		var progress, speed float64
+		if train.stale {
+			progress = 0.42 // frozen mid-block forever
+			speed = 0
+		} else if inBlock < train.dwellSec {
+			progress = 0
+			speed = 0
+		} else {
+			r := (inBlock - train.dwellSec) / (train.blockPeriod - train.dwellSec)
+			progress = trapezoidProgress(r)
+			// Cruise fluctuation: slow deterministic wobble (+/-8%) plus a
+			// touch of per-train phase so the gauges never move in lockstep.
+			wobble := 1 + 0.08*math.Sin(t/13+train.phaseOffset) + 0.04*math.Sin(t/5.5+train.phaseOffset/3)
+			speed = train.cruiseKmh * trapezoidProfile(r) * wobble
+			if speed < 0 {
+				speed = 0
+			}
+		}
+
 		railTrainProgress.WithLabelValues(train.id, block).Set(progress)
-		railTrainSpeed.WithLabelValues(train.id).Set(train.speedKmh)
-		railTrainDelay.WithLabelValues(train.id).Set(train.delaySec)
+		railTrainSpeed.WithLabelValues(train.id).Set(math.Round(speed))
+		// Delay drifts slowly instead of sitting frozen.
+		delay := train.delaySec + 20*math.Sin(t/240+train.phaseOffset/7)
+		if train.stale {
+			delay = train.delaySec
+		}
+		if delay < 0 {
+			delay = 0
+		}
+		railTrainDelay.WithLabelValues(train.id).Set(math.Round(delay))
 		if train.stale {
 			railStale.WithLabelValues(train.id).Set(1)
 		} else {
