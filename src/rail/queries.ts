@@ -267,7 +267,15 @@ export function resolveTrainTelemetry(
    * can never capture "TRAIN A EXPRESS t1" (another train whose name extends
    * this one) and extract the garbage segment "EXPRESS t1".
    */
-  knownSegmentIds?: ReadonlySet<string>
+  knownSegmentIds?: ReadonlySet<string>,
+  /**
+   * Last sample timestamp per series display name. Range queries keep a
+   * vanished series (the block the train ALREADY LEFT) in the result for the
+   * whole dashboard time range, so when several series match the prefix the
+   * FRESHEST one is the train's real position — without timestamps a marker
+   * can freeze at the end of the first block it ever rode.
+   */
+  frameTimestamps?: ReadonlyMap<string, number>
 ): ResolvedTrainTelemetry {
   let segmentId = train.segmentId;
   let progress: number | undefined;
@@ -275,6 +283,7 @@ export function resolveTrainTelemetry(
 
   if (train.segmentQuery) {
     const prefix = `${train.segmentQuery} `;
+    let bestTimestamp = -Infinity;
     for (const [name, value] of frameMap) {
       if (!name.startsWith(prefix) || !Number.isFinite(value)) {
         continue;
@@ -283,10 +292,16 @@ export function resolveTrainTelemetry(
       if (knownSegmentIds && !knownSegmentIds.has(suffix)) {
         continue;
       }
-      segmentId = suffix;
-      progress = clampProgress(value);
-      scanResolved = true;
-      break; // first valid match wins, consistent with duplicate-name handling
+      const timestamp = frameTimestamps?.get(name);
+      if (!scanResolved || (timestamp !== undefined && timestamp > bestTimestamp)) {
+        segmentId = suffix;
+        progress = clampProgress(value);
+        scanResolved = true;
+        bestTimestamp = timestamp ?? -Infinity;
+      }
+      if (!frameTimestamps) {
+        break; // no freshness info: first valid match wins, as before
+      }
     }
   }
 

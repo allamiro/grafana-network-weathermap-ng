@@ -627,6 +627,40 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, wm?.settings?.link?.valueMappingMode, useTimeline, effectiveScrub]);
 
+  // Last sample timestamp per series display name (#300): range queries keep
+  // vanished series (blocks a train already left) in the result for the whole
+  // time range, so rail train binding must prefer the FRESHEST matching
+  // series. First-wins on duplicate names, mirroring dataFrameMap.
+  const frameTimestampMap = useMemo(() => {
+    const map = new Map<string, number>();
+    data.series.forEach((frame) => {
+      try {
+        const timeValues = getTimeField(frame)?.values as Array<number | null | undefined> | undefined;
+        if (!timeValues || timeValues.length === 0) {
+          return;
+        }
+        let lastTime: number | undefined;
+        for (let i = timeValues.length - 1; i >= 0; i--) {
+          if (typeof timeValues[i] === 'number') {
+            lastTime = timeValues[i] as number;
+            break;
+          }
+        }
+        if (lastTime === undefined) {
+          return;
+        }
+        for (const { name } of getValueSeries(frame, data.series)) {
+          if (!map.has(name)) {
+            map.set(name, lastTime);
+          }
+        }
+      } catch (e) {
+        console.warn('Network Weathermap: Error while attempting to access query timestamps.', e);
+      }
+    });
+    return map;
+  }, [data]);
+
   // Minimize uneeded state changes
   const mounted = useRef(false);
 
@@ -2139,6 +2173,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               <RailLayer
                 config={wm.rail}
                 frameMap={dataFrameMap}
+                frameTimestamps={frameTimestampMap}
                 zoomScale={wm.settings.panel.zoomScale}
                 isEditMode={isEditMode}
                 motionEnabled={animationActive}

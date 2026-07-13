@@ -34,6 +34,8 @@ import { RailTrainMarkerGlyph } from './RailTrainMarker';
 export interface RailLayerProps {
   config: RailOperationsConfig;
   frameMap: Map<string, number>;
+  /** Last sample timestamp per series name; lets train binding prefer the freshest series. */
+  frameTimestamps?: Map<string, number>;
   /** Current wheel-step zoom (higher = zoomed out), for layer min/max gating. */
   zoomScale: number;
   isEditMode: boolean;
@@ -95,6 +97,7 @@ const byZIndexIndexed = <T extends { zIndex?: number }>(entities: T[]): Array<{ 
 export const RailLayer = ({
   config,
   frameMap,
+  frameTimestamps,
   zoomScale,
   isEditMode,
   motionEnabled,
@@ -293,7 +296,7 @@ export const RailLayer = ({
       render: () => (
         <g key={RAIL_LAYER_IDS.trains} data-testid="rail-trains-layer">
           {byZIndexIndexed(config.trains).map(({ entity: train, index }, sortedIndex, sorted) => {
-            const telemetry = resolveTrainTelemetry(train, frameMap, knownSegmentIds);
+            const telemetry = resolveTrainTelemetry(train, frameMap, knownSegmentIds, frameTimestamps);
             const measured = telemetry.segmentId ? measuredSegments.get(telemetry.segmentId) : undefined;
             if (!measured) {
               // Missing/deleted segment or no position: never a crash, never

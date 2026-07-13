@@ -173,6 +173,24 @@ describe('resolveTrainTelemetry unit behavior', () => {
     expect(t.stale).toBe(false);
   });
 
+  test('with timestamps, the scan binds the FRESHEST matching series, not the first (live-data fix)', () => {
+    // Range queries keep the block a train already left in the result for the
+    // whole time range; the older series appears FIRST. Without freshness the
+    // marker would freeze at the end of that old block.
+    const t = resolveTrainTelemetry(
+      { segmentQuery: 'TRAIN RD-218' },
+      frames({ 'TRAIN RD-218 t1-b01': 0.99, 'TRAIN RD-218 t1-b02': 0.31 }),
+      new Set(['t1-b01', 't1-b02']),
+      new Map([
+        ['TRAIN RD-218 t1-b01', 1000], // stale series: train left this block
+        ['TRAIN RD-218 t1-b02', 5000], // live series
+      ])
+    );
+    expect(t.segmentId).toBe('t1-b02');
+    expect(t.progress).toBe(0.31);
+    expect(t.stale).toBe(false);
+  });
+
   test('the scan never captures an extending train name when segment ids are known (review fix)', () => {
     const t = resolveTrainTelemetry(
       { segmentQuery: 'TRAIN A' },
