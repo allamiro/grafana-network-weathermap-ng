@@ -170,6 +170,7 @@ export interface RailCrossover {
 export interface RailTrainMarker {
   id: string;
   label?: string;
+  /** RESERVED: needs string-valued series support; not consumed yet. */
   labelQuery?: string;
   segmentId?: string;
   segmentQuery?: string;
@@ -177,9 +178,11 @@ export interface RailTrainMarker {
   progress?: number;
   progressQuery?: string;
   direction?: TrackDirection;
+  /** RESERVED: needs string-valued series support; not consumed yet. */
   directionQuery?: string;
   speedQuery?: string;
   delayQuery?: string;
+  /** Resolves numerically (station code); string destinations need string-valued series support. */
   destinationQuery?: string;
   statusQuery?: string;
   staleQuery?: string;

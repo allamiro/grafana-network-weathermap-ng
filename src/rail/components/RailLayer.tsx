@@ -42,7 +42,12 @@ export interface RailLayerProps {
    * gate (master switch, reduced motion, edit-mode pause, timeline scrub).
    */
   motionEnabled: boolean;
-  /** Cap on smoothly-animated train markers (shares settings.animation.maxAnimatedLinks). */
+  /**
+   * Cap on smoothly-animated train markers. Uses the same VALUE as
+   * settings.animation.maxAnimatedLinks but is applied independently of the
+   * link-particle budget. Highest-zIndex (most prominent) trains animate
+   * first.
+   */
   maxAnimated: number;
   fontSizing: { node: number; link: number };
   neutralColor: string;
@@ -134,6 +139,7 @@ export const RailLayer = ({
     }
     return map;
   }, [config.trackSegments]);
+  const knownSegmentIds = useMemo(() => new Set(segmentById.keys()), [segmentById]);
 
   const layerById = useMemo(() => new Map(config.layers.map((l) => [l.id, l])), [config.layers]);
   const visible = (layerId: string) => railLayerVisible(layerById.get(layerId), zoomScale, isEditMode);
@@ -286,8 +292,8 @@ export const RailLayer = ({
       layerId: RAIL_LAYER_IDS.trains,
       render: () => (
         <g key={RAIL_LAYER_IDS.trains} data-testid="rail-trains-layer">
-          {byZIndexIndexed(config.trains).map(({ entity: train, index }, animIndex) => {
-            const telemetry = resolveTrainTelemetry(train, frameMap);
+          {byZIndexIndexed(config.trains).map(({ entity: train, index }, sortedIndex, sorted) => {
+            const telemetry = resolveTrainTelemetry(train, frameMap, knownSegmentIds);
             const measured = telemetry.segmentId ? measuredSegments.get(telemetry.segmentId) : undefined;
             if (!measured) {
               // Missing/deleted segment or no position: never a crash, never
@@ -305,7 +311,7 @@ export const RailLayer = ({
                 fontSize={fontSizing.node}
                 showLabel={labelsVisible}
                 labelColor={labelColor}
-                motionEnabled={motionEnabled && animIndex < maxAnimated}
+                motionEnabled={motionEnabled && sorted.length - sortedIndex <= maxAnimated}
                 allowDrillDown={!isEditMode}
                 onHover={onHover}
                 onHoverLoss={onHoverLoss}

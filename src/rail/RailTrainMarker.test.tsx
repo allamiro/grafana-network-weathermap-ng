@@ -16,8 +16,9 @@ const train = (id: string, extra: Partial<RailTrainMarker> = {}): RailTrainMarke
 const markerOf = (id: string) =>
   screen.getAllByTestId('rail-train').find((el) => el.getAttribute('data-rail-id') === id)!;
 
+const transformOf = (el: Element) => (el as HTMLElement).style.transform;
 const translateX = (el: Element) => {
-  const m = /translate\(([-\d.]+),\s*([-\d.]+)\)/.exec(el.getAttribute('transform') ?? '');
+  const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(transformOf(el));
   return m ? Number(m[1]) : NaN;
 };
 
@@ -35,9 +36,8 @@ describe('train placement (#300 Phase 4)', () => {
       // t1: [100,100] -> via [250,60] -> [400,100]
       wm.rail!.trains = [train('rd-v', { segmentId: 't1', progress: 0.5 })];
     });
-    const transform = markerOf('rd-v').getAttribute('transform')!;
     // Halfway along the two equal-length legs = exactly the via point.
-    expect(transform).toContain('translate(250, 60)');
+    expect(transformOf(markerOf('rd-v'))).toContain('translate(250px, 60px)');
   });
 
   test('progress from a query is clamped; out-of-range static progress clamps too', () => {
@@ -60,7 +60,7 @@ describe('train placement (#300 Phase 4)', () => {
     );
     const marker = markerOf('rd-218');
     expect(marker.getAttribute('data-rail-segment')).toBe('t1');
-    expect(marker.getAttribute('transform')).toContain('translate(250, 60)');
+    expect(transformOf(marker)).toContain('translate(250px, 60px)');
   });
 
   test('a train on a missing or deleted segment renders nothing, never crashes', () => {
@@ -106,9 +106,9 @@ describe('train placement (#300 Phase 4)', () => {
         train('rd-flat', { segmentId: 't1', progress: 0.25, rotate: false }),
       ];
     });
-    const rotated = /rotate\((-?[\d.]+)\)/.exec(markerOf('rd-rot').getAttribute('transform')!)![1];
+    const rotated = /rotate\((-?[\d.]+)deg\)/.exec(transformOf(markerOf('rd-rot')))![1];
     expect(Number(rotated)).not.toBe(0);
-    expect(markerOf('rd-flat').getAttribute('transform')).toContain('rotate(0)');
+    expect(transformOf(markerOf('rd-flat'))).toContain('rotate(0deg)');
   });
 
   test('smooth motion is off without the animation master switch (and in edit mode)', () => {
@@ -118,13 +118,14 @@ describe('train placement (#300 Phase 4)', () => {
     expect(markerOf('rd-m').style.transition).toBe('');
   });
 
-  test('smooth motion engages with animation enabled, capped by maxAnimatedLinks', () => {
+  test('smooth motion engages with animation enabled, capped by maxAnimatedLinks (topmost trains first)', () => {
     renderRail((wm) => {
       wm.settings.animation = { enabled: true, respectReducedMotion: false, pauseInEditMode: false, maxAnimatedLinks: 1 };
-      wm.rail!.trains = [train('rd-a', { progress: 0.25 }), train('rd-b', { progress: 0.75 })];
+      wm.rail!.trains = [train('rd-a', { progress: 0.25 }), train('rd-b', { progress: 0.75, zIndex: 5 })];
     });
-    expect(markerOf('rd-a').style.transition).toContain('transform');
-    expect(markerOf('rd-b').style.transition).toBe('');
+    // The cap budget goes to the HIGHEST-zIndex (most prominent) trains.
+    expect(markerOf('rd-b').style.transition).toContain('transform');
+    expect(markerOf('rd-a').style.transition).toBe('');
   });
 
   test('trains layer visibility and label gating', () => {
@@ -169,6 +170,38 @@ describe('resolveTrainTelemetry unit behavior', () => {
     // Map preserves insertion order: first inserted key wins.
     expect(t.segmentId).toBe('b-2');
     expect(t.progress).toBe(0.7);
+    expect(t.stale).toBe(false);
+  });
+
+  test('the scan never captures an extending train name when segment ids are known (review fix)', () => {
+    const t = resolveTrainTelemetry(
+      { segmentQuery: 'TRAIN A' },
+      frames({ 'TRAIN A EXPRESS t1': 0.9, 'TRAIN A t2': 0.4 }),
+      new Set(['t1', 't2'])
+    );
+    // 'EXPRESS t1' is not a known segment; the scan must skip it and find t2.
+    expect(t.segmentId).toBe('t2');
+    expect(t.progress).toBe(0.4);
+  });
+
+  test('a vanished data-driven binding reads stale even when an authored fallback places it (review fix)', () => {
+    const t = resolveTrainTelemetry(
+      { segmentQuery: 'TRAIN GONE', segmentId: 't1', progress: 0.1 },
+      frames({})
+    );
+    expect(t.segmentId).toBe('t1'); // fallback placement still renders...
+    expect(t.progress).toBe(0.1);
+    expect(t.stale).toBe(true); // ...but never as fresh live telemetry.
+    expect(t.state.state).toBe('stale');
+  });
+
+  test('a live failed status is never repainted by the stale wash (review fix)', () => {
+    const t = resolveTrainTelemetry(
+      { segmentId: 't1', progress: 0.5, statusQuery: 'ST', staleQuery: 'AGE' },
+      frames({ ST: 0, AGE: 1 })
+    );
+    expect(t.stale).toBe(true);
+    expect(t.state.state).toBe('failed'); // severity doctrine: alarms beat stale
   });
 
   test('explicit stale flag and vanished position series both mark stale', () => {

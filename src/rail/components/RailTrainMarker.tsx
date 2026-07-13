@@ -72,12 +72,17 @@ export const RailTrainMarkerGlyph = ({
 
   return (
     <g
-      // Translate/rotate as a group transform: when motion is enabled the
-      // compositor transitions between data refreshes. The PARENT keys this
-      // component by train id + segment id, so a segment change remounts the
-      // marker — a safe snap, never a teleport animation across the map.
-      transform={`translate(${x}, ${y}) rotate(${angle})`}
-      style={motionEnabled ? { transition: 'transform 0.8s linear' } : undefined}
+      // Translate/rotate as a CSS transform (px = SVG user units), NOT the
+      // SVG transform attribute: CSS transitions reliably animate the CSS
+      // property across engines, while attribute-driven transitions have
+      // long-standing WebKit gaps. When motion is enabled the compositor
+      // transitions between data refreshes. The PARENT keys this component
+      // by train id + segment id, so a segment change remounts the marker —
+      // a safe snap, never a teleport animation across the map.
+      style={{
+        transform: `translate(${x}px, ${y}px) rotate(${angle}deg)`,
+        ...(motionEnabled ? { transition: 'transform 0.8s linear' } : {}),
+      }}
       onMouseMove={(e) => onHover(hoverTarget, e)}
       onMouseOut={onHoverLoss}
       onClick={drillDown ? () => onDrillDown(train.dashboardLink!) : undefined}
@@ -108,7 +113,8 @@ export const RailTrainMarkerGlyph = ({
       />
       {showLabel ? (
         <text
-          // Counter-rotate so labels stay upright on rotated markers.
+          // Counter-rotate so labels stay upright on rotated markers (static
+          // attribute is fine here — the label itself is not transitioned).
           transform={`rotate(${-angle})`}
           y={-BODY_WIDTH - 3}
           textAnchor="middle"

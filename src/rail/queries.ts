@@ -260,19 +260,33 @@ export function resolveTrainTelemetry(
     statusQuery?: string;
     staleQuery?: string;
   },
-  frameMap: Map<string, number>
+  frameMap: Map<string, number>,
+  /**
+   * Known track segment ids. When provided, the prefix scan only accepts a
+   * series whose suffix is EXACTLY one of them — so a train named "TRAIN A"
+   * can never capture "TRAIN A EXPRESS t1" (another train whose name extends
+   * this one) and extract the garbage segment "EXPRESS t1".
+   */
+  knownSegmentIds?: ReadonlySet<string>
 ): ResolvedTrainTelemetry {
   let segmentId = train.segmentId;
   let progress: number | undefined;
+  let scanResolved = false;
 
   if (train.segmentQuery) {
     const prefix = `${train.segmentQuery} `;
     for (const [name, value] of frameMap) {
-      if (name.startsWith(prefix) && Number.isFinite(value)) {
-        segmentId = name.slice(prefix.length).trim();
-        progress = clampProgress(value);
-        break; // first match wins, consistent with duplicate-name handling
+      if (!name.startsWith(prefix) || !Number.isFinite(value)) {
+        continue;
       }
+      const suffix = name.slice(prefix.length).trim();
+      if (knownSegmentIds && !knownSegmentIds.has(suffix)) {
+        continue;
+      }
+      segmentId = suffix;
+      progress = clampProgress(value);
+      scanResolved = true;
+      break; // first valid match wins, consistent with duplicate-name handling
     }
   }
 
@@ -295,16 +309,27 @@ export function resolveTrainTelemetry(
   };
 
   const staleValue = numeric(train.staleQuery);
-  // Explicit stale flag, or a configured data-driven position that resolved
-  // nothing (the series vanished): the marker must read as stale, never as a
-  // confidently-placed train.
+  // Stale when: the explicit flag says so; a configured position resolved
+  // nothing at all; or the PRIMARY data-driven binding (segmentQuery)
+  // vanished and only an authored fallback produced a position — a fallback
+  // placement must never read as fresh live telemetry.
   const positionConfigured = Boolean(train.segmentQuery || train.progressQuery);
-  const stale = (staleValue !== undefined && staleValue !== 0) || (positionConfigured && progress === undefined);
+  const stale =
+    (staleValue !== undefined && staleValue !== 0) ||
+    (positionConfigured && progress === undefined) ||
+    (Boolean(train.segmentQuery) && !scanResolved);
 
+  // Severity doctrine: a live alarm (failed/blocked/caution...) always beats
+  // the stale wash; stale in turn beats normal/clear — matching signals and
+  // switches, where real alarms win but missing primaries never read healthy.
   const status = resolveRailQuery(train.statusQuery, undefined, frameMap, statusDefault);
-  const state: ResolvedRailState = stale
-    ? { state: 'stale', color: railStateColor('stale') }
-    : status ?? { state: 'normal', color: railStateColor('normal') };
+  const staleState = resolved('stale');
+  let state: ResolvedRailState;
+  if (stale) {
+    state = status && STATE_SEVERITY[status.state] > STATE_SEVERITY.stale ? status : staleState;
+  } else {
+    state = status ?? resolved('normal');
+  }
 
   return {
     segmentId,

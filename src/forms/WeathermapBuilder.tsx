@@ -5,6 +5,8 @@ import { NodeForm } from './NodeForm';
 import { LinkForm } from './LinkForm';
 import { ColorForm } from './ColorForm';
 import { PanelForm } from './PanelForm';
+import { RailForm } from './RailForm';
+import { normalizeMapMode } from '../rail/normalize';
 import { v4 as uuidv4 } from 'uuid';
 import { useTheme2 } from '@grafana/ui';
 import { generateBasicNode, CURRENT_VERSION, generateBasicLink, handleVersionedStateUpdates, needsMigration } from 'utils';
@@ -131,6 +133,8 @@ export const WeathermapBuilder = (props: Props) => {
       <NodeForm {...props} value={wm}></NodeForm>
       <LinkForm {...props} value={wm}></LinkForm>
       <ColorForm {...props} value={wm}></ColorForm>
+      {/* Rail-only tools never clutter the network editor (#300). */}
+      {normalizeMapMode(wm.mapMode) === 'rail' ? <RailForm {...props} value={wm}></RailForm> : null}
       <PanelForm {...props} value={wm}></PanelForm>
     </React.Fragment>
   );
