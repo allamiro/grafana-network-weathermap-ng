@@ -287,7 +287,7 @@ dashboard = {
             "id": 2,
             "type": "text",
             "title": "",
-            "gridPos": {"h": 3, "w": 24, "x": 0, "y": 21},
+            "gridPos": {"h": 3, "w": 24, "x": 0, "y": 53},
             "options": {
                 "mode": "markdown",
                 "content": (
@@ -302,6 +302,91 @@ dashboard = {
         },
     ],
 }
+
+
+def ts_panel(pid, title, expr, legend, y, x=0, w=12, h=8, unit=None, mappings=None, maxv=None):
+    """Supporting telemetry panel (PLC-style readouts under the map)."""
+    field_config = {
+        "defaults": {
+            "custom": {"lineWidth": 2, "fillOpacity": 12, "spanNulls": False},
+            "min": 0,
+        },
+        "overrides": [],
+    }
+    if unit:
+        field_config["defaults"]["unit"] = unit
+    if maxv is not None:
+        field_config["defaults"]["max"] = maxv
+    if mappings:
+        field_config["defaults"]["mappings"] = mappings
+    return {
+        "id": pid,
+        "type": "timeseries",
+        "title": title,
+        "gridPos": {"h": h, "w": w, "x": x, "y": y},
+        "datasource": "Prometheus",
+        "targets": [target("A", expr, legend)],
+        "fieldConfig": field_config,
+    }
+
+
+def stat_panel(pid, title, expr, legend, y, x=0, w=6, h=5, unit=None, mappings=None, thresholds=None):
+    defaults = {"unit": unit or "none"}
+    if mappings:
+        defaults["mappings"] = mappings
+    if thresholds:
+        defaults["thresholds"] = thresholds
+    return {
+        "id": pid,
+        "type": "stat",
+        "title": title,
+        "gridPos": {"h": h, "w": w, "x": x, "y": y},
+        "datasource": "Prometheus",
+        "targets": [target("A", expr, legend)],
+        "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
+        "fieldConfig": {"defaults": defaults, "overrides": []},
+    }
+
+
+def value_map(entries):
+    return [{"type": "value", "options": {str(k): {"text": v[0], "color": v[1]} for k, v in entries.items()}}]
+
+
+SIGNAL_MAP = value_map({0: ("STOP", "red"), 1: ("CAUTION", "yellow"), 2: ("CLEAR", "green")})
+SWITCH_MAP = value_map({0: ("NORMAL", "green"), 1: ("REVERSE", "blue"), 2: ("MOVING", "yellow")})
+BOOL_ALARM_MAP = value_map({0: ("ALARM", "red"), 1: ("OK", "green")})
+STALE_MAP = value_map({0: ("LIVE", "green"), 1: ("STALE", "purple")})
+OCC_MAP = value_map({0: ("CLEAR", "green"), 1: ("OCCUPIED", "blue")})
+
+telemetry_panels = [
+    # Row 1 (y=24): train movement telemetry.
+    ts_panel(10, "Train speed (simulated)", "wm_rail_train_speed_kmh", "{{train_id}}", 24, x=0, w=8, unit="km/h"),
+    ts_panel(11, "Train delay (simulated)", "wm_rail_train_delay_seconds", "{{train_id}}", 24, x=8, w=8, unit="s"),
+    ts_panel(
+        12,
+        "Train progress along current block",
+        "wm_rail_train_progress",
+        "{{train_id}} @ {{segment_id}}",
+        24,
+        x=16,
+        w=8,
+        maxv=1,
+    ),
+    # Row 2 (y=32): interlocking-style discrete states.
+    stat_panel(13, "Signal aspects", "wm_rail_signal_state", "{{signal_id}}", 32, x=0, w=6, mappings=SIGNAL_MAP),
+    stat_panel(14, "Signal health", "wm_rail_signal_health", "{{signal_id}}", 32, x=6, w=4, mappings=BOOL_ALARM_MAP),
+    stat_panel(15, "Switch position", "wm_rail_switch_position", "{{switch_id}}", 32, x=10, w=4, mappings=SWITCH_MAP),
+    stat_panel(16, "Switch detection", "wm_rail_switch_detected", "{{switch_id}}", 32, x=14, w=4, mappings=BOOL_ALARM_MAP),
+    stat_panel(17, "Telemetry freshness", "wm_rail_stale", "{{entity_id}}", 32, x=18, w=6, mappings=STALE_MAP),
+    # Row 3 (y=37): occupancy / availability history.
+    ts_panel(18, "Block occupancy — Track 1 (eastbound)", 'wm_rail_track_occupied{track="1"}', "{{segment_id}}", 37, x=0, w=12, maxv=1, mappings=OCC_MAP),
+    ts_panel(19, "Block occupancy — Track 2 (westbound)", 'wm_rail_track_occupied{track="2"}', "{{segment_id}}", 37, x=12, w=12, maxv=1, mappings=OCC_MAP),
+    # Row 4 (y=45): availability + route state.
+    ts_panel(20, "Block availability (0 = blocked/possession)", "wm_rail_track_state", "{{segment_id}}", 45, x=0, w=12, maxv=1),
+    ts_panel(21, "Route established / telemetry age", "wm_rail_route_established or wm_rail_telemetry_age_seconds", "{{route_id}}{{source}}", 45, x=12, w=12),
+]
+
+dashboard["panels"].extend(telemetry_panels)
 
 out = os.path.join(ROOT, "wm-rail-operations.json")
 with open(out, "w") as f:
