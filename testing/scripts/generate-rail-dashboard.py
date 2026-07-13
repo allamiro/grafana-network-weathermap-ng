@@ -287,7 +287,7 @@ dashboard = {
             "id": 2,
             "type": "text",
             "title": "",
-            "gridPos": {"h": 3, "w": 24, "x": 0, "y": 53},
+            "gridPos": {"h": 3, "w": 24, "x": 0, "y": 63},
             "options": {
                 "mode": "markdown",
                 "content": (
@@ -360,8 +360,8 @@ OCC_MAP = value_map({0: ("CLEAR", "green"), 1: ("OCCUPIED", "blue")})
 
 telemetry_panels = [
     # Row 1 (y=24): train movement telemetry.
-    ts_panel(10, "Train speed (simulated)", "wm_rail_train_speed_kmh", "{{train_id}}", 24, x=0, w=8, unit="km/h"),
-    ts_panel(11, "Train delay (simulated)", "wm_rail_train_delay_seconds", "{{train_id}}", 24, x=8, w=8, unit="s"),
+    ts_panel(10, "Train speed (simulated)", "wm_rail_train_speed_kmh", "{{train_id}}", 34, x=0, w=8, unit="km/h"),
+    ts_panel(11, "Train delay (simulated)", "wm_rail_train_delay_seconds", "{{train_id}}", 34, x=8, w=8, unit="s"),
     ts_panel(
         12,
         "Train progress along current block",
@@ -373,20 +373,194 @@ telemetry_panels = [
         maxv=1,
     ),
     # Row 2 (y=32): interlocking-style discrete states.
-    stat_panel(13, "Signal aspects", "wm_rail_signal_state", "{{signal_id}}", 32, x=0, w=6, mappings=SIGNAL_MAP),
-    stat_panel(14, "Signal health", "wm_rail_signal_health", "{{signal_id}}", 32, x=6, w=4, mappings=BOOL_ALARM_MAP),
-    stat_panel(15, "Switch position", "wm_rail_switch_position", "{{switch_id}}", 32, x=10, w=4, mappings=SWITCH_MAP),
-    stat_panel(16, "Switch detection", "wm_rail_switch_detected", "{{switch_id}}", 32, x=14, w=4, mappings=BOOL_ALARM_MAP),
-    stat_panel(17, "Telemetry freshness", "wm_rail_stale", "{{entity_id}}", 32, x=18, w=6, mappings=STALE_MAP),
+    stat_panel(13, "Signal aspects", "wm_rail_signal_state", "{{signal_id}}", 42, x=0, w=6, mappings=SIGNAL_MAP),
+    stat_panel(14, "Signal health", "wm_rail_signal_health", "{{signal_id}}", 42, x=6, w=4, mappings=BOOL_ALARM_MAP),
+    stat_panel(15, "Switch position", "wm_rail_switch_position", "{{switch_id}}", 42, x=10, w=4, mappings=SWITCH_MAP),
+    stat_panel(16, "Switch detection", "wm_rail_switch_detected", "{{switch_id}}", 42, x=14, w=4, mappings=BOOL_ALARM_MAP),
+    stat_panel(17, "Telemetry freshness", "wm_rail_stale", "{{entity_id}}", 42, x=18, w=6, mappings=STALE_MAP),
     # Row 3 (y=37): occupancy / availability history.
-    ts_panel(18, "Block occupancy — Track 1 (eastbound)", 'wm_rail_track_occupied{track="1"}', "{{segment_id}}", 37, x=0, w=12, maxv=1, mappings=OCC_MAP),
-    ts_panel(19, "Block occupancy — Track 2 (westbound)", 'wm_rail_track_occupied{track="2"}', "{{segment_id}}", 37, x=12, w=12, maxv=1, mappings=OCC_MAP),
+    ts_panel(18, "Block occupancy — Track 1 (eastbound)", 'wm_rail_track_occupied{track="1"}', "{{segment_id}}", 47, x=0, w=12, maxv=1, mappings=OCC_MAP),
+    ts_panel(19, "Block occupancy — Track 2 (westbound)", 'wm_rail_track_occupied{track="2"}', "{{segment_id}}", 47, x=12, w=12, maxv=1, mappings=OCC_MAP),
     # Row 4 (y=45): availability + route state.
-    ts_panel(20, "Block availability (0 = blocked/possession)", "wm_rail_track_state", "{{segment_id}}", 45, x=0, w=12, maxv=1),
-    ts_panel(21, "Route established / telemetry age", "wm_rail_route_established or wm_rail_telemetry_age_seconds", "{{route_id}}{{source}}", 45, x=12, w=12),
+    ts_panel(20, "Block availability (0 = blocked/possession)", "wm_rail_track_state", "{{segment_id}}", 55, x=0, w=12, maxv=1),
+    ts_panel(21, "Route established / telemetry age", "wm_rail_route_established or wm_rail_telemetry_age_seconds", "{{route_id}}{{source}}", 55, x=12, w=12),
 ]
 
 dashboard["panels"].extend(telemetry_panels)
+
+# --- Control-room rows (#300): overview counters, speed gauges, train status
+# --- table, PLC/RTU link board, and the static legend block.
+
+def count_stat(pid, title, expr, y, x, w=4, h=4, invert=False):
+    """Alarm counter: green at 0, red when anything is active (invert for
+    counts where MORE is good, e.g. trains in service)."""
+    steps = (
+        [{"color": "red", "value": None}, {"color": "green", "value": 1}]
+        if invert
+        else [{"color": "green", "value": None}, {"color": "red", "value": 1}]
+    )
+    return {
+        "id": pid,
+        "type": "stat",
+        "title": title,
+        "gridPos": {"h": h, "w": w, "x": x, "y": y},
+        "datasource": "Prometheus",
+        "targets": [target("A", expr, "")],
+        "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "textMode": "value"},
+        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": steps}}, "overrides": []},
+    }
+
+
+overview_row = [
+    count_stat(30, "Trains in service", "count(wm_rail_stale == 0) or vector(0)", 21, 0, invert=True),
+    count_stat(31, "Delayed > 60s", "count(wm_rail_train_delay_seconds > 60) or vector(0)", 21, 4),
+    count_stat(32, "Stale telemetry", "count(wm_rail_stale == 1) or vector(0)", 21, 8),
+    count_stat(33, "Faulted blocks", "count(wm_rail_track_state == 0) or vector(0)", 21, 12),
+    count_stat(34, "Signal alarms", "count(wm_rail_signal_health == 0) or vector(0)", 21, 16),
+    count_stat(35, "Detection alarms", "count(wm_rail_switch_detected == 0) or vector(0)", 21, 20),
+]
+
+speed_gauges = {
+    "id": 36,
+    "type": "gauge",
+    "title": "Train speed (simulated)",
+    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 25},
+    "datasource": "Prometheus",
+    "targets": [target("A", "wm_rail_train_speed_kmh", "{{train_id}}")],
+    "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "showThresholdLabels": False,
+        "showThresholdMarkers": True,
+    },
+    "fieldConfig": {
+        "defaults": {
+            "unit": "km/h",
+            "min": 0,
+            "max": 90,
+            "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                    {"color": "yellow", "value": None},
+                    {"color": "green", "value": 30},
+                    {"color": "orange", "value": 70},
+                    {"color": "red", "value": 80},
+                ],
+            },
+        },
+        "overrides": [],
+    },
+}
+
+
+def table_query(ref, expr, legend=""):
+    return {"refId": ref, "expr": expr, "legendFormat": legend, "instant": True, "format": "table"}
+
+
+train_table = {
+    "id": 37,
+    "type": "table",
+    "title": "Train status (simulated)",
+    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 25},
+    "datasource": "Prometheus",
+    "targets": [
+        table_query("A", "wm_rail_train_speed_kmh"),
+        table_query("B", "wm_rail_train_delay_seconds"),
+        table_query("C", "max by (train_id) (wm_rail_train_progress)"),
+        table_query("D", "wm_rail_stale"),
+    ],
+    "transformations": [
+        {"id": "joinByField", "options": {"byField": "train_id", "mode": "outer"}},
+        {"id": "filterFieldsByName", "options": {"include": {"pattern": "^(train_id|Value.*)$"}}},
+        {
+            "id": "organize",
+            "options": {
+                "excludeByName": {"Time": True, "Time 1": True, "Time 2": True, "Time 3": True, "Time 4": True},
+                "renameByName": {
+                    "train_id": "Train",
+                    "Value #A": "Speed (km/h)",
+                    "Value #B": "Delay (s)",
+                    "Value #C": "Block progress",
+                    "Value #D": "Stale",
+                },
+            },
+        },
+    ],
+    "fieldConfig": {
+        "defaults": {"custom": {"align": "left"}},
+        "overrides": [
+            {
+                "matcher": {"id": "byName", "options": "Stale"},
+                "properties": [
+                    {
+                        "id": "mappings",
+                        "value": value_map({0: ("IN SERVICE", "green"), 1: ("STALE", "purple")}),
+                    },
+                    {"id": "custom.cellOptions", "value": {"type": "color-text"}},
+                ],
+            }
+        ],
+    },
+}
+
+plc_status_panel = {
+    "id": 38,
+    "type": "stat",
+    "title": "PLC / RTU link (simulated)",
+    "gridPos": {"h": 8, "w": 4, "x": 16, "y": 25},
+    "datasource": "Prometheus",
+    "targets": [target("A", "wm_rail_plc_status", "{{device}}")],
+    "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name", "orientation": "horizontal"},
+    "fieldConfig": {
+        "defaults": {"mappings": value_map({0: ("DISCONNECTED", "red"), 1: ("CONNECTED", "green")})},
+        "overrides": [],
+    },
+}
+
+plc_latency_panel = {
+    "id": 39,
+    "type": "stat",
+    "title": "PLC / RTU poll latency",
+    "gridPos": {"h": 8, "w": 4, "x": 20, "y": 25},
+    "datasource": "Prometheus",
+    "targets": [target("A", 'wm_rail_plc_latency_ms != 0', "{{device}}")],
+    "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name", "orientation": "horizontal"},
+    "fieldConfig": {
+        "defaults": {
+            "unit": "ms",
+            "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                    {"color": "green", "value": None},
+                    {"color": "yellow", "value": 80},
+                    {"color": "red", "value": 150},
+                ],
+            },
+        },
+        "overrides": [],
+    },
+}
+
+legend_panel = {
+    "id": 40,
+    "type": "text",
+    "title": "Legend",
+    "gridPos": {"h": 8, "w": 6, "x": 18, "y": 55},
+    "options": {
+        "mode": "markdown",
+        "content": (
+            "**Signals** \U0001F7E2 Clear \u00b7 \U0001F7E1 Caution \u00b7 \U0001F534 Stop \u00b7 "
+            "\u26AA No data \u00b7 \u2715 Failed\n\n"
+            "**Tracks** \U0001F7E9 Clear \u00b7 \U0001F7E6 Occupied \u00b7 \U0001F7E5 Blocked \u00b7 "
+            "\U0001F7EA Maintenance (dashed) \u00b7 \u25B6 Direction\n\n"
+            "**Switches** thick leg = commanded path \u00b7 dashed legs = detection lost "
+            "\u00b7 \u2610 locked \u00b7 \u2715 failed\n\n"
+            "**Trains** \u25AC\u25B6 in service \u00b7 dimmed/dashed = stale telemetry"
+        ),
+    },
+}
+
+dashboard["panels"].extend(overview_row)
+dashboard["panels"].extend([speed_gauges, train_table, plc_status_panel, plc_latency_panel, legend_panel])
 
 out = os.path.join(ROOT, "wm-rail-operations.json")
 with open(out, "w") as f:

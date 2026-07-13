@@ -83,6 +83,14 @@ var (
 		Name: "wm_rail_stale",
 		Help: "SIMULATED staleness flag per entity (1 = stale).",
 	}, []string{"entity_id"})
+	railPlcStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "wm_rail_plc_status",
+		Help: "SIMULATED PLC/RTU link status (1 = connected, 0 = disconnected).",
+	}, []string{"device", "device_type"})
+	railPlcLatency = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "wm_rail_plc_latency_ms",
+		Help: "SIMULATED PLC/RTU polling latency in milliseconds.",
+	}, []string{"device"})
 )
 
 var track1Blocks = []string{"t1-b01", "t1-b02", "t1-b03", "t1-b04", "t1-b05"}
@@ -224,4 +232,23 @@ func simulateRail(now time.Time) {
 	}
 
 	railTelemetryAge.WithLabelValues("simulator").Set(float64(now.Second() % 5))
+
+	// PLC/RTU gateway health, mimicking a read-only OT-DMZ poller's view:
+	// steady links with a few ms of jitter, PLC-JCT degrading into high
+	// latency for 20s of every minute, RTU-DEPOT disconnected outright.
+	jitter := float64(int(t) % 7)
+	railPlcStatus.WithLabelValues("PLC-YARD", "PLC").Set(1)
+	railPlcLatency.WithLabelValues("PLC-YARD").Set(18 + jitter)
+	railPlcStatus.WithLabelValues("PLC-STB", "PLC").Set(1)
+	railPlcLatency.WithLabelValues("PLC-STB").Set(21 + jitter)
+	railPlcStatus.WithLabelValues("PLC-JCT", "PLC").Set(1)
+	if int(t)%60 < 20 {
+		railPlcLatency.WithLabelValues("PLC-JCT").Set(165 + jitter)
+	} else {
+		railPlcLatency.WithLabelValues("PLC-JCT").Set(40 + jitter)
+	}
+	railPlcStatus.WithLabelValues("RTU-TERM", "RTU").Set(1)
+	railPlcLatency.WithLabelValues("RTU-TERM").Set(22 + jitter)
+	railPlcStatus.WithLabelValues("RTU-DEPOT", "RTU").Set(0)
+	railPlcLatency.WithLabelValues("RTU-DEPOT").Set(0)
 }

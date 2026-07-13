@@ -648,7 +648,7 @@
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 63
       },
       "options": {
         "mode": "markdown",
@@ -663,7 +663,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 24
+        "y": 34
       },
       "datasource": "Prometheus",
       "targets": [
@@ -696,7 +696,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 24
+        "y": 34
       },
       "datasource": "Prometheus",
       "targets": [
@@ -762,7 +762,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 32
+        "y": 42
       },
       "datasource": "Prometheus",
       "targets": [
@@ -816,7 +816,7 @@
         "h": 5,
         "w": 4,
         "x": 6,
-        "y": 32
+        "y": 42
       },
       "datasource": "Prometheus",
       "targets": [
@@ -866,7 +866,7 @@
         "h": 5,
         "w": 4,
         "x": 10,
-        "y": 32
+        "y": 42
       },
       "datasource": "Prometheus",
       "targets": [
@@ -920,7 +920,7 @@
         "h": 5,
         "w": 4,
         "x": 14,
-        "y": 32
+        "y": 42
       },
       "datasource": "Prometheus",
       "targets": [
@@ -970,7 +970,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 32
+        "y": 42
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1020,7 +1020,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 37
+        "y": 47
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1068,7 +1068,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 37
+        "y": 47
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1116,7 +1116,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 45
+        "y": 55
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1149,7 +1149,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 45
+        "y": 55
       },
       "datasource": "Prometheus",
       "targets": [
@@ -1171,6 +1171,590 @@
           "min": 0
         },
         "overrides": []
+      }
+    },
+    {
+      "id": 30,
+      "type": "stat",
+      "title": "Trains in service",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 21
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(wm_rail_stale == 0) or vector(0)",
+          "legendFormat": "",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "Delayed > 60s",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 21
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(wm_rail_train_delay_seconds > 60) or vector(0)",
+          "legendFormat": "",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Stale telemetry",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 21
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(wm_rail_stale == 1) or vector(0)",
+          "legendFormat": "",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 33,
+      "type": "stat",
+      "title": "Faulted blocks",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 21
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(wm_rail_track_state == 0) or vector(0)",
+          "legendFormat": "",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 34,
+      "type": "stat",
+      "title": "Signal alarms",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 21
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(wm_rail_signal_health == 0) or vector(0)",
+          "legendFormat": "",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 35,
+      "type": "stat",
+      "title": "Detection alarms",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 21
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(wm_rail_switch_detected == 0) or vector(0)",
+          "legendFormat": "",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 36,
+      "type": "gauge",
+      "title": "Train speed (simulated)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_rail_train_speed_kmh",
+          "legendFormat": "{{train_id}}",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "km/h",
+          "min": 0,
+          "max": 90,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 30
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 37,
+      "type": "table",
+      "title": "Train status (simulated)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_rail_train_speed_kmh",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "expr": "wm_rail_train_delay_seconds",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "expr": "max by (train_id) (wm_rail_train_progress)",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "expr": "wm_rail_stale",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "train_id",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "^(train_id|Value.*)$"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "Time 4": true
+            },
+            "renameByName": {
+              "train_id": "Train",
+              "Value #A": "Speed (km/h)",
+              "Value #B": "Delay (s)",
+              "Value #C": "Block progress",
+              "Value #D": "Stale"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Stale"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "IN SERVICE",
+                        "color": "green"
+                      },
+                      "1": {
+                        "text": "STALE",
+                        "color": "purple"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 38,
+      "type": "stat",
+      "title": "PLC / RTU link (simulated)",
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 16,
+        "y": 25
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_rail_plc_status",
+          "legendFormat": "{{device}}",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DISCONNECTED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "CONNECTED",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 39,
+      "type": "stat",
+      "title": "PLC / RTU poll latency",
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 20,
+        "y": 25
+      },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wm_rail_plc_latency_ms != 0",
+          "legendFormat": "{{device}}",
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 150
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 40,
+      "type": "text",
+      "title": "Legend",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 55
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Signals** \ud83d\udfe2 Clear \u00b7 \ud83d\udfe1 Caution \u00b7 \ud83d\udd34 Stop \u00b7 \u26aa No data \u00b7 \u2715 Failed\n\n**Tracks** \ud83d\udfe9 Clear \u00b7 \ud83d\udfe6 Occupied \u00b7 \ud83d\udfe5 Blocked \u00b7 \ud83d\udfea Maintenance (dashed) \u00b7 \u25b6 Direction\n\n**Switches** thick leg = commanded path \u00b7 dashed legs = detection lost \u00b7 \u2610 locked \u00b7 \u2715 failed\n\n**Trains** \u25ac\u25b6 in service \u00b7 dimmed/dashed = stale telemetry"
       }
     }
   ]
