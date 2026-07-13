@@ -82,11 +82,15 @@ export const RailForm = ({ value, onChange }: Props) => {
   if (!value) {
     return <React.Fragment />;
   }
-  const rail: RailOperationsConfig = value.rail ?? createDefaultRailConfig();
+  // Edit the NORMALIZED view (idempotent repair; e.g. appends missing default
+  // layers), and normalize the draft before mutating so section indexes always
+  // line up with what is displayed — a saved config with layers: [] would
+  // otherwise show an empty layer manager while the renderer shows defaults.
+  const rail: RailOperationsConfig = normalizeRailConfig(value.rail ?? createDefaultRailConfig());
 
   const updateRail = (mutate: (draft: RailOperationsConfig) => void) => {
     const options = structuredClone(value);
-    options.rail = options.rail ?? createDefaultRailConfig();
+    options.rail = normalizeRailConfig(options.rail ?? createDefaultRailConfig());
     mutate(options.rail);
     onChange(options);
   };
@@ -299,6 +303,9 @@ export const RailForm = ({ value, onChange }: Props) => {
             tooltip="Intermediate waypoints as x,y pairs separated by semicolons — e.g. 250,60; 300,80. Endpoints come from the control points."
           >
             <Input
+              // Remount when the stored value changes (e.g. after an import)
+              // so the uncontrolled input can never display stale text.
+              key={`vias-${viaPointsToText(seg.viaPoints)}`}
               defaultValue={viaPointsToText(seg.viaPoints)}
               placeholder="250,60; 300,80"
               onBlur={(e) => {

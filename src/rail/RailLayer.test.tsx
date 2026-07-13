@@ -154,6 +154,50 @@ describe('rail rendering (#300 Phase 2)', () => {
     noNaNInSvg(container);
   });
 
+  test('rail content lives inside the exported panel SVG (SVG export inclusion)', () => {
+    const { container } = renderRail();
+    // ExportForm serializes the <svg id="nw-..."> subtree verbatim, so the
+    // rail layer being inside that element guarantees export inclusion.
+    const svg = container.querySelector('svg[id^="nw-"]')!;
+    expect(svg.querySelector('[data-testid="rail-layer"]')).not.toBeNull();
+    expect(svg.querySelectorAll('[data-testid="rail-track"]').length).toBeGreaterThan(0);
+  });
+
+  test('hundreds of segments, signals, and trains render without failure (performance smoke)', () => {
+    const { container } = renderRail((wm) => {
+      const cps = Array.from({ length: 101 }, (_, i) => ({
+        id: `cp-${i}`,
+        type: 'station' as const,
+        position: [50 + i * 10, 200 + (i % 7) * 40] as [number, number],
+        label: `CP ${i}`,
+      }));
+      wm.rail!.controlPoints = cps;
+      wm.rail!.trackSegments = Array.from({ length: 300 }, (_, i) => ({
+        id: `seg-${i}`,
+        fromControlPointId: `cp-${i % 100}`,
+        toControlPointId: `cp-${(i % 100) + 1}`,
+        trackNumber: `${(i % 3) + 1}`,
+        direction: 'eastbound' as const,
+        viaPoints: [[55 + (i % 100) * 10, 190 + (i % 5) * 45]] as Array<[number, number]>,
+      }));
+      wm.rail!.signals = Array.from({ length: 150 }, (_, i) => ({
+        id: `sig-${i}`,
+        segmentId: `seg-${i}`,
+        positionPercent: (i % 10) / 10,
+        facingDirection: 'eastbound' as const,
+      }));
+      wm.rail!.trains = Array.from({ length: 30 }, (_, i) => ({
+        id: `trn-${i}`,
+        segmentId: `seg-${i * 5}`,
+        progress: (i % 10) / 10,
+      }));
+    });
+    expect(screen.getAllByTestId('rail-track')).toHaveLength(300);
+    expect(screen.getAllByTestId('rail-signal')).toHaveLength(150);
+    expect(screen.getAllByTestId('rail-train')).toHaveLength(30);
+    noNaNInSvg(container);
+  });
+
   test('network mode never renders rail layers, even with a rail config present', () => {
     renderRail((wm) => {
       delete wm.mapMode;

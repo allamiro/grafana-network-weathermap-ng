@@ -47,6 +47,9 @@ def x_of(cp_id):
 
 def segment(seg_id, from_id, to_id, track, direction, y):
     """Main-line segment running along a track line between two control points."""
+    # Via offsets follow the direction of travel, so westbound segments ramp
+    # onto their line without a backwards hook at the endpoints.
+    step = 25 if x_of(to_id) > x_of(from_id) else -25
     return {
         "id": seg_id,
         "fromControlPointId": from_id,
@@ -54,7 +57,7 @@ def segment(seg_id, from_id, to_id, track, direction, y):
         "trackNumber": track,
         "direction": direction,
         "blockId": seg_id.upper(),
-        "viaPoints": [[x_of(from_id) + 25, y], [x_of(to_id) - 25, y]],
+        "viaPoints": [[x_of(from_id) + step, y], [x_of(to_id) - step, y]],
         "occupancyQuery": f"OCC {seg_id}",
         "availabilityQuery": f"AVAIL {seg_id}",
     }
