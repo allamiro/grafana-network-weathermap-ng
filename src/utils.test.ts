@@ -449,6 +449,34 @@ describe('datasource frame shapes resolve (#253)', () => {
     expect(getValueField(frame).values[1]).toBe(200);
     expect(getDataFrameName(frame, [frame])).toContain('Bits sent');
   });
+
+  test('SQL (Postgres/MySQL) Time series shape: metric column names the frame', () => {
+    // `SELECT time, value, series AS metric` with Format as Time series pivots
+    // long->wide: one frame per metric value, named by it, with a numeric
+    // "value" field. The panel binds by that metric name.
+    const frame = toDataFrame({
+      name: 'core-a→core-b tx',
+      fields: [
+        { name: 'time', type: FieldType.time, values: [1000, 2000] },
+        { name: 'value', type: FieldType.number, values: [42.5, 43.5], labels: { metric: 'core-a→core-b tx' } },
+      ],
+    });
+    expect(getValueField(frame).name).toBe('value');
+    expect(getDataFrameName(frame, [frame])).toContain('core-a→core-b tx');
+  });
+
+  test('SQL Table shape: wide frame binds every aliased value column', () => {
+    // Format as Table returns one wide frame; each aliased numeric column is a
+    // bindable series keyed by its column name (same path as #260 wide frames).
+    const frame = toDataFrame({
+      fields: [
+        { name: 'time', type: FieldType.time, values: [1000, 2000] },
+        { name: 'core-a tx', type: FieldType.number, values: [10, 20] },
+        { name: 'core-a rx', type: FieldType.number, values: [30, 40] },
+      ],
+    });
+    expect(getValueSeries(frame, [frame]).map((s) => s.name)).toEqual(['core-a tx', 'core-a rx']);
+  });
 });
 
 describe('wide data frames expose every value field (#260)', () => {

@@ -150,6 +150,54 @@ The [Zabbix datasource plugin](https://grafana.com/grafana/plugins/alexanderzobn
 
 ---
 
+## PostgreSQL / MySQL
+
+SQL datasources work with the weathermap like any other — the panel reads standard Grafana data frames — but SQL has two extra things to get right: **the result must be time-series-shaped**, and **each series needs a clean display name**. The demo stack provisions **PostgreSQL** and **MySQL** on `:5432` / `:3306`, fed the same simulated series by the bridge into a `wm_metrics(time, series, value)` table.
+
+**Format as Time series (not Table).** In the query editor set **Format → Time series**. Return a time column, the numeric value, and a column **aliased `metric`** — Grafana uses the `metric` column's value as the series name, so the weathermap binds by it verbatim (no rename transform needed, unlike InfluxDB).
+
+**PostgreSQL:**
+
+```sql
+SELECT "time", value, series AS metric
+FROM wm_metrics
+WHERE $__timeFilter("time")
+ORDER BY "time"
+```
+
+**MySQL / MariaDB** (backtick identifiers):
+
+```sql
+SELECT `time`, value, series AS metric
+FROM wm_metrics
+WHERE $__timeFilter(`time`)
+ORDER BY `time`
+```
+
+If your table stores one row per interval already (like the demo), that's all you need. If you're aggregating raw samples, group by a time bucket with the datasource macro:
+
+```sql
+SELECT $__timeGroupAlias("time", '$__interval'), avg(value) AS value, series AS metric
+FROM wm_metrics
+WHERE $__timeFilter("time")
+GROUP BY 1, series
+ORDER BY 1
+```
+
+!!! warning "Value and any bandwidth must share a unit"
+    The panel computes utilization as a plain `value ÷ bandwidth`. If your query returns a **percentage**, set the link's **Bandwidth # to `100`**; if it returns bits/sec, use a bits/sec bandwidth. See [Links → Queries and bandwidth](links.md#queries-and-bandwidth).
+
+!!! tip "Display names come from the `metric` alias"
+    Whatever the `metric` column contains becomes the series display name the link editor binds to — keep it stable and unique (e.g. `SITE-A→SITE-B tx`). Without a `metric` column, Grafana names the series after the value column, and your bindings won't match.
+
+![WAN Utilization demo on PostgreSQL](../img/datasources/wm-postgresql.png)
+
+*The same map, every value resolved from a PostgreSQL `wm_metrics` table in Time series format. MySQL renders identically.*
+
+![WAN Utilization demo on MySQL](../img/datasources/wm-mysql.png)
+
+---
+
 ## Troubleshooting bindings
 
 - **Dropdown shows the series but the link stays `n/a`** — the display name changed after binding (legend edited, label values changed). Re-pick from the dropdown.

@@ -87,6 +87,32 @@ services:
       # default 128M PHP memory_limit (API returns 500). The web image wires
       # ZBX_MEMORYLIMIT into php-fpm's memory_limit.
       - ZBX_MEMORYLIMIT=1024M
+  # SQL datasources (#297): the same simulated series land in a
+  # wm_metrics(time, series, value) table so the PostgreSQL and MySQL Grafana
+  # datasources render the identical map. Separate from the Zabbix backend DB.
+  postgres-wm:
+    image: postgres:16-alpine
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=wm
+      - POSTGRES_PASSWORD=wm
+      - POSTGRES_DB=wm
+  mysql-wm:
+    image: mysql:8.0
+    ports:
+      - 3306:3306
+    # InnoDB native AIO is unsupported on some overlayfs/host kernels; disable
+    # it and keep the buffer pool small for the demo.
+    command:
+      - "--innodb-use-native-aio=0"
+      - "--innodb-buffer-pool-size=64M"
+      - "--default-authentication-plugin=mysql_native_password"
+    environment:
+      - MYSQL_DATABASE=wm
+      - MYSQL_USER=wm
+      - MYSQL_PASSWORD=wm
+      - MYSQL_ROOT_PASSWORD=wm-root
   bridge:
     build:
       context: bridge
@@ -97,3 +123,5 @@ services:
       - elasticsearch
       - zabbix-server
       - zabbix-web
+      - postgres-wm
+      - mysql-wm

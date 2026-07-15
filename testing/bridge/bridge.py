@@ -24,6 +24,21 @@ ZABBIX_API = os.environ.get("ZABBIX_API", "http://zabbix-web:8080/api_jsonrpc.ph
 ZABBIX_SERVER = os.environ.get("ZABBIX_SERVER", "zabbix-server")
 ZABBIX_PORT = int(os.environ.get("ZABBIX_PORT", "10051"))
 ZABBIX_HOST = "wm-sim"
+# SQL sinks (#297): the same samples land in a wm_metrics(time, series, value)
+# table in both PostgreSQL and MySQL so their Grafana datasources render the
+# identical map. Pure-Python drivers (pg8000 / pymysql) keep the image simple.
+PG_HOST = os.environ.get("PG_HOST", "postgres-wm")
+PG_PORT = int(os.environ.get("PG_PORT", "5432"))
+PG_DB = os.environ.get("PG_DB", "wm")
+PG_USER = os.environ.get("PG_USER", "wm")
+PG_PASSWORD = os.environ.get("PG_PASSWORD", "wm")
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "mysql-wm")
+MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
+MYSQL_DB = os.environ.get("MYSQL_DB", "wm")
+MYSQL_USER = os.environ.get("MYSQL_USER", "wm")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "wm")
+# Keep the demo tables bounded (rolling window, like Influx/ES retention).
+SQL_RETENTION_MIN = int(os.environ.get("SQL_RETENTION_MIN", "180"))
 INTERVAL = float(os.environ.get("INTERVAL", "5"))
 
 LINE = re.compile(r'^(\w+)\{([^}]*)\}\s+([-0-9.e+]+)$')
@@ -145,6 +160,78 @@ def zbx_send(keys, samples):
 ZBX_KEYS = None  # populated once the API is reachable
 
 
+# ---------------------------------------------------------------------------
+# SQL sinks (#297). One row per (time, series, value); Grafana queries it in
+# "Time series" format with the series column as the metric label, so the
+# copied weathermap bindings match by display name — same trick as the others.
+
+import datetime
+
+_pg_conn = None
+_my_conn = None
+
+
+def _reset_pg():
+    global _pg_conn
+    try:
+        if _pg_conn is not None:
+            _pg_conn.close()
+    except Exception:
+        pass
+    _pg_conn = None
+
+
+def _reset_my():
+    global _my_conn
+    try:
+        if _my_conn is not None:
+            _my_conn.close()
+    except Exception:
+        pass
+    _my_conn = None
+
+
+def pg_write(samples, now):
+    global _pg_conn
+    import pg8000.native
+    if _pg_conn is None:
+        _pg_conn = pg8000.native.Connection(
+            user=PG_USER, password=PG_PASSWORD, host=PG_HOST, port=PG_PORT, database=PG_DB
+        )
+        _pg_conn.run(
+            "CREATE TABLE IF NOT EXISTS wm_metrics "
+            "(time timestamptz NOT NULL, series text NOT NULL, value double precision)"
+        )
+        _pg_conn.run("CREATE INDEX IF NOT EXISTS wm_metrics_time_series ON wm_metrics (time, series)")
+    for s, v in samples:
+        _pg_conn.run("INSERT INTO wm_metrics (time, series, value) VALUES (:t, :s, :v)", t=now, s=s, v=v)
+    _pg_conn.run("DELETE FROM wm_metrics WHERE time < :cut",
+                 cut=now - datetime.timedelta(minutes=SQL_RETENTION_MIN))
+
+
+def my_write(samples, now):
+    global _my_conn
+    import pymysql
+    if _my_conn is None or not _my_conn.open:
+        _my_conn = pymysql.connect(
+            host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
+            password=MYSQL_PASSWORD, database=MYSQL_DB, autocommit=True
+        )
+        with _my_conn.cursor() as cur:
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS wm_metrics "
+                "(time DATETIME(3) NOT NULL, series VARCHAR(255) NOT NULL, value DOUBLE, "
+                "INDEX wm_time_series (time, series))"
+            )
+    with _my_conn.cursor() as cur:
+        cur.executemany(
+            "INSERT INTO wm_metrics (time, series, value) VALUES (%s, %s, %s)",
+            [(now, s, v) for s, v in samples],
+        )
+        cur.execute("DELETE FROM wm_metrics WHERE time < %s",
+                    (now - datetime.timedelta(minutes=SQL_RETENTION_MIN),))
+
+
 def main():
     print(f"bridge: {EXPORTER} -> {INFLUX} + {ES} every {INTERVAL}s", flush=True)
     while True:
@@ -193,6 +280,21 @@ def main():
             ok.append("zabbix")
         except Exception as e:
             print(f"zabbix write error (will retry): {e}", flush=True)
+
+        sql_now = datetime.datetime.now(datetime.timezone.utc)
+        try:
+            pg_write(samples, sql_now)
+            ok.append("postgres")
+        except Exception as e:
+            _reset_pg()
+            print(f"postgres write error (will retry): {e}", flush=True)
+
+        try:
+            my_write(samples, sql_now.replace(tzinfo=None))
+            ok.append("mysql")
+        except Exception as e:
+            _reset_my()
+            print(f"mysql write error (will retry): {e}", flush=True)
 
         print(f"forwarded {len(samples)} samples -> {'+'.join(ok) or 'none'}", flush=True)
         time.sleep(INTERVAL)
