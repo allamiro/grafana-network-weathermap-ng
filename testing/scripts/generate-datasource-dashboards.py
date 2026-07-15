@@ -106,6 +106,43 @@ zabbix = make(
     # Zabbix item names ARE the series display names — no transformation.
 )
 
-for name, d in (("wm-wan-influx.json", influx), ("wm-wan-elastic.json", elastic), ("wm-wan-zabbix.json", zabbix)):
+# SQL: one row per (time, series, value); Grafana's "Time series" format uses
+# the column aliased `metric` as the series name, so the copied weathermap
+# bindings match the series display names verbatim — no transformation needed.
+SQL = (
+    'SELECT "time", value, series AS metric\n'
+    "FROM wm_metrics\n"
+    "WHERE $__timeFilter(\"time\")\n"
+    'ORDER BY "time"'
+)
+# MySQL/MariaDB quotes identifiers with backticks, not double quotes.
+SQL_MY = (
+    "SELECT `time`, value, series AS metric\n"
+    "FROM wm_metrics\n"
+    "WHERE $__timeFilter(`time`)\n"
+    "ORDER BY `time`"
+)
+
+postgres = make(
+    "wm-wan-postgres",
+    "WAN Demo — Utilization (PostgreSQL)",
+    "postgres-wm",
+    [{"refId": "A", "rawSql": SQL, "format": "time_series",
+      "datasource": {"uid": "postgres-wm"}}],
+)
+
+mysql = make(
+    "wm-wan-mysql",
+    "WAN Demo — Utilization (MySQL)",
+    "mysql-wm",
+    [{"refId": "A", "rawSql": SQL_MY, "format": "time_series",
+      "datasource": {"uid": "mysql-wm"}}],
+)
+
+for name, d in (
+    ("wm-wan-influx.json", influx), ("wm-wan-elastic.json", elastic),
+    ("wm-wan-zabbix.json", zabbix), ("wm-wan-postgres.json", postgres),
+    ("wm-wan-mysql.json", mysql),
+):
     json.dump(d, open(f"grafana/dashboards/{name}", "w"), indent=2)
     print("wrote", name)
