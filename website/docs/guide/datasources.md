@@ -1,6 +1,6 @@
 # Data Sources
 
-The weathermap is **datasource-agnostic**: it reads whatever time series Grafana hands it. Any datasource that returns a time field and a numeric value field works — Prometheus, InfluxDB, Elasticsearch, Zabbix, and most others.
+The weathermap is **datasource-agnostic**: it reads whatever time series Grafana hands it. Any datasource that returns a time field and a numeric value field works — Prometheus, InfluxDB, Elasticsearch, Zabbix, PostgreSQL, MySQL, and most others.
 
 !!! tip "The one rule that matters everywhere"
     The panel binds link sides to series by **display name** — the name you see in the link editor's *A/B Side Query* dropdown. Keep your legends/aliases **stable**: renaming a series later breaks the binding, and duplicate display names resolve to the **first** matching series. Always pick series from the dropdown rather than typing names by hand.
@@ -15,14 +15,15 @@ Whatever the datasource, building a weathermap dashboard is the same five steps:
 4. **Bind the series**: in the panel editor open **Links**, select a link, and pick the series in the **A Side Query** and **Z Side Query** dropdowns.
 5. **Set bandwidth and thresholds** so the color scale means something.
 
-The demo stack (`cd testing && docker compose up --build`) runs the same simulated WAN metrics through **Prometheus, InfluxDB, and Elasticsearch simultaneously** — a bridge forwards the exporter's values to all three, tagged with identical series names. Three provisioned dashboards render the **same map from the same numbers**:
+The demo stack (`cd testing && docker compose up --build`) runs the same simulated WAN metrics through **Prometheus, InfluxDB, Elasticsearch, Zabbix, PostgreSQL, and MySQL simultaneously** — a bridge forwards the exporter's values to every backend, tagged with identical series names. Each provisioned dashboard renders the **same map from the same numbers**:
 
 - *WAN Demo — Utilization* (Prometheus)
 - *WAN Demo — Utilization (InfluxDB)* — one Flux query + a rename-by-regex transformation
 - *WAN Demo — Utilization (Elasticsearch)* — one terms + date-histogram query, no transformation needed
 - *WAN Demo — Utilization (Zabbix)* — one group/host/item wildcard query; item names are the series names, no transformation needed
+- *WAN Demo — Utilization (PostgreSQL)* / *(MySQL)* — one SQL query in Time series format; the `metric` column names the series, no transformation needed
 
-Open them side by side to see that the weathermap options are byte-identical — only the queries differ. `testing/scripts/generate-datasource-dashboards.py` regenerates the two variants from the Prometheus original.
+Open them side by side to see that the weathermap options are byte-identical — only the queries differ. `testing/scripts/generate-datasource-dashboards.py` regenerates the variants from the Prometheus original.
 
 ---
 
@@ -184,17 +185,24 @@ GROUP BY 1, series
 ORDER BY 1
 ```
 
-!!! warning "Value and any bandwidth must share a unit"
-    The panel computes utilization as a plain `value ÷ bandwidth`. If your query returns a **percentage**, set the link's **Bandwidth # to `100`**; if it returns bits/sec, use a bits/sec bandwidth. See [Links → Queries and bandwidth](links.md#queries-and-bandwidth).
+**Frame shape note:** in Time series format Grafana pivots the long result (time, metric, value) into one frame per `metric` value, named by it, with a single numeric `value` field. The panel resolves the value field by *numeric type*, and the frame name is the display name your links bind to — so the copied WAN map's bindings match with no transformation. Wide **Table** results (see below) bind each numeric column by its column name instead.
+
+!!! warning "Deviation: Format as Time series, or alias every column"
+    SQL queries default to **Format as → Table**, which returns one *wide* frame. That still works — each numeric column becomes a bindable series keyed by its column name — but you must **alias every value column** to the display name you want (`SELECT ts, out_bps AS "core-a→core-b tx", …`). The simpler path for many series is **Format as → Time series** with a `metric` column, as above. Pick from the link dropdown either way.
+
+!!! warning "Deviation: value and bandwidth must share a unit"
+    The panel computes utilization as a plain `value ÷ bandwidth` with no unit conversion. If your query returns a **percentage**, set the link's **Bandwidth # to `100`**; if it returns bits/sec, use a bits/sec bandwidth. See [Links → Queries and bandwidth](links.md#queries-and-bandwidth).
 
 !!! tip "Display names come from the `metric` alias"
     Whatever the `metric` column contains becomes the series display name the link editor binds to — keep it stable and unique (e.g. `SITE-A→SITE-B tx`). Without a `metric` column, Grafana names the series after the value column, and your bindings won't match.
 
 ![WAN Utilization demo on PostgreSQL](../img/datasources/wm-postgresql.png)
 
-*The same map, every value resolved from a PostgreSQL `wm_metrics` table in Time series format. MySQL renders identically.*
+*The same map, every value resolved from a PostgreSQL `wm_metrics` table in Time series format.*
 
 ![WAN Utilization demo on MySQL](../img/datasources/wm-mysql.png)
+
+*MySQL renders the identical map from the identical numbers — the bridge writes both from one source of truth.*
 
 ---
 
