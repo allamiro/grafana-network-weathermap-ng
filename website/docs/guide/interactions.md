@@ -20,12 +20,18 @@ Some gestures (adding VIAs, free zoom) are **edit-mode only** to avoid interferi
 | **Move a node** | Click-drag the node | Click-drag the node |
 | **Pan the map** | **Ctrl**+drag, **Shift**+drag, or middle-mouse drag | **⌘ Cmd**+drag or **Shift**+drag |
 | **Zoom** | Scroll (edit mode); **Shift**+scroll (view mode) | Scroll (edit mode); **Shift**+scroll (view mode) |
+| **Zoom & pan in view mode** | Plain scroll / plain drag, when **View Mode Zoom & Pan** is enabled (Panel Options → Interaction & Labels); double-click resets | Same |
 | **Multi-select nodes** | **Ctrl**+click each node | **⌘ Cmd**+click each node |
 | **Add a VIA** | **Double-click** a link (edit mode) | **Double-click** a link (edit mode) |
 | **Move a VIA** | Drag the VIA | Drag the VIA |
 | **Delete a VIA** | **Right-click** the VIA (edit mode) | **Right-click** (or Ctrl-click) the VIA |
 
 !!! tip "macOS"
+    **View Mode Zoom & Pan** is off by default because plain scrolling over the
+    panel would otherwise stop the dashboard page from scrolling. When enabled,
+    each viewer's zoom/pan is local to their browser — it is never saved into
+    the dashboard — and a double-click returns to the saved view.
+
     macOS uses **⌘ Cmd** where Linux/Windows use **Ctrl** (Ctrl-click is a right-click on a Mac). Zoom uses the dominant scroll axis, so a Mac's Shift+scroll (which the OS remaps to horizontal) still zooms.
 
 ---

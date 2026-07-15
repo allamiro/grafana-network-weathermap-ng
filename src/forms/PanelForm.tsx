@@ -559,6 +559,24 @@ export const PanelForm = ({ value, onChange }: Props) => {
         <FormDivider title="Interaction & Labels" />
         <InlineField
           grow
+          label="View Mode Zoom & Pan"
+          className={styles.inlineField}
+          tooltip={
+            'Let dashboard viewers zoom with the mouse wheel and pan by dragging, without opening the editor. ' +
+            'The zoom stays local to each viewer (never saved into the panel); double-click resets to the saved view. ' +
+            'When off, viewers can still zoom with Shift+wheel and pan with Shift+drag.'
+          }
+        >
+          <InlineSwitch
+            data-testid="nwm-view-zoom-pan"
+            value={value.settings.panel.viewZoomPan ?? false}
+            onChange={(e) => {
+              updatePanelSettings({ viewZoomPan: e.currentTarget.checked });
+            }}
+          />
+        </InlineField>
+        <InlineField
+          grow
           label="Hover Highlight"
           className={styles.inlineField}
           tooltip={'Hovering a link highlights its whole path (including VIA segments) and fades unrelated links.'}

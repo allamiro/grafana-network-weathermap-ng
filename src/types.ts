@@ -6,6 +6,12 @@ export interface PanelOptions {
   panelSize: AreaSize;
   zoomScale: number;
   offset: Position;
+  // Opt-in wheel zoom + drag pan while VIEWING the dashboard (#306). The
+  // viewer's zoom/pan stays local to their browser session and is never
+  // written back into the saved panel options; double-click resets it.
+  // Absent = off, preserving the existing behavior (view zoom only via
+  // Shift+wheel, no migration required).
+  viewZoomPan?: boolean;
   showTimestamp: boolean;
   grid: {
     enabled: boolean;
