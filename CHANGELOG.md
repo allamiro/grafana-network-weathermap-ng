@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Features
+
+- **Rail Operations mode (experimental, monitoring-only)** ([#300](https://github.com/allamiro/grafana-network-weathermap-ng/issues/300)): an opt-in `mapMode` that renders stations/control points, independent physical track segments with ordered via waypoints, signals, switches, crossovers, route and incident/maintenance overlays, and metric-driven train markers (segment + progress binding that follows `rail_train_progress`-style series across blocks). Categorical state semantics with severity composition (live alarms beat data-quality states; missing primary series never read healthy), layer visibility/zoom gating, tooltips, sanitized drill-downs, a mode-gated editor with live topology validation and rail JSON import/export, a bundled static baseline background, and a shared polyline geometry module (`src/geometry/polyline.ts`) with miter-correct parallel offsets. Existing dashboards are untouched: absent `mapMode` always means network mode, the schema version is unchanged, and network maps are never rewritten. All telemetry integration is read-only; the mode must not be used to issue safety-critical railway control commands.
+- Demo stack: deterministic simulated rail telemetry (`testing/exporter/rail.go`, clearly labeled simulated) and the provisioned "Rail Operations Monitoring — Simulated Demo" dashboard.
+
 ## [1.6.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.0) (2026-07-09)
 
 ### Features

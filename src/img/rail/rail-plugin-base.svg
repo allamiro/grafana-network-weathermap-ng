@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Rail operations plugin base background</title>
+  <desc id="desc">Lightweight SVG base for a rail operations weathermap plugin. Includes a dark background, subtle minor and major grid, safe area, corridor guides, and editor alignment guides only. It intentionally does not include stations, tracks, signals, trains, or live UI widgets.</desc>
+
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#050B16"/>
+      <stop offset="55%" stop-color="#07101E"/>
+      <stop offset="100%" stop-color="#040914"/>
+    </linearGradient>
+
+    <linearGradient id="zoneGlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#B8C8DE" stop-opacity="0.02"/>
+      <stop offset="50%" stop-color="#D8E4F5" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#B8C8DE" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <pattern id="minorGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#88A4C6" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+
+    <pattern id="majorGrid" width="160" height="160" patternUnits="userSpaceOnUse">
+      <path d="M 160 0 L 0 0 0 160" fill="none" stroke="#A9C0DA" stroke-opacity="0.12" stroke-width="1.2"/>
+    </pattern>
+
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0.25  0 0 1 0 0.6  0 0 0 0.25 0"/>
+    </filter>
+
+    <style>
+      .frame { fill: none; stroke: #8EA9C8; stroke-opacity: 0.75; stroke-width: 1.25; }
+      .safe { fill: none; stroke: #7F96B0; stroke-opacity: 0.22; stroke-width: 1; stroke-dasharray: 6 8; }
+      .guide { stroke: #B9C7DA; stroke-opacity: 0.18; stroke-width: 1; stroke-dasharray: 7 8; }
+      .guideStrong { stroke: #C6D4E6; stroke-opacity: 0.22; stroke-width: 1.2; stroke-dasharray: 9 8; }
+      .anchor { fill: #D7E5F6; fill-opacity: 0.22; stroke: #D7E5F6; stroke-opacity: 0.35; stroke-width: 1; }
+      .tick { stroke: #D0DEEF; stroke-opacity: 0.2; stroke-width: 1.25; }
+      .corner { stroke: #B9CBE3; stroke-opacity: 0.36; stroke-width: 1.4; fill: none; }
+    </style>
+  </defs>
+
+  <!-- Root background -->
+  <g id="background">
+    <rect x="0" y="0" width="1600" height="900" rx="20" fill="url(#bgGradient)"/>
+    <rect x="12" y="12" width="1576" height="876" rx="16" class="frame"/>
+  </g>
+
+  <!-- Primary canvas where plugin objects should be placed -->
+  <g id="canvas-area">
+    <rect x="60" y="60" width="1480" height="780" rx="14" fill="#08111F" fill-opacity="0.28" stroke="#9FB7D2" stroke-opacity="0.55" stroke-width="1.2"/>
+    <rect x="60" y="60" width="1480" height="780" rx="14" fill="url(#minorGrid)"/>
+    <rect x="60" y="60" width="1480" height="780" rx="14" fill="url(#majorGrid)"/>
+  </g>
+
+  <!-- Safe area to keep labels and important objects clear of edges -->
+  <g id="safe-area">
+    <rect x="100" y="100" width="1400" height="700" rx="8" class="safe"/>
+  </g>
+
+  <!-- Optional operating corridor guides for a simple two-track line -->
+  <g id="corridor-guides">
+    <rect x="60" y="334" width="1480" height="34" fill="url(#zoneGlow)"/>
+    <rect x="60" y="532" width="1480" height="34" fill="url(#zoneGlow)"/>
+    <line x1="60" y1="351" x2="1540" y2="351" class="guideStrong"/>
+    <line x1="60" y1="549" x2="1540" y2="549" class="guideStrong"/>
+  </g>
+
+  <!-- Editor alignment guides: station/control-point columns only. Keep subtle. -->
+  <g id="editor-guides">
+    <line x1="180" y1="140" x2="180" y2="760" class="guide"/>
+    <line x1="360" y1="140" x2="360" y2="760" class="guide"/>
+    <line x1="560" y1="140" x2="560" y2="760" class="guide"/>
+    <line x1="780" y1="140" x2="780" y2="760" class="guide"/>
+    <line x1="1020" y1="140" x2="1020" y2="760" class="guide"/>
+    <line x1="1260" y1="140" x2="1260" y2="760" class="guide"/>
+    <line x1="1440" y1="140" x2="1440" y2="760" class="guide"/>
+
+    <!-- top-row anchor markers -->
+    <circle cx="180" cy="351" r="5" class="anchor"/>
+    <circle cx="360" cy="351" r="5" class="anchor"/>
+    <circle cx="560" cy="351" r="5" class="anchor"/>
+    <circle cx="780" cy="351" r="5" class="anchor"/>
+    <circle cx="1020" cy="351" r="5" class="anchor"/>
+    <circle cx="1260" cy="351" r="5" class="anchor"/>
+    <circle cx="1440" cy="351" r="5" class="anchor"/>
+
+    <!-- bottom-row anchor markers -->
+    <circle cx="180" cy="549" r="5" class="anchor"/>
+    <circle cx="360" cy="549" r="5" class="anchor"/>
+    <circle cx="560" cy="549" r="5" class="anchor"/>
+    <circle cx="780" cy="549" r="5" class="anchor"/>
+    <circle cx="1020" cy="549" r="5" class="anchor"/>
+    <circle cx="1260" cy="549" r="5" class="anchor"/>
+    <circle cx="1440" cy="549" r="5" class="anchor"/>
+  </g>
+
+  <!-- Subtle junction expansion hint zones: optional editing help only -->
+  <g id="junction-zones" opacity="0.18">
+    <rect x="675" y="275" width="210" height="350" rx="16" fill="#AFC4DD" fill-opacity="0.035" stroke="#C8D7E8" stroke-opacity="0.12" stroke-width="1.1"/>
+    <rect x="1345" y="295" width="120" height="250" rx="14" fill="#AFC4DD" fill-opacity="0.03" stroke="#C8D7E8" stroke-opacity="0.10" stroke-width="1.0"/>
+  </g>
+
+  <!-- Minor reference ticks along the corridor center lines -->
+  <g id="corridor-ticks" opacity="0.9">
+    <line x1="140" y1="341" x2="140" y2="361" class="tick"/>
+    <line x1="260" y1="341" x2="260" y2="361" class="tick"/>
+    <line x1="460" y1="341" x2="460" y2="361" class="tick"/>
+    <line x1="660" y1="341" x2="660" y2="361" class="tick"/>
+    <line x1="900" y1="341" x2="900" y2="361" class="tick"/>
+    <line x1="1140" y1="341" x2="1140" y2="361" class="tick"/>
+    <line x1="1380" y1="341" x2="1380" y2="361" class="tick"/>
+
+    <line x1="140" y1="539" x2="140" y2="559" class="tick"/>
+    <line x1="260" y1="539" x2="260" y2="559" class="tick"/>
+    <line x1="460" y1="539" x2="460" y2="559" class="tick"/>
+    <line x1="660" y1="539" x2="660" y2="559" class="tick"/>
+    <line x1="900" y1="539" x2="900" y2="559" class="tick"/>
+    <line x1="1140" y1="539" x2="1140" y2="559" class="tick"/>
+    <line x1="1380" y1="539" x2="1380" y2="559" class="tick"/>
+  </g>
+
+  <!-- Very subtle corner brackets for wallboard feel -->
+  <g id="corner-brackets">
+    <path d="M 72 92 H 122 M 72 92 V 142" class="corner"/>
+    <path d="M 1478 92 H 1528 M 1528 92 V 142" class="corner"/>
+    <path d="M 72 808 H 122 M 72 808 V 758" class="corner"/>
+    <path d="M 1478 808 H 1528 M 1528 808 V 758" class="corner"/>
+  </g>
+</svg>

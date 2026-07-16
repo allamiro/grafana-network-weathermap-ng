@@ -5,7 +5,7 @@ services:
       args:
         GRAFANA_VERSION: ${GRAFANA_VERSION:-12.4.0}
         # Zabbix datasource app for the multi-datasource demo (#256).
-        GF_INSTALL_PLUGINS: alexanderzobnin-zabbix-app
+        GF_INSTALL_PLUGINS: alexanderzobnin-zabbix-app,grafana-clock-panel
     ports:
       - 3101:3000
     volumes:

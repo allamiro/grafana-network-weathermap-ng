@@ -1,39 +1,10 @@
 // Regression tests for numeric input handling (#200): blank numeric inputs
 // report NaN via valueAsNumber, and NaN must never reach the saved options —
 // it propagates into the panel viewBox and SVG geometry.
-import React, { useState } from 'react';
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { StandardEditorProps } from '@grafana/data';
-import { PanelForm } from './PanelForm';
-import { Weathermap } from 'types';
 import { getData, theme } from '../testData';
-
-
-// Deep-freeze the value handed to the form: any residual in-place mutation of
-// props.value throws immediately (#233). Handlers must clone before writing.
-const deepFreeze = <T,>(o: T): T => {
-  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-    Object.freeze(o);
-  }
-  return o;
-};
-
-const Harness = ({ initial, onChangeSpy }: { initial: Weathermap; onChangeSpy: jest.Mock }) => {
-  const [wm, setWm] = useState(initial);
-  const props = {
-    value: deepFreeze(wm),
-    onChange: (v: Weathermap) => {
-      onChangeSpy(v);
-      setWm(v);
-    },
-    context: { data: [] },
-    item: { settings: { placeholder: '' } },
-  } as unknown as StandardEditorProps<Weathermap, { placeholder: string }>;
-  return <PanelForm {...props} />;
-};
-
-const lastValue = (spy: jest.Mock): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+import { Harness, lastValue } from './panelFormTestHarness';
 
 const containsNaN = (o: unknown): boolean => {
   if (typeof o === 'number') {

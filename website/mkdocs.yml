@@ -40,6 +40,7 @@ nav:
       - Panel Options: guide/panel-options.md
       - Interactions & Editing: guide/interactions.md
       - Traffic Animation: guide/animation.md
+      - Rail Operations Mode: guide/rail-operations.md
       - BGP Neighbor Status: guide/bgp.md
       - Use Cases: guide/use-cases.md
       - Data Sources: guide/datasources.md
