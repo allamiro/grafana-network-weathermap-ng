@@ -890,8 +890,8 @@
                   "dashboardLink": "",
                   "portLabel": "Eth-Trunk1",
                   "directionLabel": "Out",
-                  "portLabelOffset": 28,
-                  "portLabelDistance": 6
+                  "portLabelOffset": 14,
+                  "portLabelDistance": 10
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1078,8 +1078,8 @@
                   "dashboardLink": "",
                   "portLabel": "Eth-Trunk2",
                   "directionLabel": "Out",
-                  "portLabelOffset": 28,
-                  "portLabelDistance": -18
+                  "portLabelOffset": 14,
+                  "portLabelDistance": -24
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1266,8 +1266,8 @@
                   "dashboardLink": "",
                   "portLabel": "HundredGigE0/0/1",
                   "directionLabel": "Out",
-                  "portLabelOffset": 22,
-                  "portLabelDistance": 26
+                  "portLabelOffset": 40,
+                  "portLabelDistance": 28
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1454,8 +1454,8 @@
                   "dashboardLink": "",
                   "portLabel": "HundredGigE0/0/2",
                   "directionLabel": "Out",
-                  "portLabelOffset": 22,
-                  "portLabelDistance": 26
+                  "portLabelOffset": 40,
+                  "portLabelDistance": 28
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1834,8 +1834,8 @@
                   "dashboardLink": "",
                   "portLabel": "GigabitEthernet0/2",
                   "directionLabel": "Out",
-                  "portLabelOffset": 30,
-                  "portLabelDistance": 10
+                  "portLabelOffset": 44,
+                  "portLabelDistance": 24
                 },
                 "Z": {
                   "bandwidth": 1000000000,
@@ -2365,8 +2365,8 @@
                   "dashboardLink": "",
                   "portLabel": "HundredGigE0/0/9",
                   "directionLabel": "Out",
-                  "portLabelOffset": 35,
-                  "portLabelDistance": 0
+                  "portLabelOffset": 25,
+                  "portLabelDistance": -35
                 },
                 "Z": {
                   "bandwidth": 10000000000,

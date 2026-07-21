@@ -29,14 +29,25 @@ wm = panel["options"]["weathermap"]
 # (offset% along axis, distance px perpendicular) per link id — chosen to lift
 # each label off the node/icon and show the full range of both controls.
 PLACEMENT = {
-    "link-core-a<->core-b/1": (28, 6),
-    "link-core-a<->core-b/2": (28, -18),
-    "link-core-a<->edge-1": (22, 26),
-    "link-core-b<->edge-2": (22, 26),
+    # The two core trunks are parallel and close, with value labels clustered
+    # at the centre — keep both port labels toward the CORE-A end and well
+    # above/below the line so they clear the value labels.
+    "link-core-a<->core-b/1": (14, 10),
+    "link-core-a<->core-b/2": (14, -24),
+    # CORE-A/CORE-B sit above their edge nodes with a device icon rendered over
+    # the box, so slide these labels well toward the midpoint (offset) and lift
+    # them off the line (distance) to clear the icon.
+    "link-core-a<->edge-1": (40, 28),
+    "link-core-b<->edge-2": (40, 28),
     "link-edge-1<->site-atl": (18, 34),
-    "link-edge-1<->site-dfw": (30, 10),
+    # Slide past the near-end value label toward the midpoint and lift it off
+    # the line so it stops overlapping EDGE-1's value label.
+    "link-edge-1<->site-dfw": (44, 24),
     "link-edge-2<->site-nyc/a": (18, 34),
-    "link-core-b<->inet": (35, 0),
+    # INET sits directly above CORE-B, so the long port label rides over
+    # CORE-B's icon: slide toward the midpoint and push it off the line to the
+    # right (negative distance) into open space, away from the CORE-B stack.
+    "link-core-b<->inet": (25, -35),
 }
 
 touched = 0
