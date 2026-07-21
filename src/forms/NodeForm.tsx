@@ -290,6 +290,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
     originX: 100,
     originY: 100,
     statusQueryTemplate: '',
+    statusColoring: true,
   });
   const [gridError, setGridError] = useState<string | null>(null);
   const setGridField = (patch: Partial<PortGridFormValues>) => setGrid((g) => ({ ...g, ...patch }));
@@ -317,6 +318,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
           originX: grid.originX,
           originY: grid.originY,
           statusQueryTemplate: grid.statusQueryTemplate.trim() || undefined,
+          statusColoring: grid.statusColoring,
           gridSize: snap?.enabled ? snap.size : undefined,
         },
         theme
@@ -1065,6 +1067,16 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
               value={grid.statusQueryTemplate}
               placeholder={'ifOperStatus {label}'}
               onChange={(e) => setGridField({ statusQueryTemplate: e.currentTarget.value })}
+            />
+          </InlineField>
+          <InlineField
+            grow
+            label="Status coloring"
+            tooltip={'Fill each port green when up (value ≥ 1) and red when down (0) — the standard port-board convention. Pair with the status query template above.'}
+          >
+            <InlineSwitch
+              value={grid.statusColoring}
+              onChange={(e) => setGridField({ statusColoring: e.currentTarget.checked })}
             />
           </InlineField>
           {gridError && (

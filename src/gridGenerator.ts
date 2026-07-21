@@ -10,6 +10,13 @@ import { generateBasicNode, nearestMultiple } from 'utils';
 
 export type PortGridOrdering = 'row-major' | 'column-major' | 'odd-even';
 
+// Standard port-board status colors, matching the universal switch-LED
+// convention (green = link up, red = link down). Applied to every generated
+// port when status coloring is enabled, so a status-bound board reads up/down
+// at a glance instead of leaving 48 default-colored nodes to hand-edit.
+export const PORT_STATUS_UP_COLOR = '#73BF69';
+export const PORT_STATUS_DOWN_COLOR = '#F2495C';
+
 export interface PortGridOptions {
   // How many port nodes to create.
   count: number;
@@ -34,6 +41,9 @@ export interface PortGridOptions {
   // Optional per-port status query — `{n}` → port number, `{label}` → the
   // generated label, so one action binds all ports (e.g. "ifOperStatus {label}").
   statusQueryTemplate?: string;
+  // When true, stamp standard up/down status value mappings (green ≥1, red 0)
+  // and fill the node background — turning the block into a live port board.
+  statusColoring?: boolean;
   // Optional icon name (as used elsewhere, e.g. "rack/patch-panel").
   icon?: string;
   // When > 0, snap generated positions to this grid so ports line up with
@@ -76,6 +86,7 @@ export interface PortGridFormValues {
   originX: number;
   originY: number;
   statusQueryTemplate: string;
+  statusColoring: boolean;
 }
 
 // One-click starting points for common rack devices. These are *only* parameter
@@ -96,6 +107,7 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 46,
       vSpacing: 34,
+      statusColoring: true,
     },
   },
   {
@@ -110,6 +122,7 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 46,
       vSpacing: 34,
+      statusColoring: true,
     },
   },
   {
@@ -125,6 +138,7 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 40,
       vSpacing: 40,
+      statusColoring: true,
     },
   },
   {
@@ -140,6 +154,7 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 40,
       vSpacing: 26,
+      statusColoring: true,
     },
   },
   {
@@ -155,6 +170,7 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 8,
       hSpacing: 62,
       vSpacing: 60,
+      statusColoring: true,
     },
   },
 ];
@@ -204,6 +220,14 @@ export function generatePortGrid(opts: PortGridOptions, theme: GrafanaTheme2): N
     }
     if (opts.statusQueryTemplate) {
       node.statusQuery = fillTemplate(opts.statusQueryTemplate, portNumber, label);
+    }
+    if (opts.statusColoring) {
+      // value 0 → red (down), value ≥ 1 → green (up); highest matching wins.
+      node.statusValueMappings = [
+        { value: 0, color: PORT_STATUS_DOWN_COLOR },
+        { value: 1, color: PORT_STATUS_UP_COLOR },
+      ];
+      node.nodeStatusColorTarget = 'background';
     }
     if (opts.icon) {
       node.nodeIcon = {

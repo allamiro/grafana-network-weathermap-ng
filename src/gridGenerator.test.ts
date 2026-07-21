@@ -1,4 +1,10 @@
-import { generatePortGrid, PortGridOptions, PORT_GRID_PRESETS } from 'gridGenerator';
+import {
+  generatePortGrid,
+  PortGridOptions,
+  PORT_GRID_PRESETS,
+  PORT_STATUS_UP_COLOR,
+  PORT_STATUS_DOWN_COLOR,
+} from 'gridGenerator';
 import { theme } from 'testData';
 
 const base: PortGridOptions = {
@@ -75,7 +81,29 @@ test('sets node padding from nodeSize when provided', () => {
   expect(nodes[0].padding).toEqual({ horizontal: 12, vertical: 12 });
 });
 
+test('status coloring stamps up/down mappings and a background fill on every port', () => {
+  const nodes = generatePortGrid({ ...base, count: 3, statusColoring: true }, theme);
+  for (const node of nodes) {
+    expect(node.statusValueMappings).toEqual([
+      { value: 0, color: PORT_STATUS_DOWN_COLOR },
+      { value: 1, color: PORT_STATUS_UP_COLOR },
+    ]);
+    expect(node.nodeStatusColorTarget).toBe('background');
+  }
+});
+
+test('status coloring is off unless requested (no mappings by default)', () => {
+  const nodes = generatePortGrid({ ...base, count: 3 }, theme);
+  expect(nodes.every((n) => n.statusValueMappings === undefined)).toBe(true);
+});
+
 describe('presets', () => {
+  test('every device preset enables status coloring so it renders as a live board', () => {
+    for (const preset of PORT_GRID_PRESETS) {
+      expect(preset.values.statusColoring).toBe(true);
+    }
+  });
+
   test('every preset produces a valid grid of its stated count', () => {
     for (const preset of PORT_GRID_PRESETS) {
       const opts = { ...base, ...preset.values, originX: 0, originY: 0 } as PortGridOptions;

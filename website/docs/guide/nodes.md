@@ -37,6 +37,7 @@ Open the **Generate Port Grid** panel and set:
 | **H / V spacing** | Gap between columns / rows, in pixels. |
 | **Origin X / Y** | Top-left corner of the block. |
 | **Status query template** | *Optional.* Bind a status query to every port at once — `{n}` → port number, `{label}` → the generated label (e.g. `ifOperStatus {label}`). |
+| **Status coloring** | Fills each port **green when up** (value ≥ 1) and **red when down** (0) — the standard switch-LED convention — so the block reads as a live port board. On by default; pair it with the status query template. |
 
 Then click **Generate … Ports**. The ports are appended as **normal, editable nodes** — you can move, recolor, icon, and query them like any other node, and they save/reload with the dashboard. When **Panel Options → Grid** snapping is on, generated positions snap to it so ports line up with hand-placed nodes.
 
