@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [Unreleased]
 
+### Features
+
+* **port label positioning**: each link side gets two sliders to place its port label clear of node icons, arrows, or parallel links — **Port Label Offset %** (−50…50, slides along the link axis: positive toward the midpoint, negative toward the node) and **Port Label Distance** (−30…60 px, moves perpendicular to the link: positive further from the line, negative closer/across). Both default 0, so saved maps are unchanged ([#309](https://github.com/allamiro/grafana-network-weathermap-ng/issues/309))
+
 ### Fixed
 
 * **duplicate port label on VIA links**: a port label set on a VIA-routed (waypointed) link rendered again at every intermediate bend, because the origin side data is copied onto each downstream segment for value/color propagation. Port labels now render only at their real node endpoint, never at a VIA connection node — value/color propagation is unchanged ([#317](https://github.com/allamiro/grafana-network-weathermap-ng/issues/317))

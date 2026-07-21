@@ -1929,14 +1929,20 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 const perpOffset = -(d.stroke / 2 + wm.settings.fontSizing.link / 2 + 2);
                 const labelDist = Math.min(len * 0.25, 30);
 
-                const aPosX = d.lineStartA.x + (dx / len) * labelDist;
-                const aPosY = d.lineStartA.y + (dy / len) * labelDist;
-
+                // Slide the port label along the link axis (#309): add a signed
+                // percentage of the link length to the default distance, clamped
+                // so it never lands behind its own endpoint. Unset/0 = default.
                 const zdx = d.lineEndZ.x - d.lineStartZ.x;
                 const zdy = d.lineEndZ.y - d.lineStartZ.y;
                 const zlen = Math.sqrt(zdx * zdx + zdy * zdy);
-                const zPosX = zlen > 0 ? d.lineStartZ.x + (zdx / zlen) * labelDist : d.lineStartZ.x;
-                const zPosY = zlen > 0 ? d.lineStartZ.y + (zdy / zlen) * labelDist : d.lineStartZ.y;
+                const aDist = Math.max(0, labelDist + ((d.sides.A.portLabelOffset ?? 0) / 100) * len);
+                const zDist = Math.max(0, labelDist + ((d.sides.Z.portLabelOffset ?? 0) / 100) * (zlen || len));
+
+                const aPosX = d.lineStartA.x + (dx / len) * aDist;
+                const aPosY = d.lineStartA.y + (dy / len) * aDist;
+
+                const zPosX = zlen > 0 ? d.lineStartZ.x + (zdx / zlen) * zDist : d.lineStartZ.x;
+                const zPosY = zlen > 0 ? d.lineStartZ.y + (zdy / zlen) * zDist : d.lineStartZ.y;
 
                 return (
                   <React.Fragment key={i}>
@@ -1949,7 +1955,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       <g transform={`translate(${aPosX},${aPosY}) rotate(${angleDeg})`}>
                         <text
                           x={0}
-                          y={perpOffset}
+                          y={perpOffset - (d.sides.A.portLabelDistance ?? 0)}
                           textAnchor="middle"
                           dominantBaseline="auto"
                           fontSize={`${wm.settings.fontSizing.link}px`}
@@ -1964,7 +1970,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       <g transform={`translate(${zPosX},${zPosY}) rotate(${angleDeg})`}>
                         <text
                           x={0}
-                          y={flipped ? -perpOffset : perpOffset}
+                          y={
+                            flipped
+                              ? -perpOffset + (d.sides.Z.portLabelDistance ?? 0)
+                              : perpOffset - (d.sides.Z.portLabelDistance ?? 0)
+                          }
                           textAnchor="middle"
                           dominantBaseline="auto"
                           fontSize={`${wm.settings.fontSizing.link}px`}

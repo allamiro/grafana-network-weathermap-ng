@@ -357,6 +357,40 @@ export const LinkForm = (props: Props) => {
                             name={`${sName}portLabel`}
                           />
                         </InlineField>
+                        <InlineField
+                          grow
+                          label={`${sName} Port Label Offset %`}
+                          style={{ width: '100%' }}
+                          tooltip={'Slide the port label along the link axis. 0 keeps the default position; positive moves it toward the midpoint, negative toward the node.'}
+                        >
+                          <Slider
+                            min={-50}
+                            max={50}
+                            value={side.portLabelOffset ?? 0}
+                            onChange={(v) => {
+                              let weathermap: Weathermap = structuredClone(value);
+                              weathermap.links[i].sides[sName].portLabelOffset = v;
+                              onChange(weathermap);
+                            }}
+                          />
+                        </InlineField>
+                        <InlineField
+                          grow
+                          label={`${sName} Port Label Distance`}
+                          style={{ width: '100%' }}
+                          tooltip={'Move the port label perpendicular to the link line. 0 keeps the default distance; positive moves it further from the line, negative closer or across. Handy when a label overlaps the node icon.'}
+                        >
+                          <Slider
+                            min={-30}
+                            max={60}
+                            value={side.portLabelDistance ?? 0}
+                            onChange={(v) => {
+                              let weathermap: Weathermap = structuredClone(value);
+                              weathermap.links[i].sides[sName].portLabelDistance = v;
+                              onChange(weathermap);
+                            }}
+                          />
+                        </InlineField>
                         <InlineField grow label={`${sName} Direction Label`} style={{ width: '100%' }}>
                           <Input
                             value={side.directionLabel ?? ''}
