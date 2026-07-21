@@ -165,6 +165,35 @@ test('Port label offset slides the label along the link axis (#309)', () => {
   expect(translateX()).not.toBeCloseTo(defaultX, 1);
 });
 
+test('Port label distance moves the label perpendicular to the link (#309)', () => {
+  const build = (distance?: number) => {
+    let testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.links[0].sides.A.portLabel = 'GE-0/0/1';
+    if (distance !== undefined) {
+      weathermap.links[0].sides.A.portLabelDistance = distance;
+    }
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+    return testProps;
+  };
+  // The perpendicular distance changes the <text> y within its rotated group.
+  const textY = (): number => parseFloat(screen.getByText('GE-0/0/1').getAttribute('y') || 'NaN');
+
+  const view = render(<WeathermapPanel {...build()} />);
+  const defaultY = textY();
+  view.unmount();
+
+  // Unset behaves exactly like 0.
+  render(<WeathermapPanel {...build(0)} />);
+  expect(textY()).toBeCloseTo(defaultY, 5);
+  cleanup();
+
+  // Positive distance pushes the A-side label further from the line (more negative y).
+  render(<WeathermapPanel {...build(20)} />);
+  expect(textY()).toBeCloseTo(defaultY - 20, 5);
+});
+
 test('Uses explicit per-side direction labels in the link tooltip when set', () => {
   let testProps = { ...mPanelProps };
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);

@@ -46,16 +46,20 @@ With bandwidth set, the tooltip and coloring can express **throughput %** (curre
 
 - **Label Offset** — slide the value text along the link (0–100%). Handy when two labels overlap.
 - **Port Label** — a per-side interface name (e.g. `ge-0/0/1`) rendered next to the link at 25% from each endpoint, rotated to follow the line.
-- **Port Label Offset %** — slide a port label **along the link axis** (−50…50). `0` (default) keeps the position above; positive moves it toward the midpoint, negative toward the node. Useful when a port label collides with a node, an arrow, or a parallel link.
+- **Port Label Offset %** — slide a port label **along the link axis** (−50…50). `0` (default) keeps the position above; positive moves it toward the midpoint, negative toward the node.
+- **Port Label Distance** — move a port label **perpendicular to the link line** (−30…60 px). `0` (default) keeps the current distance; positive pushes it further from the line, negative brings it closer or across. Between the two you can lift a label clear of a node icon, an arrow, or a parallel link.
 
-**Setting the offset:**
+**Positioning a port label:**
 
 1. **Edit** the panel → open **Links** and select a link from the dropdown.
-2. Under **A Side Options** / **Z Side Options**, set the **Port Label**, then drag the **Port Label Offset %** slider.
+2. Under **A Side Options** / **Z Side Options**, set the **Port Label**, then use the two sliders: **Port Label Offset %** (along the link) and **Port Label Distance** (away from the link).
 
-    ![The A Port Label Offset slider in the link editor](../img/getting-started/port-label-offset-option.png)
+    ![The A Port Label Offset and Distance sliders in the link editor](../img/getting-started/port-label-offset-option.png)
 
-3. **Save** the dashboard — the label sits where you slid it.
+3. **Save** the dashboard — the label sits where you placed it.
+
+!!! tip "Label overlapping a node?"
+    Port labels sit ~25% from each endpoint, so on dense maps they can overlap the node icon or its label. Nudge **Offset %** positive (toward the midpoint, away from the node) and/or **Distance** to lift it off the icon.
 
 ![WAN map with port labels and direction labels on links](../img/use-cases/wm-wan-utilization.png)
 

@@ -137,6 +137,11 @@ export interface LinkSide {
   // moves it toward the midpoint, negative toward the node. Unset/0 keeps the
   // existing position, so old maps are unchanged.
   portLabelOffset?: number;
+  // Move this side's port label perpendicular to the link line (#309): signed
+  // pixels away from the axis in the label's natural direction (positive =
+  // further from the line, negative = closer / across). Unset/0 keeps the
+  // existing distance, so old maps are unchanged.
+  portLabelDistance?: number;
   // Optional explicit direction label for this side (e.g. "Inbound", "Outbound",
   // "To WAN"). When set, the hover tooltip labels this side's value with it
   // instead of the generic Inbound/Outbound wording.

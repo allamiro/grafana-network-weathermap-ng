@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 
-* **port label offset**: each link side gets a **Port Label Offset %** slider (−50…50) to slide its port label along the link axis — positive toward the midpoint, negative toward the node. Default 0 keeps the existing position, so saved maps are unchanged ([#309](https://github.com/allamiro/grafana-network-weathermap-ng/issues/309))
+* **port label positioning**: each link side gets two sliders to place its port label clear of node icons, arrows, or parallel links — **Port Label Offset %** (−50…50, slides along the link axis: positive toward the midpoint, negative toward the node) and **Port Label Distance** (−30…60 px, moves perpendicular to the link: positive further from the line, negative closer/across). Both default 0, so saved maps are unchanged ([#309](https://github.com/allamiro/grafana-network-weathermap-ng/issues/309))
 
 ## [1.6.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.1) (2026-07-21)
 

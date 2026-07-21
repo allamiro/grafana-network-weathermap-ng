@@ -1950,7 +1950,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       <g transform={`translate(${aPosX},${aPosY}) rotate(${angleDeg})`}>
                         <text
                           x={0}
-                          y={perpOffset}
+                          y={perpOffset - (d.sides.A.portLabelDistance ?? 0)}
                           textAnchor="middle"
                           dominantBaseline="auto"
                           fontSize={`${wm.settings.fontSizing.link}px`}
@@ -1965,7 +1965,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       <g transform={`translate(${zPosX},${zPosY}) rotate(${angleDeg})`}>
                         <text
                           x={0}
-                          y={flipped ? -perpOffset : perpOffset}
+                          y={
+                            flipped
+                              ? -perpOffset + (d.sides.Z.portLabelDistance ?? 0)
+                              : perpOffset - (d.sides.Z.portLabelDistance ?? 0)
+                          }
                           textAnchor="middle"
                           dominantBaseline="auto"
                           fontSize={`${wm.settings.fontSizing.link}px`}

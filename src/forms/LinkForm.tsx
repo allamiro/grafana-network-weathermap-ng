@@ -374,6 +374,23 @@ export const LinkForm = (props: Props) => {
                             }}
                           />
                         </InlineField>
+                        <InlineField
+                          grow
+                          label={`${sName} Port Label Distance`}
+                          style={{ width: '100%' }}
+                          tooltip={'Move the port label perpendicular to the link line. 0 keeps the default distance; positive moves it further from the line, negative closer or across. Handy when a label overlaps the node icon.'}
+                        >
+                          <Slider
+                            min={-30}
+                            max={60}
+                            value={side.portLabelDistance ?? 0}
+                            onChange={(v) => {
+                              let weathermap: Weathermap = structuredClone(value);
+                              weathermap.links[i].sides[sName].portLabelDistance = v;
+                              onChange(weathermap);
+                            }}
+                          />
+                        </InlineField>
                         <InlineField grow label={`${sName} Direction Label`} style={{ width: '100%' }}>
                           <Input
                             value={side.directionLabel ?? ''}
