@@ -34,6 +34,17 @@ Some gestures (adding VIAs, free zoom) are **edit-mode only** to avoid interferi
 
     macOS uses **⌘ Cmd** where Linux/Windows use **Ctrl** (Ctrl-click is a right-click on a Mac). Zoom uses the dominant scroll axis, so a Mac's Shift+scroll (which the OS remaps to horizontal) still zooms.
 
+### Enabling View Mode Zoom & Pan
+
+1. **Edit** the panel → in the options, open **Interaction & Labels** and turn on **View Mode Zoom & Pan**.
+
+    ![The View Mode Zoom & Pan toggle under Interaction & Labels](../img/getting-started/view-mode-zoom-option.png)
+
+2. **Save** the dashboard.
+3. Back in **view mode** (not editing), over the panel: **mouse wheel = zoom**, **left-drag = pan**, **double-click = reset** to the saved view.
+
+Each viewer's zoom/pan is local to their browser and is never written back to the dashboard. With the toggle **off**, viewers still zoom with **Shift**+wheel and pan with **Shift**/**Ctrl**/**⌘**-drag, and plain scrolling passes through to the dashboard page.
+
 ---
 
 ## Editing VIAs on the canvas
