@@ -807,6 +807,23 @@ describe('timeline and state synchronization (#201)', () => {
     expect(JSON.stringify(testProps.options.weathermap.links)).toBe(optionsBefore);
   });
 
+  test('port label on a VIA link renders once, not on every segment', () => {
+    // withSideData copies the origin A-side (incl. portLabel) onto every
+    // downstream VIA segment so value/color propagate — but the port label
+    // must render only at the real node endpoint, never at a VIA bend.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    weathermap.links[0].sides.A.portLabel = 'GE-9/9/9';
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    render(<WeathermapPanel {...testProps} />);
+
+    // Exactly one label, despite the A-side (with its portLabel) being copied
+    // onto the C0 -> B segment for data propagation.
+    expect(screen.getAllByText('GE-9/9/9')).toHaveLength(1);
+  });
+
   test('multi-VIA chains show the origin data on every downstream segment', () => {
     // A -> C1 -> C2 -> B: three segments through two consecutive connection
     // nodes. Every segment's A-side label must resolve back to the origin
