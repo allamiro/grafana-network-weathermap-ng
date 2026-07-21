@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Features
+
+* **port grid generator**: a **Generate Port Grid** action in the node editor creates a whole block of aligned port nodes in one step — for switch faceplates, patch panels, PDU strips, or blade chassis. One-click **presets** (48-/24-port switch, 24-port patch panel, PDU strip, blade chassis) fill the form, then adjust count, rows/columns, fill order (row-major / column-major / **odd-even faceplate**), a `{n}` label pattern, start number, node size, spacing, and origin; an optional status-query template (`{n}` / `{label}`) binds a query to every port at once, and **status coloring** stamps the standard green-up / red-down convention onto every port so the block reads as a live port board. An optional **block gap** breaks a board into faceplate blocks (like real switch hardware) and a shared **icon** can be drawn on every port. Generated ports are plain, editable nodes appended in a single undo step, and snap to the panel grid when snapping is on. Ships with a *Switch Port Board (generated)* demo dashboard ([#267](https://github.com/allamiro/grafana-network-weathermap-ng/issues/267))
+
 ## [1.6.4](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.4) (2026-07-21)
 
 ### Features

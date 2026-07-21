@@ -202,6 +202,60 @@ test('a newly added node gets its own colors object (#281)', () => {
   expect(newNode.colors).not.toBe(updated.nodes[0].colors);
 });
 
+// #267: the port-grid generator appends plain, editable nodes in one action.
+test('Generate Port Grid appends editable port nodes (#267)', () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  const before = JSON.parse(JSON.stringify(initial));
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  // Open the generator and run it with the defaults (48-port odd/even faceplate).
+  fireEvent.click(screen.getByText('Generate Port Grid'));
+  fireEvent.click(screen.getByText(/Generate \d+ Ports/));
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  // 48 new nodes appended after the existing ones, sequentially labeled.
+  expect(updated.nodes).toHaveLength(initial.nodes.length + 48);
+  const labels = updated.nodes.map((n: { label?: string }) => n.label);
+  expect(labels).toEqual(expect.arrayContaining(['Gi1/0/1', 'Gi1/0/24', 'Gi1/0/48']));
+  // Generated ports are normal nodes, not connections, and delivered immutably.
+  const generated = updated.nodes.slice(initial.nodes.length);
+  expect(generated.every((n: { isConnection: boolean }) => n.isConnection === false)).toBe(true);
+  expect(updated).not.toBe(initial);
+  expect(initial).toEqual(before);
+});
+
+test('a port-grid preset fills the form and generates its layout (#267)', () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.click(screen.getByText('Generate Port Grid'));
+  // Apply the patch-panel preset, then generate.
+  fireEvent.click(screen.getByText('24-port patch panel'));
+  fireEvent.click(screen.getByText(/Generate \d+ Ports/));
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  expect(updated.nodes).toHaveLength(initial.nodes.length + 24);
+  const labels = updated.nodes.map((n: { label?: string }) => n.label);
+  expect(labels).toEqual(expect.arrayContaining(['P1', 'P24']));
+});
+
+test('invalid port-grid input surfaces an error and adds nothing (#267)', () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.click(screen.getByText('Generate Port Grid'));
+  // Set the port count to 0, then try to generate.
+  fireEvent.change(screen.getByDisplayValue('48'), { target: { value: '0' } });
+  fireEvent.click(screen.getByText(/Generate \d+ Ports/));
+
+  // An error is shown and no onChange (no nodes) fired from the generator.
+  expect(screen.getByText(/must be a positive number/i)).toBeInTheDocument();
+  expect(spy).not.toHaveBeenCalled();
+});
+
 test('node padding sliders allow values above the old 50 cap (#279)', async () => {
   const spy = jest.fn();
   const initial = getData(theme);

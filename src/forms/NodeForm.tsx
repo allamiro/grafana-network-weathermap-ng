@@ -34,6 +34,7 @@ import {
   CloudIcons,
 } from './iconOptions';
 import { finiteOrFallback, getDataFrameName, sanitizeUrl } from 'utils';
+import { generatePortGrid, PortGridOrdering, PortGridFormValues, PORT_GRID_PRESETS } from 'gridGenerator';
 
 interface Settings {
   placeholder: string;
@@ -274,6 +275,72 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
 
   const [currentNode, setCurrentNode] = useState('null' as unknown as Node);
 
+  // Port-grid generator (#267): local form state + a single append action. The
+  // generation logic itself lives in the pure generatePortGrid helper.
+  const [grid, setGrid] = useState<PortGridFormValues>({
+    count: 48,
+    rows: 2,
+    cols: 24,
+    ordering: 'odd-even' as PortGridOrdering,
+    labelPattern: 'Gi1/0/{n}',
+    startNumber: 1,
+    nodeSize: 4,
+    hSpacing: 46,
+    vSpacing: 34,
+    groupSize: 6,
+    groupGap: 18,
+    originX: 100,
+    originY: 100,
+    statusQueryTemplate: '',
+    statusColoring: true,
+    icon: '',
+  });
+  const [gridError, setGridError] = useState<string | null>(null);
+  const setGridField = (patch: Partial<PortGridFormValues>) => setGrid((g) => ({ ...g, ...patch }));
+  // Applying a preset fills the device-shape fields but leaves the origin where
+  // the user set it, so the block lands where they want it.
+  const applyPreset = (values: Partial<PortGridFormValues>) => {
+    setGrid((g) => ({ ...g, ...values }));
+    setGridError(null);
+  };
+
+  const handleGeneratePortGrid = () => {
+    try {
+      const snap = value.settings.panel.grid;
+      const generated = generatePortGrid(
+        {
+          count: grid.count,
+          rows: grid.rows,
+          cols: grid.cols,
+          ordering: grid.ordering,
+          labelPattern: grid.labelPattern,
+          startNumber: grid.startNumber,
+          nodeSize: grid.nodeSize,
+          hSpacing: grid.hSpacing,
+          vSpacing: grid.vSpacing,
+          groupSize: grid.groupSize,
+          groupGap: grid.groupGap,
+          originX: grid.originX,
+          originY: grid.originY,
+          statusQueryTemplate: grid.statusQueryTemplate.trim() || undefined,
+          statusColoring: grid.statusColoring,
+          icon: grid.icon.trim() || undefined,
+          gridSize: snap?.enabled ? snap.size : undefined,
+        },
+        theme
+      );
+      // Append-only + single onChange (#225/#238): links reference nodes by
+      // index, so appending (never inserting) leaves existing links intact and
+      // keeps the whole generation a single undo step.
+      const weathermap = structuredClone(value);
+      weathermap.nodes.push(...generated);
+      onChange(weathermap);
+      setGridError(null);
+    } catch (e) {
+      setGridError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const ciscoIconsFormatted = CiscoIcons.map((t) => {
     return { label: t, value: 'cisco/' + t };
   });
@@ -310,6 +377,19 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const cloudIconsFormatted = CloudIcons.map((t) => {
     return { label: t, value: 'cloud/' + t };
   });
+
+  // Grouped icon options for the port-grid generator (same catalog as the node
+  // icon picker, minus custom — generated ports share one built-in icon).
+  const portGridIconOptions = [
+    { label: 'Rack Parts', value: 'rack', options: rackIconsFormatted },
+    { label: 'Cisco Icons', value: 'cisco', options: ciscoIconsFormatted },
+    { label: 'Networking Icons', value: 'networking', options: networkingIconsFormatted },
+    { label: 'Database Icons', value: 'databases', options: databaseIconsFormatted },
+    { label: 'Computer Icons', value: 'computers_monitors', options: computerIconsFormatted },
+    { label: 'Platforms & Apps', value: 'platforms', options: platformIconsFormatted },
+    { label: 'Vendors', value: 'vendors', options: vendorIconsFormatted },
+    { label: 'Cloud', value: 'cloud', options: cloudIconsFormatted },
+  ];
 
   let dataWithIds: string[] = [];
   context.data.forEach((d, i) => {
@@ -858,6 +938,218 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
         }
         return;
       })}
+
+      <InlineFieldRow className={styles.inlineRow}>
+        <ControlledCollapse label="Generate Port Grid">
+          <p style={{ margin: '0 0 8px', fontSize: '11px', opacity: 0.7 }}>
+            Create a block of aligned port nodes for a switch faceplate, patch panel, PDU strip, or blade chassis. Use{' '}
+            <code>{'{n}'}</code> in the label for the port number (e.g. <code>Gi1/0/{'{n}'}</code>). Generated ports are
+            normal, editable nodes appended to the map.
+          </p>
+          <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 600 }}>Presets</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+            {PORT_GRID_PRESETS.map((preset) => (
+              <Button
+                key={preset.label}
+                variant="secondary"
+                size="sm"
+                onClick={() => applyPreset(preset.values)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+          <InlineFieldRow>
+            <InlineField label="Port count">
+              <Input
+                type="number"
+                min={1}
+                value={grid.count}
+                width={12}
+                onChange={(e) => setGridField({ count: finiteOrFallback(e.currentTarget.valueAsNumber, grid.count) })}
+              />
+            </InlineField>
+            <InlineField label="Rows">
+              <Input
+                type="number"
+                min={1}
+                value={grid.rows}
+                width={8}
+                onChange={(e) => setGridField({ rows: finiteOrFallback(e.currentTarget.valueAsNumber, grid.rows) })}
+              />
+            </InlineField>
+            <InlineField label="Columns">
+              <Input
+                type="number"
+                min={1}
+                value={grid.cols}
+                width={8}
+                onChange={(e) => setGridField({ cols: finiteOrFallback(e.currentTarget.valueAsNumber, grid.cols) })}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <p style={{ margin: '4px 0', fontSize: '12px', fontWeight: 600 }}>Order</p>
+          <div style={{ marginBottom: '8px' }}>
+            <RadioButtonGroup
+              id="nwm-port-grid-ordering"
+              options={[
+                { label: 'Row-major', value: 'row-major' },
+                { label: 'Column-major', value: 'column-major' },
+                { label: 'Odd/even (faceplate)', value: 'odd-even' },
+              ] as Array<{ label: string; value: PortGridOrdering }>}
+              value={grid.ordering}
+              onChange={(v) => setGridField({ ordering: v })}
+            />
+          </div>
+          <InlineFieldRow>
+            <InlineField label="Label pattern" tooltip={'{n} is replaced with the port number.'}>
+              <Input
+                type="text"
+                value={grid.labelPattern}
+                width={20}
+                onChange={(e) => setGridField({ labelPattern: e.currentTarget.value })}
+              />
+            </InlineField>
+            <InlineField label="Start #">
+              <Input
+                type="number"
+                value={grid.startNumber}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ startNumber: finiteOrFallback(e.currentTarget.valueAsNumber, grid.startNumber) })
+                }
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField label="Node size" tooltip={'Padding applied to every generated node.'}>
+              <Input
+                type="number"
+                min={0}
+                value={grid.nodeSize}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ nodeSize: finiteOrFallback(e.currentTarget.valueAsNumber, grid.nodeSize) })
+                }
+              />
+            </InlineField>
+            <InlineField label="H spacing">
+              <Input
+                type="number"
+                value={grid.hSpacing}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ hSpacing: finiteOrFallback(e.currentTarget.valueAsNumber, grid.hSpacing) })
+                }
+              />
+            </InlineField>
+            <InlineField label="V spacing">
+              <Input
+                type="number"
+                value={grid.vSpacing}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ vSpacing: finiteOrFallback(e.currentTarget.valueAsNumber, grid.vSpacing) })
+                }
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField
+              label="Block size"
+              tooltip={'Insert a gap after every N columns for a real-faceplate look (blocks of ports). 0 = one even strip.'}
+            >
+              <Input
+                type="number"
+                min={0}
+                value={grid.groupSize}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ groupSize: finiteOrFallback(e.currentTarget.valueAsNumber, grid.groupSize) })
+                }
+              />
+            </InlineField>
+            <InlineField label="Block gap">
+              <Input
+                type="number"
+                min={0}
+                value={grid.groupGap}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ groupGap: finiteOrFallback(e.currentTarget.valueAsNumber, grid.groupGap) })
+                }
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineField grow label="Icon" tooltip={'Optional icon drawn on every generated port (e.g. a rack part).'}>
+            <Select
+              inputId="nwm-port-grid-icon"
+              onChange={(v) => setGridField({ icon: v ? (v.value as string) : '' })}
+              value={grid.icon || null}
+              options={portGridIconOptions}
+              placeholder={'No icon'}
+              isClearable
+              menuShouldPortal
+            />
+          </InlineField>
+          <InlineFieldRow>
+            <InlineField label="Origin X">
+              <Input
+                type="number"
+                value={grid.originX}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ originX: finiteOrFallback(e.currentTarget.valueAsNumber, grid.originX) })
+                }
+              />
+            </InlineField>
+            <InlineField label="Origin Y">
+              <Input
+                type="number"
+                value={grid.originY}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ originY: finiteOrFallback(e.currentTarget.valueAsNumber, grid.originY) })
+                }
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineField
+            grow
+            label="Status query template"
+            tooltip={'Optional. {n} → port number, {label} → the generated label. e.g. ifOperStatus {label}'}
+          >
+            <Input
+              type="text"
+              value={grid.statusQueryTemplate}
+              placeholder={'ifOperStatus {label}'}
+              onChange={(e) => setGridField({ statusQueryTemplate: e.currentTarget.value })}
+            />
+          </InlineField>
+          <InlineField
+            grow
+            label="Status coloring"
+            tooltip={'Fill each port green when up (value ≥ 1) and red when down (0) — the standard port-board convention. Pair with the status query template above.'}
+          >
+            <InlineSwitch
+              value={grid.statusColoring}
+              onChange={(e) => setGridField({ statusColoring: e.currentTarget.checked })}
+            />
+          </InlineField>
+          {gridError && (
+            <p style={{ margin: '8px 0 0', color: theme.colors.error.text, fontSize: '12px' }}>{gridError}</p>
+          )}
+          <Button
+            variant="primary"
+            icon="plus"
+            size="md"
+            onClick={handleGeneratePortGrid}
+            style={{ marginTop: '10px' }}
+          >
+            Generate {grid.count} Ports
+          </Button>
+        </ControlledCollapse>
+      </InlineFieldRow>
 
       <Button variant="secondary" icon="plus" size="md" onClick={addNewNode} className={styles.addNew}>
         Add Node
