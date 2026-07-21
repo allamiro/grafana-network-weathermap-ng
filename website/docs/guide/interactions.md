@@ -20,13 +20,30 @@ Some gestures (adding VIAs, free zoom) are **edit-mode only** to avoid interferi
 | **Move a node** | Click-drag the node | Click-drag the node |
 | **Pan the map** | **Ctrl**+drag, **Shift**+drag, or middle-mouse drag | **⌘ Cmd**+drag or **Shift**+drag |
 | **Zoom** | Scroll (edit mode); **Shift**+scroll (view mode) | Scroll (edit mode); **Shift**+scroll (view mode) |
+| **Zoom & pan in view mode** | Plain scroll / plain drag, when **View Mode Zoom & Pan** is enabled (Panel Options → Interaction & Labels); double-click resets | Same |
 | **Multi-select nodes** | **Ctrl**+click each node | **⌘ Cmd**+click each node |
 | **Add a VIA** | **Double-click** a link (edit mode) | **Double-click** a link (edit mode) |
 | **Move a VIA** | Drag the VIA | Drag the VIA |
 | **Delete a VIA** | **Right-click** the VIA (edit mode) | **Right-click** (or Ctrl-click) the VIA |
 
 !!! tip "macOS"
+    **View Mode Zoom & Pan** is off by default because plain scrolling over the
+    panel would otherwise stop the dashboard page from scrolling. When enabled,
+    each viewer's zoom/pan is local to their browser — it is never saved into
+    the dashboard — and a double-click returns to the saved view.
+
     macOS uses **⌘ Cmd** where Linux/Windows use **Ctrl** (Ctrl-click is a right-click on a Mac). Zoom uses the dominant scroll axis, so a Mac's Shift+scroll (which the OS remaps to horizontal) still zooms.
+
+### Enabling View Mode Zoom & Pan
+
+1. **Edit** the panel → in the options, open **Interaction & Labels** and turn on **View Mode Zoom & Pan**.
+
+    ![The View Mode Zoom & Pan toggle under Interaction & Labels](../img/getting-started/view-mode-zoom-option.png)
+
+2. **Save** the dashboard.
+3. Back in **view mode** (not editing), over the panel: **mouse wheel = zoom**, **left-drag = pan**, **double-click = reset** to the saved view.
+
+Each viewer's zoom/pan is local to their browser and is never written back to the dashboard. With the toggle **off**, viewers still zoom with **Shift**+wheel and pan with **Shift**/**Ctrl**/**⌘**-drag, and plain scrolling passes through to the dashboard page.
 
 ---
 
