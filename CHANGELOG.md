@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.3) (2026-07-21)
+
+### Security
+
+* completed the **brace-expansion** advisory fix — pinned the remaining **1.x** line (1.1.15 → 1.1.16, CVE-2026-13149) that the 1.6.2 override missed; `npm audit` now reports **0 vulnerabilities**. Dev-only tooling, not shipped in the plugin; no code or runtime behavior change
+
 ## [1.6.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.2) (2026-07-21)
 
 ### Security
