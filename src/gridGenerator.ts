@@ -61,6 +61,104 @@ function cellFor(i: number, rows: number, cols: number, ordering: PortGridOrderi
   }
 }
 
+// The tunable fields the editor form holds. Presets fill a subset of these;
+// origin is intentionally left to the user so a preset lands where they want.
+export interface PortGridFormValues {
+  count: number;
+  rows: number;
+  cols: number;
+  ordering: PortGridOrdering;
+  labelPattern: string;
+  startNumber: number;
+  nodeSize: number;
+  hSpacing: number;
+  vSpacing: number;
+  originX: number;
+  originY: number;
+  statusQueryTemplate: string;
+}
+
+// One-click starting points for common rack devices. These are *only* parameter
+// bundles — no device-specific generation code — so the generic generator stays
+// the single source of truth. Users tweak the fields after applying one.
+export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridFormValues> }> = [
+  {
+    // Real 48-port switch: ports 1..48 numbered sequentially, odd on the top
+    // row and even directly below, columns advancing every pair.
+    label: '48-port switch',
+    values: {
+      count: 48,
+      rows: 2,
+      cols: 24,
+      ordering: 'odd-even',
+      labelPattern: 'Gi1/0/{n}',
+      startNumber: 1,
+      nodeSize: 4,
+      hSpacing: 46,
+      vSpacing: 34,
+    },
+  },
+  {
+    label: '24-port switch',
+    values: {
+      count: 24,
+      rows: 2,
+      cols: 12,
+      ordering: 'odd-even',
+      labelPattern: 'Gi1/0/{n}',
+      startNumber: 1,
+      nodeSize: 4,
+      hSpacing: 46,
+      vSpacing: 34,
+    },
+  },
+  {
+    // Patch panel: a single sequential row of jacks, left to right.
+    label: '24-port patch panel',
+    values: {
+      count: 24,
+      rows: 1,
+      cols: 24,
+      ordering: 'row-major',
+      labelPattern: 'P{n}',
+      startNumber: 1,
+      nodeSize: 4,
+      hSpacing: 40,
+      vSpacing: 40,
+    },
+  },
+  {
+    // Vertical PDU strip: one column of outlets, top to bottom.
+    label: 'PDU strip (24)',
+    values: {
+      count: 24,
+      rows: 24,
+      cols: 1,
+      ordering: 'column-major',
+      labelPattern: 'Outlet {n}',
+      startNumber: 1,
+      nodeSize: 4,
+      hSpacing: 40,
+      vSpacing: 26,
+    },
+  },
+  {
+    // Blade chassis: a true 2-D grid of bays.
+    label: 'Blade chassis (16)',
+    values: {
+      count: 16,
+      rows: 2,
+      cols: 8,
+      ordering: 'row-major',
+      labelPattern: 'Blade {n}',
+      startNumber: 1,
+      nodeSize: 8,
+      hSpacing: 62,
+      vSpacing: 60,
+    },
+  },
+];
+
 export function generatePortGrid(opts: PortGridOptions, theme: GrafanaTheme2): Node[] {
   const ordering: PortGridOrdering = opts.ordering ?? 'row-major';
   const start = opts.startNumber ?? 1;

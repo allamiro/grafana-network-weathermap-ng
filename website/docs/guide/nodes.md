@@ -22,6 +22,8 @@ Open **Panel options → Nodes** to manage nodes. Select a node from the dropdow
 
 Building a switch faceplate, patch panel, PDU strip, or blade chassis by hand means placing dozens of small nodes one at a time. **Generate Port Grid** (in the **Nodes** section, next to **Add Node**) creates a whole block of aligned port nodes in one action.
 
+Start from a **preset** (one click fills the form for a common device — *48-port switch*, *24-port switch*, *24-port patch panel*, *PDU strip*, *blade chassis*), then adjust any field. Presets are just starting parameters — the generator itself is device-agnostic.
+
 Open the **Generate Port Grid** panel and set:
 
 | Field | Purpose |

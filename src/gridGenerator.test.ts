@@ -1,4 +1,4 @@
-import { generatePortGrid, PortGridOptions } from 'gridGenerator';
+import { generatePortGrid, PortGridOptions, PORT_GRID_PRESETS } from 'gridGenerator';
 import { theme } from 'testData';
 
 const base: PortGridOptions = {
@@ -73,6 +73,35 @@ test('snaps positions to the grid when a grid size is given', () => {
 test('sets node padding from nodeSize when provided', () => {
   const nodes = generatePortGrid({ ...base, count: 1, nodeSize: 12 }, theme);
   expect(nodes[0].padding).toEqual({ horizontal: 12, vertical: 12 });
+});
+
+describe('presets', () => {
+  test('every preset produces a valid grid of its stated count', () => {
+    for (const preset of PORT_GRID_PRESETS) {
+      const opts = { ...base, ...preset.values, originX: 0, originY: 0 } as PortGridOptions;
+      const nodes = generatePortGrid(opts, theme);
+      expect(nodes).toHaveLength(preset.values.count!);
+      // Every generated node is a plain, uniquely-identified node.
+      expect(new Set(nodes.map((n) => n.id)).size).toBe(nodes.length);
+      expect(nodes.every((n) => n.isConnection === false)).toBe(true);
+    }
+  });
+
+  test('the patch-panel preset is a single sequential row', () => {
+    const preset = PORT_GRID_PRESETS.find((p) => p.label.includes('patch panel'))!;
+    const nodes = generatePortGrid({ ...base, ...preset.values, originX: 0, originY: 0 } as PortGridOptions, theme);
+    const ys = new Set(nodes.map((n) => n.position[1]));
+    expect(ys.size).toBe(1); // one row
+    expect(nodes[0].label).toBe('P1');
+  });
+
+  test('the PDU preset is a single vertical column', () => {
+    const preset = PORT_GRID_PRESETS.find((p) => p.label.startsWith('PDU'))!;
+    const nodes = generatePortGrid({ ...base, ...preset.values, originX: 0, originY: 0 } as PortGridOptions, theme);
+    const xs = new Set(nodes.map((n) => n.position[0]));
+    expect(xs.size).toBe(1); // one column
+    expect(nodes[0].label).toBe('Outlet 1');
+  });
 });
 
 describe('invalid input', () => {

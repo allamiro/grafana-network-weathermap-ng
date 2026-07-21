@@ -225,6 +225,22 @@ test('Generate Port Grid appends editable port nodes (#267)', () => {
   expect(initial).toEqual(before);
 });
 
+test('a port-grid preset fills the form and generates its layout (#267)', () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.click(screen.getByText('Generate Port Grid'));
+  // Apply the patch-panel preset, then generate.
+  fireEvent.click(screen.getByText('24-port patch panel'));
+  fireEvent.click(screen.getByText(/Generate \d+ Ports/));
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  expect(updated.nodes).toHaveLength(initial.nodes.length + 24);
+  const labels = updated.nodes.map((n: { label?: string }) => n.label);
+  expect(labels).toEqual(expect.arrayContaining(['P1', 'P24']));
+});
+
 test('invalid port-grid input surfaces an error and adds nothing (#267)', () => {
   const spy = jest.fn();
   const initial = getData(theme);

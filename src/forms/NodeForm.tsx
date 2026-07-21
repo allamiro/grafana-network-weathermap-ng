@@ -34,7 +34,7 @@ import {
   CloudIcons,
 } from './iconOptions';
 import { finiteOrFallback, getDataFrameName, sanitizeUrl } from 'utils';
-import { generatePortGrid, PortGridOrdering } from 'gridGenerator';
+import { generatePortGrid, PortGridOrdering, PortGridFormValues, PORT_GRID_PRESETS } from 'gridGenerator';
 
 interface Settings {
   placeholder: string;
@@ -277,7 +277,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
 
   // Port-grid generator (#267): local form state + a single append action. The
   // generation logic itself lives in the pure generatePortGrid helper.
-  const [grid, setGrid] = useState({
+  const [grid, setGrid] = useState<PortGridFormValues>({
     count: 48,
     rows: 2,
     cols: 24,
@@ -292,7 +292,13 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
     statusQueryTemplate: '',
   });
   const [gridError, setGridError] = useState<string | null>(null);
-  const setGridField = (patch: Partial<typeof grid>) => setGrid((g) => ({ ...g, ...patch }));
+  const setGridField = (patch: Partial<PortGridFormValues>) => setGrid((g) => ({ ...g, ...patch }));
+  // Applying a preset fills the device-shape fields but leaves the origin where
+  // the user set it, so the block lands where they want it.
+  const applyPreset = (values: Partial<PortGridFormValues>) => {
+    setGrid((g) => ({ ...g, ...values }));
+    setGridError(null);
+  };
 
   const handleGeneratePortGrid = () => {
     try {
@@ -919,6 +925,19 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
             <code>{'{n}'}</code> in the label for the port number (e.g. <code>Gi1/0/{'{n}'}</code>). Generated ports are
             normal, editable nodes appended to the map.
           </p>
+          <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 600 }}>Presets</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+            {PORT_GRID_PRESETS.map((preset) => (
+              <Button
+                key={preset.label}
+                variant="secondary"
+                size="sm"
+                onClick={() => applyPreset(preset.values)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
           <InlineFieldRow>
             <InlineField label="Port count">
               <Input
