@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Fixed
+
+* **duplicate port label on VIA links**: a port label set on a VIA-routed (waypointed) link rendered again at every intermediate bend, because the origin side data is copied onto each downstream segment for value/color propagation. Port labels now render only at their real node endpoint, never at a VIA connection node — value/color propagation is unchanged ([#317](https://github.com/allamiro/grafana-network-weathermap-ng/issues/317))
+
 ## [1.6.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.3) (2026-07-21)
 
 ### Security
