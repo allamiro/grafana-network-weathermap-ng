@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.2) (2026-07-21)
+
+### Security
+
+* cleared development-dependency advisories via `overrides` — **websocket-driver** 0.7.4 → 0.7.5 (Critical, GHSA-xv26-6w52-cph6), **brace-expansion** 2.1.1 → 2.1.2 and 5.0.6 → 5.0.7 (High, CVE-2026-13149), **protobufjs** 7.6.4 → 7.6.5 (Moderate). All are build/lint/test tooling — **not shipped in the plugin** — but pinned so the dependency scan stays clean; no code or runtime behavior change ([#314](https://github.com/allamiro/grafana-network-weathermap-ng/pull/314))
+
 ## [1.6.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.1) (2026-07-21)
 
 ### Features
