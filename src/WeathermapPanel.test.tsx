@@ -1,7 +1,7 @@
 import React from 'react';
 import { FieldType, getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
 import { SimpleOptions } from 'types';
 import { handleVersionedStateUpdates } from 'utils';
@@ -130,6 +130,39 @@ test('wide frame: link sides bound to separate value fields both resolve (#260)'
   // The tooltip graph extracts each bound value field from the wide frame.
   fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
   fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
+test('Port label offset slides the label along the link axis (#309)', () => {
+  const build = (offset?: number) => {
+    let testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.links[0].sides.A.portLabel = 'GE-0/0/1';
+    if (offset !== undefined) {
+      weathermap.links[0].sides.A.portLabelOffset = offset;
+    }
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+    return testProps;
+  };
+  // The port label <text> sits inside a `translate(x,y) rotate(...)` group.
+  const translateX = (): number => {
+    const g = screen.getByText('GE-0/0/1').closest('g');
+    const m = /translate\(\s*([-0-9.]+)/.exec(g?.getAttribute('transform') || '');
+    return m ? parseFloat(m[1]) : NaN;
+  };
+
+  const view = render(<WeathermapPanel {...build()} />);
+  const defaultX = translateX();
+  view.unmount();
+
+  // Unset offset behaves exactly like offset 0 — no change to old maps.
+  render(<WeathermapPanel {...build(0)} />);
+  expect(translateX()).toBeCloseTo(defaultX, 5);
+  cleanup();
+
+  // A non-zero offset moves the label along the link axis.
+  render(<WeathermapPanel {...build(40)} />);
+  expect(translateX()).not.toBeCloseTo(defaultX, 1);
 });
 
 test('Uses explicit per-side direction labels in the link tooltip when set', () => {

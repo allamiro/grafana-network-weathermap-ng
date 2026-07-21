@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Features
+
+* **port label offset**: each link side gets a **Port Label Offset %** slider (−50…50) to slide its port label along the link axis — positive toward the midpoint, negative toward the node. Default 0 keeps the existing position, so saved maps are unchanged ([#309](https://github.com/allamiro/grafana-network-weathermap-ng/issues/309))
+
 ## [1.6.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.0) (2026-07-09)
 
 ### Features

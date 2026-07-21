@@ -126,6 +126,11 @@ export interface LinkSide {
   anchor: Anchor;
   dashboardLink: string;
   portLabel?: string;
+  // Slide this side's port label along the link axis (#309). Signed percentage
+  // of the link length added to the default near-endpoint position: positive
+  // moves it toward the midpoint, negative toward the node. Unset/0 keeps the
+  // existing position, so old maps are unchanged.
+  portLabelOffset?: number;
   // Optional explicit direction label for this side (e.g. "Inbound", "Outbound",
   // "To WAN"). When set, the hover tooltip labels this side's value with it
   // instead of the generic Inbound/Outbound wording.

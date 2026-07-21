@@ -46,6 +46,7 @@ With bandwidth set, the tooltip and coloring can express **throughput %** (curre
 
 - **Label Offset** — slide the value text along the link (0–100%). Handy when two labels overlap.
 - **Port Label** — a per-side interface name (e.g. `ge-0/0/1`) rendered next to the link at 25% from each endpoint, rotated to follow the line.
+- **Port Label Offset %** — slide a port label **along the link axis** (−50…50). `0` (default) keeps the position above; positive moves it toward the midpoint, negative toward the node. Useful when a port label collides with a node, an arrow, or a parallel link.
 
 ![WAN map with port labels and direction labels on links](../img/use-cases/wm-wan-utilization.png)
 
