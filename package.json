@@ -1,6 +1,6 @@
 {
   "name": "tamirsuliman-weathermap-panel",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "A modernized, actively maintained network weathermap plugin for Grafana. Continuation of the original knightss27-weathermap-panel.",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -101,6 +101,7 @@
     "@grafana/ui": {
       "uuid": "11.1.1"
     },
+    "immutable@5.1.5": "5.1.9",
     "@opentelemetry/core": "^2.8.0",
     "websocket-driver": "0.7.5",
     "protobufjs": "^7.6.5",
