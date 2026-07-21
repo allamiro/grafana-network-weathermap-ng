@@ -81,6 +81,33 @@ test('sets node padding from nodeSize when provided', () => {
   expect(nodes[0].padding).toEqual({ horizontal: 12, vertical: 12 });
 });
 
+test('group gap breaks the row into faceplate blocks', () => {
+  // 8 ports in one row, blocks of 2 columns with a 10px gap after each block.
+  const nodes = generatePortGrid(
+    { ...base, count: 8, rows: 1, cols: 8, hSpacing: 20, groupSize: 2, groupGap: 10, originX: 0 },
+    theme
+  );
+  // cols 0,1 -> no gap; col 2 crosses one block (+10); col 4 -> +20; col 6 -> +30.
+  expect(nodes[0].position[0]).toBe(0); // col 0
+  expect(nodes[1].position[0]).toBe(20); // col 1
+  expect(nodes[2].position[0]).toBe(2 * 20 + 10); // col 2, one gap
+  expect(nodes[4].position[0]).toBe(4 * 20 + 20); // col 4, two gaps
+  expect(nodes[6].position[0]).toBe(6 * 20 + 30); // col 6, three gaps
+});
+
+test('no group gap leaves an even strip', () => {
+  const nodes = generatePortGrid({ ...base, count: 4, rows: 1, cols: 4, hSpacing: 20, originX: 0 }, theme);
+  expect(nodes.map((n) => n.position[0])).toEqual([0, 20, 40, 60]);
+});
+
+test('sets a shared icon on every port when given', () => {
+  const nodes = generatePortGrid({ ...base, count: 3, icon: 'rack/switch' }, theme);
+  for (const node of nodes) {
+    expect(node.nodeIcon?.name).toBe('rack/switch');
+    expect(node.nodeIcon?.src).toContain('/icons/rack/switch.svg');
+  }
+});
+
 test('status coloring stamps up/down mappings and a background fill on every port', () => {
   const nodes = generatePortGrid({ ...base, count: 3, statusColoring: true }, theme);
   for (const node of nodes) {

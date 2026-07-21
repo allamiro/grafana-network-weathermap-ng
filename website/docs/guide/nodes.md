@@ -35,6 +35,8 @@ Open the **Generate Port Grid** panel and set:
 | **Start #** | The first port number (default 1). |
 | **Node size** | Padding applied to every generated node. |
 | **H / V spacing** | Gap between columns / rows, in pixels. |
+| **Block size / gap** | Insert an extra gap after every N columns, so a 48-port board breaks into faceplate blocks (like real switch hardware) instead of one even strip. `0` = no blocks. |
+| **Icon** | *Optional.* Draw a built-in icon on every generated port. |
 | **Origin X / Y** | Top-left corner of the block. |
 | **Status query template** | *Optional.* Bind a status query to every port at once — `{n}` → port number, `{label}` → the generated label (e.g. `ifOperStatus {label}`). |
 | **Status coloring** | Fills each port **green when up** (value ≥ 1) and **red when down** (0) — the standard switch-LED convention — so the block reads as a live port board. On by default; pair it with the status query template. |
@@ -42,6 +44,10 @@ Open the **Generate Port Grid** panel and set:
 Then click **Generate … Ports**. The ports are appended as **normal, editable nodes** — you can move, recolor, icon, and query them like any other node, and they save/reload with the dashboard. When **Panel Options → Grid** snapping is on, generated positions snap to it so ports line up with hand-placed nodes.
 
 ![The Generate Port Grid form in the node editor](../img/getting-started/port-grid-generator.png)
+
+A generated 24-port switch board, colored live from a port-status query — odd/even faceplate ordering, block gaps, green up / red down:
+
+![A generated switch port board with green up and red down ports](../img/use-cases/wm-port-grid.png)
 
 !!! tip "Place it over a faceplate background"
     Generate the grid, then drop a switch/patch-panel image via **Panel Options → Background Image** and nudge **Origin X/Y** so the ports sit on the physical jacks.

@@ -36,6 +36,11 @@ export interface PortGridOptions {
   vSpacing: number;
   // Node padding applied to every generated node (square-ish cells). Optional.
   nodeSize?: number;
+  // Faceplate blocks: insert `groupGap` extra px after every `groupSize`
+  // columns, so a 48-port board breaks into blocks of ports like real switch
+  // hardware instead of one even strip. 0 (either) = no grouping.
+  groupSize?: number;
+  groupGap?: number;
   // Fill order (default 'row-major').
   ordering?: PortGridOrdering;
   // Optional per-port status query — `{n}` → port number, `{label}` → the
@@ -83,10 +88,13 @@ export interface PortGridFormValues {
   nodeSize: number;
   hSpacing: number;
   vSpacing: number;
+  groupSize: number;
+  groupGap: number;
   originX: number;
   originY: number;
   statusQueryTemplate: string;
   statusColoring: boolean;
+  icon: string;
 }
 
 // One-click starting points for common rack devices. These are *only* parameter
@@ -107,6 +115,8 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 46,
       vSpacing: 34,
+      groupSize: 6,
+      groupGap: 18,
       statusColoring: true,
     },
   },
@@ -122,6 +132,8 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 46,
       vSpacing: 34,
+      groupSize: 6,
+      groupGap: 18,
       statusColoring: true,
     },
   },
@@ -138,6 +150,8 @@ export const PORT_GRID_PRESETS: Array<{ label: string; values: Partial<PortGridF
       nodeSize: 4,
       hSpacing: 40,
       vSpacing: 40,
+      groupSize: 6,
+      groupGap: 16,
       statusColoring: true,
     },
   },
@@ -206,6 +220,11 @@ export function generatePortGrid(opts: PortGridOptions, theme: GrafanaTheme2): N
     const { row, col } = cellFor(i, opts.rows, opts.cols, ordering);
 
     let x = opts.originX + col * opts.hSpacing;
+    // Faceplate block gap: shove each column right by one gap per completed
+    // block of `groupSize` columns to its left.
+    if (opts.groupSize && opts.groupSize > 0 && opts.groupGap) {
+      x += Math.floor(col / opts.groupSize) * opts.groupGap;
+    }
     let y = opts.originY + row * opts.vSpacing;
     if (opts.gridSize && opts.gridSize > 0) {
       x = nearestMultiple(x, opts.gridSize);

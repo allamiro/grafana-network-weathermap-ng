@@ -52,6 +52,7 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — BGP Session Detail** | Per-router drill-down (state / prefixes / uptime / flaps), reached from the map; `node_name` variable. |
 | **WAN Demo — BGP Fleet Overview** | Established / down / total counters, a session status table, and a prefixes-received bar gauge. |
 | **WAN Demo — Port Label Positioning** | The WAN map with per-side **Port Label Offset %** (along the link axis) and **Port Label Distance** (perpendicular) set on every interface label, lifting each one clear of its node icon. |
+| **WAN Demo — Switch Port Board (generated)** | A 24-port switch faceplate produced by the editor's **Generate Port Grid** action (#267): odd/even faceplate ordering with block gaps, colored live by **status coloring** (green up / red down) from `wm_port_status`. Ports Gi1/0/7 and Gi1/0/19 read down; 13 flaps. |
 
 The WAN dashboards are generated — do not hand-edit them. To change the topology
 or scenarios, edit and re-run:
@@ -61,6 +62,7 @@ node testing/scripts/generate-scenario-dashboards.js       # core WAN demos
 python3 testing/scripts/generate-animated-dashboard.py     # animated traffic
 python3 testing/scripts/generate-bgp-dashboards.py         # BGP neighbor map + detail + overview
 python3 testing/scripts/generate-port-label-demo.py        # port label offset + distance
+python3 testing/scripts/generate-port-grid-demo.py         # generated switch port board
 ```
 
 The world-map background is `BlankMap-World-Equirectangular.svg` from Wikimedia

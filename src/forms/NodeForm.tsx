@@ -287,10 +287,13 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
     nodeSize: 4,
     hSpacing: 46,
     vSpacing: 34,
+    groupSize: 6,
+    groupGap: 18,
     originX: 100,
     originY: 100,
     statusQueryTemplate: '',
     statusColoring: true,
+    icon: '',
   });
   const [gridError, setGridError] = useState<string | null>(null);
   const setGridField = (patch: Partial<PortGridFormValues>) => setGrid((g) => ({ ...g, ...patch }));
@@ -315,10 +318,13 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
           nodeSize: grid.nodeSize,
           hSpacing: grid.hSpacing,
           vSpacing: grid.vSpacing,
+          groupSize: grid.groupSize,
+          groupGap: grid.groupGap,
           originX: grid.originX,
           originY: grid.originY,
           statusQueryTemplate: grid.statusQueryTemplate.trim() || undefined,
           statusColoring: grid.statusColoring,
+          icon: grid.icon.trim() || undefined,
           gridSize: snap?.enabled ? snap.size : undefined,
         },
         theme
@@ -371,6 +377,19 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const cloudIconsFormatted = CloudIcons.map((t) => {
     return { label: t, value: 'cloud/' + t };
   });
+
+  // Grouped icon options for the port-grid generator (same catalog as the node
+  // icon picker, minus custom — generated ports share one built-in icon).
+  const portGridIconOptions = [
+    { label: 'Rack Parts', value: 'rack', options: rackIconsFormatted },
+    { label: 'Cisco Icons', value: 'cisco', options: ciscoIconsFormatted },
+    { label: 'Networking Icons', value: 'networking', options: networkingIconsFormatted },
+    { label: 'Database Icons', value: 'databases', options: databaseIconsFormatted },
+    { label: 'Computer Icons', value: 'computers_monitors', options: computerIconsFormatted },
+    { label: 'Platforms & Apps', value: 'platforms', options: platformIconsFormatted },
+    { label: 'Vendors', value: 'vendors', options: vendorIconsFormatted },
+    { label: 'Cloud', value: 'cloud', options: cloudIconsFormatted },
+  ];
 
   let dataWithIds: string[] = [];
   context.data.forEach((d, i) => {
@@ -1035,6 +1054,44 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
               />
             </InlineField>
           </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField
+              label="Block size"
+              tooltip={'Insert a gap after every N columns for a real-faceplate look (blocks of ports). 0 = one even strip.'}
+            >
+              <Input
+                type="number"
+                min={0}
+                value={grid.groupSize}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ groupSize: finiteOrFallback(e.currentTarget.valueAsNumber, grid.groupSize) })
+                }
+              />
+            </InlineField>
+            <InlineField label="Block gap">
+              <Input
+                type="number"
+                min={0}
+                value={grid.groupGap}
+                width={8}
+                onChange={(e) =>
+                  setGridField({ groupGap: finiteOrFallback(e.currentTarget.valueAsNumber, grid.groupGap) })
+                }
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineField grow label="Icon" tooltip={'Optional icon drawn on every generated port (e.g. a rack part).'}>
+            <Select
+              inputId="nwm-port-grid-icon"
+              onChange={(v) => setGridField({ icon: v ? (v.value as string) : '' })}
+              value={grid.icon || null}
+              options={portGridIconOptions}
+              placeholder={'No icon'}
+              isClearable
+              menuShouldPortal
+            />
+          </InlineField>
           <InlineFieldRow>
             <InlineField label="Origin X">
               <Input
