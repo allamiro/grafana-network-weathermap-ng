@@ -1,0 +1,124 @@
+import { GrafanaTheme2 } from '@grafana/data';
+import { Node } from 'types';
+import { generateBasicNode, nearestMultiple } from 'utils';
+
+// Port-grid generator (#267): a pure helper that produces aligned port nodes for
+// switch faceplates, patch panels, PDU strips, blade chassis, etc. It only
+// creates plain weathermap nodes — no new node type, no inventory/DCIM state.
+// The whole feature's testable surface lives here; the editor form is a thin
+// wrapper that calls generatePortGrid once and appends the result.
+
+export type PortGridOrdering = 'row-major' | 'column-major' | 'odd-even';
+
+export interface PortGridOptions {
+  // How many port nodes to create.
+  count: number;
+  // Layout grid. For 'odd-even' the layout is always two rows (odd ports on the
+  // top row, even on the bottom, like a real switch faceplate); rows is ignored.
+  rows: number;
+  cols: number;
+  // Label template — `{n}` is replaced with the port number, e.g. "Gi1/0/{n}".
+  labelPattern: string;
+  // First port number (default 1).
+  startNumber?: number;
+  // Top-left origin of the grid, in panel coordinates.
+  originX: number;
+  originY: number;
+  // Gap between adjacent columns / rows, in pixels.
+  hSpacing: number;
+  vSpacing: number;
+  // Node padding applied to every generated node (square-ish cells). Optional.
+  nodeSize?: number;
+  // Fill order (default 'row-major').
+  ordering?: PortGridOrdering;
+  // Optional per-port status query — `{n}` → port number, `{label}` → the
+  // generated label, so one action binds all ports (e.g. "ifOperStatus {label}").
+  statusQueryTemplate?: string;
+  // Optional icon name (as used elsewhere, e.g. "rack/patch-panel").
+  icon?: string;
+  // When > 0, snap generated positions to this grid so ports line up with
+  // hand-placed nodes (pass wm.settings.panel.grid.size when snapping is on).
+  gridSize?: number;
+}
+
+// Substitute `{n}` (port number) and `{label}` (final node label) in a template.
+function fillTemplate(template: string, portNumber: number, label: string): string {
+  return template.replace(/\{n\}/g, String(portNumber)).replace(/\{label\}/g, label);
+}
+
+// Map a generation index to a (row, col) cell for the chosen ordering. Ports are
+// always numbered sequentially (1..count); only their placement changes.
+function cellFor(i: number, rows: number, cols: number, ordering: PortGridOrdering): { row: number; col: number } {
+  switch (ordering) {
+    case 'column-major':
+      return { row: i % rows, col: Math.floor(i / rows) };
+    case 'odd-even':
+      // Two-row faceplate: odd port (i=0,2,4…) on top, even (i=1,3,5…) below.
+      return { row: i % 2, col: Math.floor(i / 2) };
+    case 'row-major':
+    default:
+      return { row: Math.floor(i / cols), col: i % cols };
+  }
+}
+
+export function generatePortGrid(opts: PortGridOptions, theme: GrafanaTheme2): Node[] {
+  const ordering: PortGridOrdering = opts.ordering ?? 'row-major';
+  const start = opts.startNumber ?? 1;
+
+  // Validation — throw with a human-readable message so the form can surface it.
+  if (!Number.isFinite(opts.count) || opts.count <= 0) {
+    throw new Error('Port count must be a positive number.');
+  }
+  if (!Number.isInteger(opts.count)) {
+    throw new Error('Port count must be a whole number.');
+  }
+  if (!Number.isFinite(opts.rows) || opts.rows <= 0 || !Number.isFinite(opts.cols) || opts.cols <= 0) {
+    throw new Error('Rows and columns must be positive numbers.');
+  }
+  // 'odd-even' is inherently two rows; other orderings must have enough cells.
+  if (ordering !== 'odd-even' && opts.rows * opts.cols < opts.count) {
+    throw new Error(`A ${opts.rows}×${opts.cols} grid has ${opts.rows * opts.cols} cells — too few for ${opts.count} ports.`);
+  }
+  if (!Number.isFinite(opts.hSpacing) || !Number.isFinite(opts.vSpacing)) {
+    throw new Error('Horizontal and vertical spacing must be finite numbers.');
+  }
+  if (!Number.isFinite(opts.originX) || !Number.isFinite(opts.originY)) {
+    throw new Error('Origin X and Y must be finite numbers.');
+  }
+
+  const nodes: Node[] = [];
+  for (let i = 0; i < opts.count; i++) {
+    const portNumber = start + i;
+    const { row, col } = cellFor(i, opts.rows, opts.cols, ordering);
+
+    let x = opts.originX + col * opts.hSpacing;
+    let y = opts.originY + row * opts.vSpacing;
+    if (opts.gridSize && opts.gridSize > 0) {
+      x = nearestMultiple(x, opts.gridSize);
+      y = nearestMultiple(y, opts.gridSize);
+    }
+
+    const label = fillTemplate(opts.labelPattern, portNumber, '');
+    const node = generateBasicNode(label, [x, y], theme);
+
+    if (opts.nodeSize !== undefined && Number.isFinite(opts.nodeSize) && opts.nodeSize >= 0) {
+      node.padding = { horizontal: opts.nodeSize, vertical: opts.nodeSize };
+    }
+    if (opts.statusQueryTemplate) {
+      node.statusQuery = fillTemplate(opts.statusQueryTemplate, portNumber, label);
+    }
+    if (opts.icon) {
+      node.nodeIcon = {
+        src: 'public/plugins/tamirsuliman-weathermap-panel/icons/' + opts.icon + '.svg',
+        name: opts.icon,
+        size: { width: 40, height: 40 },
+        padding: { vertical: 0, horizontal: 0 },
+        drawInside: false,
+      };
+    }
+
+    nodes.push(node);
+  }
+
+  return nodes;
+}
