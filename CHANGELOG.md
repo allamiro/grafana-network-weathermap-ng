@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.5](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.5) (2026-07-21)
+
+### Security
+
+* patched the high-severity advisories that blocked the v1.6.4 marketplace submission ([#323](https://github.com/allamiro/grafana-network-weathermap-ng/issues/323)) — **fast-uri** 3.1.2 → 3.1.4 (CVE-2026-13676, host confusion via failed IDN canonicalization; flagged by the Grafana plugin validator's osv-scanner) and **immutable** 4.3.8 → 4.3.9 / 5.1.5 → 5.1.9 (CVE-2026-59879, CVE-2026-59880, DoS in `List`/`Map`/`Set`; the 5.x copy is pinned exactly by @grafana/ui, remapped with a version-scoped override). `npm audit` reports 0 high/critical findings; no code or runtime behavior change ([#322](https://github.com/allamiro/grafana-network-weathermap-ng/pull/322))
+
 ## [1.6.4](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.4) (2026-07-21)
 
 ### Features
