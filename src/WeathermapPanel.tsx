@@ -1946,7 +1946,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
                 return (
                   <React.Fragment key={i}>
-                    {d.sides.A.portLabel && (
+                    {/* A port label only renders at a real node. On a VIA link,
+                        withSideData copies the origin A-side (incl. portLabel)
+                        onto every downstream segment for value/color propagation,
+                        so without this guard the port label would re-render at
+                        each VIA bend. */}
+                    {d.sides.A.portLabel && !tempNodes[d.source.index]?.isConnection && (
                       <g transform={`translate(${aPosX},${aPosY}) rotate(${angleDeg})`}>
                         <text
                           x={0}
@@ -1961,7 +1966,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         </text>
                       </g>
                     )}
-                    {d.sides.Z.portLabel && (
+                    {d.sides.Z.portLabel && !tempNodes[d.target.index]?.isConnection && (
                       <g transform={`translate(${zPosX},${zPosY}) rotate(${angleDeg})`}>
                         <text
                           x={0}

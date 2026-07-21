@@ -8,6 +8,22 @@ All notable changes to this project will be documented in this file. See [standa
 
 * **port label positioning**: each link side gets two sliders to place its port label clear of node icons, arrows, or parallel links — **Port Label Offset %** (−50…50, slides along the link axis: positive toward the midpoint, negative toward the node) and **Port Label Distance** (−30…60 px, moves perpendicular to the link: positive further from the line, negative closer/across). Both default 0, so saved maps are unchanged ([#309](https://github.com/allamiro/grafana-network-weathermap-ng/issues/309))
 
+### Fixed
+
+* **duplicate port label on VIA links**: a port label set on a VIA-routed (waypointed) link rendered again at every intermediate bend, because the origin side data is copied onto each downstream segment for value/color propagation. Port labels now render only at their real node endpoint, never at a VIA connection node — value/color propagation is unchanged ([#317](https://github.com/allamiro/grafana-network-weathermap-ng/issues/317))
+
+## [1.6.3](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.3) (2026-07-21)
+
+### Security
+
+* completed the **brace-expansion** advisory fix — pinned the remaining **1.x** line (1.1.15 → 1.1.16, CVE-2026-13149) that the 1.6.2 override missed; `npm audit` now reports **0 vulnerabilities**. Dev-only tooling, not shipped in the plugin; no code or runtime behavior change
+
+## [1.6.2](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.2) (2026-07-21)
+
+### Security
+
+* cleared development-dependency advisories via `overrides` — **websocket-driver** 0.7.4 → 0.7.5 (Critical, GHSA-xv26-6w52-cph6), **brace-expansion** 2.1.1 → 2.1.2 and 5.0.6 → 5.0.7 (High, CVE-2026-13149), **protobufjs** 7.6.4 → 7.6.5 (Moderate). All are build/lint/test tooling — **not shipped in the plugin** — but pinned so the dependency scan stays clean; no code or runtime behavior change ([#314](https://github.com/allamiro/grafana-network-weathermap-ng/pull/314))
+
 ## [1.6.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.1) (2026-07-21)
 
 ### Features
