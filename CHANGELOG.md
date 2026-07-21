@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file. See [standa
 
 * **port label offset**: each link side gets a **Port Label Offset %** slider (−50…50) to slide its port label along the link axis — positive toward the midpoint, negative toward the node. Default 0 keeps the existing position, so saved maps are unchanged ([#309](https://github.com/allamiro/grafana-network-weathermap-ng/issues/309))
 
+## [1.6.1](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.1) (2026-07-21)
+
+### Features
+
+* **view-mode zoom & pan** ([#306](https://github.com/allamiro/grafana-network-weathermap-ng/issues/306)): an opt-in panel setting (**Panel Options → Interaction & Labels → View Mode Zoom & Pan**) that lets dashboard viewers zoom with the mouse wheel and pan by dragging without opening the editor. The viewer's zoom/pan stays local to their browser (never written into the saved panel options) and double-click resets to the saved view. Off by default — existing panels keep the current behavior (Shift+wheel / Shift+drag in view mode) ([#307](https://github.com/allamiro/grafana-network-weathermap-ng/pull/307))
+
 ## [1.6.0](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.0) (2026-07-09)
 
 ### Features

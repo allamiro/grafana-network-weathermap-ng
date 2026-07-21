@@ -152,6 +152,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Check for editing-related feature set
   const isEditMode = locationService.getSearch().has('editPanel');
 
+  // Opt-in view-mode zoom & pan (#306): the viewer's zoom lives in LOCAL
+  // state — it must never be written into the saved panel options (viewers
+  // may not even have edit rights, and one viewer's zoom is not dashboard
+  // content). Rendering uses saved zoomScale + this local delta.
+  const viewZoomPanEnabled = wm ? wm.settings.panel.viewZoomPan ?? false : false;
+  const viewInteractions = viewZoomPanEnabled && !isEditMode;
+  const [viewZoomDelta, setViewZoomDelta] = useState(0);
+  const renderedZoomScale = (wm ? wm.settings.panel.zoomScale : 0) + viewZoomDelta;
+
   const [draggedNode, setDraggedNode] = useState(null as unknown as DrawnNode);
   const [selectedNodes, setSelectedNodes] = useState([] as DrawnNode[]);
 
@@ -255,7 +264,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   // Calculate aspect-ratio corrected drag positions
   function getScaledMousePos(pos: { x: number; y: number }): { x: number; y: number } {
-    const zoomAmt = Math.pow(1.2, wm.settings.panel.zoomScale);
+    const zoomAmt = Math.pow(1.2, renderedZoomScale);
     return {
       x: pos.x * zoomAmt * aspectMultiplier,
       y: pos.y * zoomAmt * aspectMultiplier,
@@ -635,19 +644,29 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }, [options, data, nodes, dataFrameMap]);
 
   const zoom = (e: WheelEvent) => {
-    // Just don't allow zooming when not in edit mode
-    if (!isEditMode && !e.shiftKey) {
-      return;
-    }
-
     // Use the dominant scroll axis so macOS Shift+scroll (which the OS remaps to
     // horizontal/deltaX) and trackpad gestures still zoom reliably.
     const scroll = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     if (scroll === 0) {
       return;
     }
-
     const delta = scroll > 0 ? 1 : -1;
+
+    if (!isEditMode) {
+      if (viewZoomPanEnabled) {
+        // Viewer-local zoom (#306): consume the wheel event (the panel is an
+        // interactive canvas here, not a page-scroll region) and keep the
+        // delta out of the saved options.
+        e.preventDefault();
+        setViewZoomDelta((prev) => prev + delta);
+        return;
+      }
+      // Legacy gate: without the opt-in, view mode zooms only via Shift+wheel.
+      if (!e.shiftKey) {
+        return;
+      }
+    }
+
     onOptionsChange({
       weathermap: {
         ...wm,
@@ -657,6 +676,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         },
       },
     });
+  };
+
+  // The wheel listener is attached natively and non-passively: React roots
+  // register wheel passively, so preventDefault() from the JSX onWheel prop
+  // cannot reliably stop the dashboard page from scrolling while zooming.
+  const zoomHandlerRef = useRef(zoom);
+  zoomHandlerRef.current = zoom;
+  const svgElRef = useRef<SVGSVGElement | null>(null);
+  const nativeWheel = useRef((e: WheelEvent) => zoomHandlerRef.current(e)).current;
+  const setSvgRef = (el: SVGSVGElement | null) => {
+    if (svgElRef.current === el) {
+      return;
+    }
+    if (svgElRef.current) {
+      svgElRef.current.removeEventListener('wheel', nativeWheel);
+    }
+    svgElRef.current = el;
+    if (el) {
+      el.addEventListener('wheel', nativeWheel, { passive: false });
+    }
   };
 
   const [isDragging, setDragging] = useState(false);
@@ -688,9 +727,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }, [savedOffsetX, savedOffsetY]);
 
   const drag = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
-    if (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey) {
+    if (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey || (viewInteractions && e.buttons === 1)) {
       e.nativeEvent.preventDefault();
-      const zoomAmt = Math.pow(1.2, wm.settings.panel.zoomScale);
+      const zoomAmt = Math.pow(1.2, renderedZoomScale);
 
       setOffset((prev) => {
         return {
@@ -791,7 +830,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Zoom-dependent labels (#179): hide value labels once zoomed out past the
   // configured number of wheel steps.
   const labelHideZoom = wm?.settings?.link?.labelHideZoom ?? 0;
-  const hideValueLabels = labelHideZoom > 0 && (wm?.settings?.panel?.zoomScale ?? 0) >= labelHideZoom;
+  const hideValueLabels = labelHideZoom > 0 && renderedZoomScale >= labelHideZoom;
 
   // VIA-chain data collection for rendering (#201): a segment leaving a
   // connection node displays the incoming link's A-side data. Resolved once
@@ -1406,25 +1445,32 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           height={height2}
           xmlns="http://www.w3.org/2000/svg"
           xmlnsXlink="http://www.w3.org/1999/xlink"
-          viewBox={`0 0 ${wm.settings.panel.panelSize.width * Math.pow(1.2, wm.settings.panel.zoomScale)} ${
-            wm.settings.panel.panelSize.height * Math.pow(1.2, wm.settings.panel.zoomScale)
+          viewBox={`0 0 ${wm.settings.panel.panelSize.width * Math.pow(1.2, renderedZoomScale)} ${
+            wm.settings.panel.panelSize.height * Math.pow(1.2, renderedZoomScale)
           }`}
           shapeRendering="crispEdges"
           textRendering="geometricPrecision"
           fontFamily="sans-serif"
-          onWheel={zoom as unknown as React.WheelEventHandler<SVGSVGElement>}
+          ref={setSvgRef}
           onMouseDown={(e) => {
             e.preventDefault();
             updateAspects();
             setDragging(true);
           }}
           onMouseMove={(e) => {
-            if (isDragging && (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey)) {
+            if (
+              isDragging &&
+              (e.ctrlKey || e.metaKey || e.buttons === 4 || e.shiftKey || (viewInteractions && e.buttons === 1))
+            ) {
               drag(e);
             }
           }}
           onMouseUp={() => {
             setDragging(false);
+            if (viewInteractions) {
+              // Viewer-local pan (#306): stays in the offset state only.
+              return;
+            }
             // Persist through a clone: mutating wm in place hands the same
             // reference back to Grafana and can skip downstream re-renders (#225).
             onOptionsChange({
@@ -1436,6 +1482,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           }}
           onDoubleClick={() => {
             setSelectedNodes([]);
+            if (viewInteractions) {
+              // Double-click resets the viewer-local zoom/pan to the saved view.
+              setViewZoomDelta(0);
+              setOffset({ x: savedOffsetX, y: savedOffsetY });
+            }
           }}
         >
           <defs>
@@ -1507,12 +1558,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           </defs>
           <g
             transform={`translate(${
-              (wm.settings.panel.panelSize.width * Math.pow(1.2, wm.settings.panel.zoomScale) -
+              (wm.settings.panel.panelSize.width * Math.pow(1.2, renderedZoomScale) -
                 wm.settings.panel.panelSize.width) /
                 2 +
               offset.x
             }, ${
-              (wm.settings.panel.panelSize.height * Math.pow(1.2, wm.settings.panel.zoomScale) -
+              (wm.settings.panel.panelSize.height * Math.pow(1.2, renderedZoomScale) -
                 wm.settings.panel.panelSize.height) /
                 2 +
               offset.y
@@ -1545,17 +1596,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   x={
                     wm.nodes.length > 0
                       ? wm.nodes[0].position[0] -
-                        wm.settings.panel.panelSize.width * Math.pow(1.2, wm.settings.panel.zoomScale) * 2
+                        wm.settings.panel.panelSize.width * Math.pow(1.2, renderedZoomScale) * 2
                       : 0
                   }
                   y={
                     wm.nodes.length > 0
                       ? wm.nodes[0].position[1] -
-                        wm.settings.panel.panelSize.height * Math.pow(1.2, wm.settings.panel.zoomScale) * 2
+                        wm.settings.panel.panelSize.height * Math.pow(1.2, renderedZoomScale) * 2
                       : 0
                   }
-                  width={wm.settings.panel.panelSize.width * Math.pow(1.2, wm.settings.panel.zoomScale) * 4}
-                  height={wm.settings.panel.panelSize.height * Math.pow(1.2, wm.settings.panel.zoomScale) * 4}
+                  width={wm.settings.panel.panelSize.width * Math.pow(1.2, renderedZoomScale) * 4}
+                  height={wm.settings.panel.panelSize.height * Math.pow(1.2, renderedZoomScale) * 4}
                   fill="url(#smallGrid)"
                 />
               </>
@@ -1565,12 +1616,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           </g>
           <g
             transform={`translate(${
-              (wm.settings.panel.panelSize.width * Math.pow(1.2, wm.settings.panel.zoomScale) -
+              (wm.settings.panel.panelSize.width * Math.pow(1.2, renderedZoomScale) -
                 wm.settings.panel.panelSize.width) /
                 2 +
               offset.x
             }, ${
-              (wm.settings.panel.panelSize.height * Math.pow(1.2, wm.settings.panel.zoomScale) -
+              (wm.settings.panel.panelSize.height * Math.pow(1.2, renderedZoomScale) -
                 wm.settings.panel.panelSize.height) /
                 2 +
               offset.y

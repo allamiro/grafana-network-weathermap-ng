@@ -117,6 +117,18 @@ test('viewbox width change delivers a new weathermap object (#225)', () => {
   expect(initial).toEqual(before);
 });
 
+// #306: the view-mode zoom & pan opt-in writes immutably and defaults off.
+test('view mode zoom & pan toggle writes the panel setting (#306)', () => {
+  const spy = jest.fn();
+  render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+  const toggle = screen.getByTestId('nwm-view-zoom-pan');
+  expect((toggle as HTMLInputElement).checked).toBe(false);
+  fireEvent.click(toggle);
+  expect(lastValue(spy).settings.panel.viewZoomPan).toBe(true);
+  fireEvent.click(screen.getByTestId('nwm-view-zoom-pan'));
+  expect(lastValue(spy).settings.panel.viewZoomPan).toBe(false);
+});
+
 // #278: the scale legibility overrides render, write immutably, and clear
 // back to the automatic behavior.
 test('scale font color and background controls appear and clear (#278)', async () => {
