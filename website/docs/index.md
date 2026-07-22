@@ -52,7 +52,20 @@ Reliability is treated as a feature. The panel is tested against hostile input �
 
 ### Under the hood
 
-The original was rebuilt for modern Grafana: the plugin ID is now `tamirsuliman-weathermap-panel`, the `@grafana/*` SDK is updated and verified from **Grafana 11 through 13** (requires **11.0.0+**), React moved 17 → 18, styling migrated from the deprecated `stylesFactory` to `useStyles2` + `@emotion/css`, all `@ts-ignore` overrides were removed, and URLs for dashboard links, icons, and background images are sanitized. Releases are built on Node.js 24, signed and attested, with an API-compatibility matrix and packaging checks on every PR.
+The original was rebuilt for modern Grafana. What changed from the archived plugin:
+
+| Area | Change |
+|---|---|
+| Plugin ID | `tamirsuliman-weathermap-panel` (was `knightss27-weathermap-panel`) |
+| Grafana SDK | `@grafana/data` / `runtime` / `ui` updated and verified from **Grafana 11 → 13** (requires **11.0.0+**) |
+| React | Upgraded 17 → 18 (React 19 `findDOMNode` crash fixed) |
+| TypeScript | On 5.4+ — all `@ts-ignore` overrides removed |
+| Styling | Deprecated `stylesFactory` → `useStyles2` + `@emotion/css` |
+| Deprecated APIs | `Vector.get()` replaced with direct array indexing |
+| Datasource compat | Value extraction finds the first numeric field instead of hardcoding `fields[1]`; wide-frame binding across Prometheus / InfluxDB / Elasticsearch / Zabbix |
+| Security | URL sanitization for dashboard links, icons, and background images; `window.open()` uses `noopener,noreferrer`; `locationService` replaces `window.location` |
+| Testing | Playwright E2E (`@grafana/plugin-e2e`) on real Grafana, declared minimum through latest |
+| CI / CD | Node.js 24, signed + attested releases, Grafana API-compatibility matrix, packaging checks, GitHub Pages docs deploy |
 
 Contributions and bug reports are welcome at [github.com/allamiro/grafana-network-weathermap-ng](https://github.com/allamiro/grafana-network-weathermap-ng).
 
