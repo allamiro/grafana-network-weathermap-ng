@@ -26,20 +26,33 @@ New here? Start with the step-by-step guide:
 
 ## About This Fork
 
-This plugin is a continuation of the original [knightss27/grafana-network-weathermap](https://github.com/knightss27/grafana-network-weathermap) which was archived in 2023. The goal of this fork is to keep the plugin working with current Grafana releases and to fix outstanding bugs.
+This plugin is a continuation of the original [knightss27/grafana-network-weathermap](https://github.com/knightss27/grafana-network-weathermap), which was archived in 2023. What began as a compatibility rescue — keeping a much-loved panel working on modern Grafana — has since grown into an actively maintained project with new capabilities, a full documentation site, a hardened core, and runnable demos. This page is a short tour of where the fork stands today.
 
-**What changed from the original:**
+### What's new since the fork
 
-| Area | Change |
-|---|---|
-| Plugin ID | `tamirsuliman-weathermap-panel` (was `knightss27-weathermap-panel`) |
-| Grafana SDK | Updated to `@grafana/*` v11 — requires **Grafana 11.0.0+** |
-| React | Upgraded from React 17 → React 18 |
-| Styling | Migrated from deprecated `stylesFactory` → `useStyles2` + `@emotion/css` |
-| Deprecated APIs | Replaced `Vector.get()` with direct array indexing |
-| Datasource compat | Value extraction now finds the first numeric field instead of hardcoding `fields[1]` |
-| Security | All `window.open()` calls use `noopener,noreferrer`; `locationService` replaces `window.location` |
-| CI / CD | Node.js 24, GitHub Actions Pages deployment, Grafana API version matrix |
+The panel does considerably more than the archived original, and every capability below is driven entirely by the metrics you already query — no extra agents, no packet capture.
+
+- **Live traffic animation** — links animate moving dots whose speed and density track real utilization, with a down-link ✕ badge. See the [Traffic Animation guide](guide/animation.md).
+- **BGP neighbor status maps** — turn session state into a live map, with fleet and detail dashboards and an SNMP/gNMI collection kit. See the [BGP guide](guide/bgp.md).
+- **Timeline / incident replay** — scrub back through history and watch link utilization *and* node status replay step by step.
+- **View-mode zoom & pan** — an opt-in setting that lets dashboard viewers zoom and pan without opening the editor.
+- **Faceplate & rack generators** — one-click **Generate Port Grid** (switch faceplates, patch panels, PDU strips, blade chassis) and **Generate Rack Elevation** (devices laid out by rack unit) build whole port boards as editable nodes in a single step.
+- **Richer nodes & labels** — larger node sizing, scalable font color with an optional background box, and per-side port-label positioning to keep labels clear of icons and parallel links.
+- **1064 bundled icons across 12 sets** — networking, cloud, vendors, platforms, databases, country flags and more, all served by the plugin itself (air-gap friendly). Browse the [Icon Reference](icons.md).
+- **Runnable demos** — a Docker demo stack provisions every scenario (WAN utilization, incident replay, rack boards, the world-map backbone) against Prometheus, InfluxDB, Elasticsearch, and Zabbix. Explore them in the [Use Cases guide](guide/use-cases.md).
+- **Dashboard backup/restore utility** — a dependency-free tool to snapshot your existing Grafana dashboards, queries, and data sources before installing or upgrading.
+
+### Documentation
+
+The fork ships this full documentation site — a step-by-step [Getting Started](guide/getting-started.md) tutorial, deep-dive guides for [Nodes](guide/nodes.md), [Links](guide/links.md), [Panel Options](guide/panel-options.md), and [Interactions & Editing](guide/interactions.md), feature guides for [Traffic Animation](guide/animation.md) and [BGP Neighbor Status](guide/bgp.md), a [Data Sources](guide/datasources.md) reference with per-source notes, a gallery of [Use Cases](guide/use-cases.md), the [Icon Reference](icons.md), and an [FAQ](faq.md).
+
+### Reliability & fixes
+
+Reliability is treated as a feature. The panel is tested against hostile input — malformed saved options, links pointing at deleted nodes, empty data frames — so it renders instead of crashing, and the editor state is deep-frozen in tests so accidental mutation fails CI. Playwright end-to-end suites run on real Grafana from the declared minimum through the latest release. Along the way the fork has fixed data-source binding across Prometheus, InfluxDB, Elasticsearch, and Zabbix (wide-frame value binding, Zabbix alignment and trends), corrected link gradient rendering to the arrow tips, and stays on top of dependency security advisories.
+
+### Under the hood
+
+The original was rebuilt for modern Grafana: the plugin ID is now `tamirsuliman-weathermap-panel`, the `@grafana/*` SDK is updated and verified from **Grafana 11 through 13** (requires **11.0.0+**), React moved 17 → 18, styling migrated from the deprecated `stylesFactory` to `useStyles2` + `@emotion/css`, all `@ts-ignore` overrides were removed, and URLs for dashboard links, icons, and background images are sanitized. Releases are built on Node.js 24, signed and attested, with an API-compatibility matrix and packaging checks on every PR.
 
 Contributions and bug reports are welcome at [github.com/allamiro/grafana-network-weathermap-ng](https://github.com/allamiro/grafana-network-weathermap-ng).
 
