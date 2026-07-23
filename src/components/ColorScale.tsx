@@ -1,7 +1,20 @@
 import { useStyles2, useTheme2 } from '@grafana/ui';
+import { getValueFormat } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import React from 'react';
 import { Threshold, WeathermapSettings } from 'types';
+
+// Format an absolute threshold value for the legend. With a scale unit set,
+// route the raw number through Grafana's getValueFormat so it inherits the same
+// automatic prefixing (Kb/s, Mb/s, Gb/s…) the link labels use (#327). Without a
+// unit, keep the raw number — the pre-#327 behavior.
+const formatScaleValue = (value: number, unit?: string): string => {
+  if (!unit) {
+    return String(value);
+  }
+  const formatted = getValueFormat(unit)(value);
+  return `${formatted.text}${formatted.suffix ?? ''}`;
+};
 
 interface ColorScaleProps {
   thresholds: Threshold[];
@@ -83,10 +96,12 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
           const isValueMode = settings.colorScaleMode === 'value';
           let label: string;
           if (isValueMode) {
+            const unit = settings.scale.scaleUnit;
+            const current = formatScaleValue(threshold.percent, unit);
             label =
               thresholds[i + 1] === undefined
-                ? String(threshold.percent) + '+'
-                : threshold.percent + ' – ' + thresholds[i + 1].percent;
+                ? current + '+'
+                : current + ' – ' + formatScaleValue(thresholds[i + 1].percent, unit);
           } else {
             label =
               threshold.percent +

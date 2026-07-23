@@ -343,6 +343,11 @@ export interface TrafficPanelSettings {
   // Optional background box behind the scale (#278). Unset = transparent,
   // exactly as before.
   backgroundColor?: string;
+  // Optional Grafana unit id (e.g. 'bps', 'binbps', 'Bps') used to format the
+  // Absolute Value scale legend labels through getValueFormat, so a threshold
+  // of 500000000 renders as "500 Mb/s" instead of a raw number (#327). Unset =
+  // raw numbers, exactly as before. Ignored in Percentage mode.
+  scaleUnit?: string;
 }
 
 export interface Weathermap {

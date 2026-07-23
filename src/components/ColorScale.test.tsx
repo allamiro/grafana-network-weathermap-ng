@@ -105,3 +105,39 @@ test('without an override the automatic contrast color is kept', () => {
   const title = screen.getByText(settings.scale.title);
   expect(getComputedStyle(title).color).not.toBe('');
 });
+
+// #327: Absolute Value legend labels can be formatted with a unit.
+test('value mode without a scale unit renders raw numbers (pre-#327 behavior)', () => {
+  const settings = structuredClone(getData(theme).settings);
+  settings.colorScaleMode = 'value';
+  delete settings.scale.scaleUnit;
+  render(
+    <ColorScale
+      thresholds={[
+        { color: '#73BF69', percent: 500000000 },
+        { color: '#FF9830', percent: 750000000 },
+      ]}
+      settings={settings}
+    />
+  );
+  expect(screen.getByText('500000000 – 750000000')).not.toBeNull();
+  expect(screen.getByText('750000000+')).not.toBeNull();
+});
+
+test('value mode with a bps scale unit formats labels with automatic prefixes', () => {
+  const settings = structuredClone(getData(theme).settings);
+  settings.colorScaleMode = 'value';
+  settings.scale.scaleUnit = 'bps';
+  render(
+    <ColorScale
+      thresholds={[
+        { color: '#73BF69', percent: 500000000 },
+        { color: '#FF9830', percent: 750000000 },
+      ]}
+      settings={settings}
+    />
+  );
+  // 500000000 bps -> "500 Mb/s", 750000000 bps -> "750 Mb/s".
+  expect(screen.getByText('500 Mb/s – 750 Mb/s')).not.toBeNull();
+  expect(screen.getByText('750 Mb/s+')).not.toBeNull();
+});
