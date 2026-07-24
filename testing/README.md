@@ -53,6 +53,8 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — BGP Fleet Overview** | Established / down / total counters, a session status table, and a prefixes-received bar gauge. |
 | **WAN Demo — Port Label Positioning** | The WAN map with per-side **Port Label Offset %** (along the link axis) and **Port Label Distance** (perpendicular) set on every interface label, lifting each one clear of its node icon. |
 | **WAN Demo — Switch Port Board (generated)** | A 24-port switch faceplate produced by the editor's **Generate Port Grid** action (#267): odd/even faceplate ordering with block gaps, colored live by **status coloring** (green up / red down) from `wm_port_status`. Ports Gi1/0/7 and Gi1/0/19 read down; 13 flaps. |
+| **WAN Demo — Rack Elevation (generated)** | A rack of different devices laid out by rack unit by the **Generate Rack Elevation** action (#319): two switches with live port faceplates (R-SW1 port 5 down), a router and firewall with their ports, and three servers colored by NIC/iLO health. |
+| **WAN Demo — Data Center (generated: rack + port board)** | Both node generators on one canvas, colored live from `wm_port_status`: a rack elevation (#319) beside a generated 24-port switch board for RACK1-TOR (#267). |
 
 The WAN dashboards are generated — do not hand-edit them. To change the topology
 or scenarios, edit and re-run:
@@ -63,6 +65,8 @@ python3 testing/scripts/generate-animated-dashboard.py     # animated traffic
 python3 testing/scripts/generate-bgp-dashboards.py         # BGP neighbor map + detail + overview
 python3 testing/scripts/generate-port-label-demo.py        # port label offset + distance
 python3 testing/scripts/generate-port-grid-demo.py         # generated switch port board
+python3 testing/scripts/generate-rack-elevation-demo.py    # generated rack elevation
+python3 testing/scripts/generate-datacenter-demo.py        # combined rack + port board
 ```
 
 The world-map background is `BlankMap-World-Equirectangular.svg` from Wikimedia

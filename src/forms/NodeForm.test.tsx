@@ -241,6 +241,27 @@ test('a port-grid preset fills the form and generates its layout (#267)', () => 
   expect(labels).toEqual(expect.arrayContaining(['P1', 'P24']));
 });
 
+// #319: the rack elevation generator appends device rows + per-device faceplates.
+test('Generate Rack Elevation appends device rows and their port faceplates (#319)', () => {
+  const spy = jest.fn();
+  const initial = getData(theme);
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  fireEvent.click(screen.getByText('Generate Rack Elevation'));
+  fireEvent.click(screen.getByText(/Generate Rack \(\d+ devices\)/));
+
+  const updated = spy.mock.calls[spy.mock.calls.length - 1][0];
+  // Default rack (#321 hybrid chassis): 3 devices → 3 bars + 3 name nodes, Switch
+  // adds 24 ports (= 30), plus 12 U-markers (12U rack) and the chassis (1 frame +
+  // 2 rails = 3).
+  expect(updated.nodes).toHaveLength(initial.nodes.length + 30 + 12 + 3);
+  const labels = updated.nodes.map((n: { label?: string }) => n.label);
+  expect(labels).toEqual(expect.arrayContaining(['Switch', 'Router', 'Server', 'Gi1/0/1', 'Gi1/0/24']));
+  // Chassis backdrop (empty, hidden-label nodes) and rail U-numbers are present.
+  expect(updated.nodes.some((n: { label?: string; showLabel?: boolean }) => n.label === '' && n.showLabel === false)).toBe(true);
+  expect(labels).toEqual(expect.arrayContaining(['U1', 'U12']));
+});
+
 test('invalid port-grid input surfaces an error and adds nothing (#267)', () => {
   const spy = jest.fn();
   const initial = getData(theme);

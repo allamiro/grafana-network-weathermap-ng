@@ -35,6 +35,7 @@ import {
 } from './iconOptions';
 import { finiteOrFallback, getDataFrameName, sanitizeUrl } from 'utils';
 import { generatePortGrid, PortGridOrdering, PortGridFormValues, PORT_GRID_PRESETS } from 'gridGenerator';
+import { generateRackElevation } from 'rackGenerator';
 
 interface Settings {
   placeholder: string;
@@ -302,6 +303,87 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
   const applyPreset = (values: Partial<PortGridFormValues>) => {
     setGrid((g) => ({ ...g, ...values }));
     setGridError(null);
+  };
+
+  // Rack elevation generator (#319): global rack settings + a device list.
+  type RackDeviceRow = { label: string; u: number; height: number; ports: number; portLabel: string; statusQuery: string };
+  const [rack, setRack] = useState({
+    rackUnits: 12,
+    numbering: 'bottom-up' as 'bottom-up' | 'top-down',
+    uPx: 34,
+    labelWidth: 90,
+    portHSpacing: 30,
+    portVSpacing: 26,
+    originX: 120,
+    originY: 150,
+    statusColoring: true,
+    // Visual scaffolding on by default so a freshly generated rack reads as a
+    // rack (#321); users can switch any of these off.
+    frame: true,
+    frameLabel: '',
+    uMarkers: true,
+    uMarkerStep: 1,
+    fullWidthDevices: true,
+    devices: [
+      { label: 'Switch', u: 10, height: 2, ports: 24, portLabel: 'Gi1/0/{n}', statusQuery: 'ifOperStatus {label}' },
+      { label: 'Router', u: 8, height: 1, ports: 0, portLabel: '', statusQuery: '' },
+      { label: 'Server', u: 1, height: 1, ports: 0, portLabel: '', statusQuery: '' },
+    ] as RackDeviceRow[],
+  });
+  const [rackError, setRackError] = useState<string | null>(null);
+  const setRackField = (patch: Partial<typeof rack>) => setRack((r) => ({ ...r, ...patch }));
+  const updateRackDevice = (i: number, patch: Partial<RackDeviceRow>) =>
+    setRack((r) => ({ ...r, devices: r.devices.map((d, di) => (di === i ? { ...d, ...patch } : d)) }));
+  const addRackDevice = () =>
+    setRack((r) => ({ ...r, devices: [...r.devices, { label: 'Device', u: 1, height: 1, ports: 0, portLabel: '', statusQuery: '' }] }));
+  const removeRackDevice = (i: number) => setRack((r) => ({ ...r, devices: r.devices.filter((_, di) => di !== i) }));
+
+  const handleGenerateRack = () => {
+    try {
+      const snap = value.settings.panel.grid;
+      const generated = generateRackElevation(
+        {
+          rackUnits: rack.rackUnits,
+          numbering: rack.numbering,
+          uPx: rack.uPx,
+          labelWidth: rack.labelWidth,
+          portHSpacing: rack.portHSpacing,
+          portVSpacing: rack.portVSpacing,
+          originX: rack.originX,
+          originY: rack.originY,
+          gridSize: snap?.enabled ? snap.size : undefined,
+          frame: rack.frame,
+          frameLabel: rack.frameLabel.trim() || undefined,
+          uMarkers: rack.uMarkers,
+          uMarkerStep: rack.uMarkerStep,
+          fullWidthDevices: rack.fullWidthDevices,
+          devices: rack.devices.map((d) => ({
+            label: d.label,
+            u: d.u,
+            height: d.height,
+            statusColoring: rack.statusColoring,
+            ...(d.ports > 0
+              ? {
+                  ports: {
+                    count: d.ports,
+                    rows: d.ports > 12 ? 2 : 1,
+                    labelPattern: d.portLabel.trim() || '{n}',
+                    statusQueryTemplate: d.statusQuery.trim() || undefined,
+                    statusColoring: rack.statusColoring,
+                  },
+                }
+              : { statusQuery: d.statusQuery.trim() || undefined }),
+          })),
+        },
+        theme
+      );
+      const weathermap = structuredClone(value);
+      weathermap.nodes.push(...generated);
+      onChange(weathermap);
+      setRackError(null);
+    } catch (e) {
+      setRackError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const handleGeneratePortGrid = () => {
@@ -1148,6 +1230,206 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
           >
             Generate {grid.count} Ports
           </Button>
+        </ControlledCollapse>
+      </InlineFieldRow>
+
+      <InlineFieldRow className={styles.inlineRow}>
+        <ControlledCollapse label="Generate Rack Elevation">
+          <p style={{ margin: '0 0 8px', fontSize: '11px', opacity: 0.7 }}>
+            Lay out a rack of different devices by rack unit (U). Each device is placed by its U slot; a device with a
+            port count also gets its port faceplate drawn (via the port grid engine). Generated nodes are normal,
+            editable nodes.
+          </p>
+          <InlineFieldRow>
+            <InlineField label="Rack size (U)">
+              <Input
+                type="number"
+                min={1}
+                value={rack.rackUnits}
+                width={10}
+                onChange={(e) => setRackField({ rackUnits: finiteOrFallback(e.currentTarget.valueAsNumber, rack.rackUnits) })}
+              />
+            </InlineField>
+            <InlineField label="Px per U">
+              <Input
+                type="number"
+                min={1}
+                value={rack.uPx}
+                width={8}
+                onChange={(e) => setRackField({ uPx: finiteOrFallback(e.currentTarget.valueAsNumber, rack.uPx) })}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <p style={{ margin: '4px 0', fontSize: '12px', fontWeight: 600 }}>Numbering</p>
+          <div style={{ marginBottom: '8px' }}>
+            <RadioButtonGroup
+              id="nwm-rack-numbering"
+              options={[
+                { label: 'Bottom-up (U1 at floor)', value: 'bottom-up' },
+                { label: 'Top-down', value: 'top-down' },
+              ] as Array<{ label: string; value: 'bottom-up' | 'top-down' }>}
+              value={rack.numbering}
+              onChange={(v) => setRackField({ numbering: v })}
+            />
+          </div>
+          <InlineFieldRow>
+            <InlineField label="Label width">
+              <Input
+                type="number"
+                value={rack.labelWidth}
+                width={8}
+                onChange={(e) => setRackField({ labelWidth: finiteOrFallback(e.currentTarget.valueAsNumber, rack.labelWidth) })}
+              />
+            </InlineField>
+            <InlineField label="Port H sp">
+              <Input
+                type="number"
+                value={rack.portHSpacing}
+                width={7}
+                onChange={(e) => setRackField({ portHSpacing: finiteOrFallback(e.currentTarget.valueAsNumber, rack.portHSpacing) })}
+              />
+            </InlineField>
+            <InlineField label="Port V sp">
+              <Input
+                type="number"
+                value={rack.portVSpacing}
+                width={7}
+                onChange={(e) => setRackField({ portVSpacing: finiteOrFallback(e.currentTarget.valueAsNumber, rack.portVSpacing) })}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField label="Origin X">
+              <Input
+                type="number"
+                value={rack.originX}
+                width={8}
+                onChange={(e) => setRackField({ originX: finiteOrFallback(e.currentTarget.valueAsNumber, rack.originX) })}
+              />
+            </InlineField>
+            <InlineField label="Origin Y">
+              <Input
+                type="number"
+                value={rack.originY}
+                width={8}
+                onChange={(e) => setRackField({ originY: finiteOrFallback(e.currentTarget.valueAsNumber, rack.originY) })}
+              />
+            </InlineField>
+            <InlineField label="Status coloring">
+              <InlineSwitch
+                value={rack.statusColoring}
+                onChange={(e) => setRackField({ statusColoring: e.currentTarget.checked })}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Appearance</p>
+          <InlineFieldRow>
+            <InlineField label="Rack frame" tooltip="Draw a border-only enclosure behind the devices so it reads as a rack.">
+              <InlineSwitch value={rack.frame} onChange={(e) => setRackField({ frame: e.currentTarget.checked })} />
+            </InlineField>
+            <InlineField label="Full-width devices" tooltip="Draw device bodies filling the label column, like mounted equipment.">
+              <InlineSwitch
+                value={rack.fullWidthDevices}
+                onChange={(e) => setRackField({ fullWidthDevices: e.currentTarget.checked })}
+              />
+            </InlineField>
+            <InlineField label="U markers" tooltip="Number the rail (U1, U2 …) down the left side.">
+              <InlineSwitch value={rack.uMarkers} onChange={(e) => setRackField({ uMarkers: e.currentTarget.checked })} />
+            </InlineField>
+            <InlineField label="Every" tooltip="Label every Nth U (1 = every unit).">
+              <Input
+                type="number"
+                min={1}
+                width={6}
+                value={rack.uMarkerStep}
+                disabled={!rack.uMarkers}
+                onChange={(e) => setRackField({ uMarkerStep: finiteOrFallback(e.currentTarget.valueAsNumber, rack.uMarkerStep) })}
+              />
+            </InlineField>
+            <InlineField label="Rack title" tooltip="Optional label drawn above the frame (e.g. Rack A1).">
+              <Input
+                type="text"
+                width={12}
+                value={rack.frameLabel}
+                disabled={!rack.frame}
+                onChange={(e) => setRackField({ frameLabel: e.currentTarget.value })}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <p style={{ margin: '8px 0 4px', fontSize: '12px', fontWeight: 600 }}>Devices (bottom of rack = U1)</p>
+          {rack.devices.map((dev, i) => (
+            <div
+              key={i}
+              style={{ border: '1px solid var(--in-content-button-background)', borderRadius: '2px', padding: '6px', marginBottom: '6px' }}
+            >
+              <InlineFieldRow>
+                <InlineField label="Label">
+                  <Input
+                    type="text"
+                    value={dev.label}
+                    width={14}
+                    onChange={(e) => updateRackDevice(i, { label: e.currentTarget.value })}
+                  />
+                </InlineField>
+                <InlineField label="U">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={dev.u}
+                    width={6}
+                    onChange={(e) => updateRackDevice(i, { u: finiteOrFallback(e.currentTarget.valueAsNumber, dev.u) })}
+                  />
+                </InlineField>
+                <InlineField label="Height">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={dev.height}
+                    width={6}
+                    onChange={(e) => updateRackDevice(i, { height: finiteOrFallback(e.currentTarget.valueAsNumber, dev.height) })}
+                  />
+                </InlineField>
+                <InlineField label="Ports">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={dev.ports}
+                    width={6}
+                    onChange={(e) => updateRackDevice(i, { ports: finiteOrFallback(e.currentTarget.valueAsNumber, dev.ports) })}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+              <InlineFieldRow>
+                <InlineField label="Port label" tooltip={'{n} → port number, when Ports > 0.'}>
+                  <Input
+                    type="text"
+                    value={dev.portLabel}
+                    placeholder={'Gi0/{n}'}
+                    width={16}
+                    onChange={(e) => updateRackDevice(i, { portLabel: e.currentTarget.value })}
+                  />
+                </InlineField>
+                <InlineField grow label="Status query" tooltip={'Ports > 0: a per-port template (e.g. PORT R-SW1 Gi0/{n}). Ports = 0: a device status query.'}>
+                  <Input
+                    type="text"
+                    value={dev.statusQuery}
+                    placeholder={'PORT DEV {n}  /  STATUS DEV'}
+                    onChange={(e) => updateRackDevice(i, { statusQuery: e.currentTarget.value })}
+                  />
+                </InlineField>
+                <Button variant="destructive" icon="trash-alt" size="sm" onClick={() => removeRackDevice(i)} />
+              </InlineFieldRow>
+            </div>
+          ))}
+          <Button variant="secondary" icon="plus" size="sm" onClick={addRackDevice}>
+            Add device
+          </Button>
+          {rackError && <p style={{ margin: '8px 0 0', color: theme.colors.error.text, fontSize: '12px' }}>{rackError}</p>}
+          <div>
+            <Button variant="primary" icon="plus" size="md" onClick={handleGenerateRack} style={{ marginTop: '10px' }}>
+              Generate Rack ({rack.devices.length} devices)
+            </Button>
+          </div>
         </ControlledCollapse>
       </InlineFieldRow>
 
