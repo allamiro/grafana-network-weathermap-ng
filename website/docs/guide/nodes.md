@@ -54,6 +54,34 @@ A generated 24-port switch board, colored live from a port-status query — odd/
 
 ---
 
+## Generate a rack elevation
+
+Where **Generate Port Grid** lays out the ports of *one* device, **Generate Rack Elevation** lays out a rack of *different* devices by **rack unit (U)** — and a device with ports also gets its faceplate drawn automatically (via the port-grid engine).
+
+Open **Generate Rack Elevation** (in the **Nodes** section), set the rack up (**Rack size (U)**, **Px per U**, **Numbering** — bottom-up puts U1 at the floor), then add a row per device:
+
+| Per-device field | Purpose |
+|---|---|
+| **Label** | The device name. |
+| **U** | Its starting rack unit (1 = bottom). |
+| **Height** | How many U it occupies (a 2U device is drawn taller). |
+| **Ports** | How many ports to draw for it (`0` = a plain device row). |
+| **Port label** | The port label pattern (`{n}` → port number), when Ports > 0. |
+| **Status query** | With ports: a per-port template (e.g. `PORT R-SW1 Gi0/{n}`). Without ports: a device status query. |
+
+Click **Generate Rack** — each device is placed at its U position, sized by its U-height, and colored green up / red down when **Status coloring** is on. Everything is normal, editable nodes.
+
+![The Generate Rack Elevation form with its per-device rows](../img/getting-started/rack-elevation-generator.png)
+
+![A generated rack elevation with switches, router, firewall and servers colored by status](../img/use-cases/wm-rack-elevation.png)
+
+*A generated rack: two switches with live port faceplates (R-SW1 port 5 down), a router and firewall with their ports, and three servers colored by NIC/iLO health — laid out by rack unit.*
+
+!!! note "It figures the geometry, not your inventory"
+    The generator computes each device's position from the U slots you give it — it doesn't know or infer your rack's contents. It's a visualization helper, not a [DCIM/inventory system](https://allamiro.github.io/grafana-network-weathermap-ng/).
+
+---
+
 ## Label
 
 The **Label** is the text shown on/under the node. Leave it blank (and use an icon) for an icon-only node. You can also hide the label with **Show Label** while keeping the node interactive.
