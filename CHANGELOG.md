@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.6](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.6) (2026-07-26)
+
+### Features
+
+* **unit-aware Absolute Value scale labels** ([#327](https://github.com/allamiro/grafana-network-weathermap-ng/issues/327)): Absolute Value mode gains an optional **Scale Unit** setting (a Grafana unit picker shown only in that mode, e.g. *bits/sec (SI)*). When set, the scale legend labels are formatted through Grafana's `getValueFormat` — the same automatic Kb/s / Mb/s / Gb/s prefixing the link labels already use — so `500000000 – 750000000` renders as `500 Mb/s – 750 Mb/s`, a standby link reads `70 Kb/s`, and a busy one `1.8 Gb/s`. Unset keeps raw numbers, so existing maps are unchanged; ignored in Percentage mode ([#328](https://github.com/allamiro/grafana-network-weathermap-ng/pull/328))
+
+### Dependencies
+
+* **dompurify** 3.4.11 → 3.4.12 (Dependabot, low-severity alert; sanitizer hardening) ([#324](https://github.com/allamiro/grafana-network-weathermap-ng/pull/324))
+
 ## [1.6.5](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.5) (2026-07-21)
 
 ### Security
