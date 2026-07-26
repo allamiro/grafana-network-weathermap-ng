@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { css } from '@emotion/css';
-import { Button, Input, ColorPicker, Icon, useStyles2, RadioButtonGroup } from '@grafana/ui';
+import { Button, Input, ColorPicker, Icon, useStyles2, RadioButtonGroup, UnitPicker } from '@grafana/ui';
 import { GrafanaTheme2, SelectableValue, StandardEditorProps } from '@grafana/data';
 import { finiteOrFallback } from 'utils';
 import { Weathermap } from 'types';
@@ -82,6 +82,15 @@ export const ColorForm = (props: Props) => {
     onChange({ ...value, settings: { ...value.settings, colorScaleMode: mode } });
   };
 
+  const handleScaleUnitChange = (unit: string | undefined) => {
+    // Immutable update so the editor re-renders (#162); scaleUnit lives on the
+    // scale settings block alongside title/position/colors.
+    onChange({
+      ...value,
+      settings: { ...value.settings, scale: { ...value.settings.scale, scaleUnit: unit } },
+    });
+  };
+
   const thresholdLabel = currentMode === 'value' ? 'Value' : '%';
 
   return (
@@ -107,6 +116,15 @@ export const ColorForm = (props: Props) => {
           size="sm"
         />
       </div>
+      {/* Absolute Value legend labels can inherit the same automatic unit
+          prefixing (Kb/s, Mb/s, Gb/s…) as link labels (#327). Only meaningful
+          in value mode — percentages never carry a unit. */}
+      {currentMode === 'value' && (
+        <div className={styles.modeRow}>
+          <span className={styles.modeLabel}>Scale Unit</span>
+          <UnitPicker value={value.settings.scale.scaleUnit} onChange={handleScaleUnitChange} />
+        </div>
+      )}
       {editedPercents.map((threshold, i) => (
         <Input
           // Explicit id: without one, Grafana 13's options-pane Field context
