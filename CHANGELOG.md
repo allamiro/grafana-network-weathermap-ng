@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 * **unit-aware Absolute Value scale labels** ([#327](https://github.com/allamiro/grafana-network-weathermap-ng/issues/327)): Absolute Value mode gains an optional **Scale Unit** setting (a Grafana unit picker shown only in that mode, e.g. *bits/sec (SI)*). When set, the scale legend labels are formatted through Grafana's `getValueFormat` — the same automatic Kb/s / Mb/s / Gb/s prefixing the link labels already use — so `500000000 – 750000000` renders as `500 Mb/s – 750 Mb/s`, a standby link reads `70 Kb/s`, and a busy one `1.8 Gb/s`. Unset keeps raw numbers, so existing maps are unchanged; ignored in Percentage mode ([#328](https://github.com/allamiro/grafana-network-weathermap-ng/pull/328))
 
+### Security
+
+* patched the high-severity advisories flagged by the Grafana plugin validator's osv-scanner (both dev/build-only, not shipped in the plugin). **postcss** 8.5.15 → 8.5.23 (GHSA-r28c-9q8g-f849 — path traversal in previous-source-map auto-loading). **brace-expansion** pinned to 5.0.8 across the whole tree (GHSA-mh99-v99m-4gvg — DoS via unbounded expansion; OSV marks every version below 5.0.8 affected). Because 5.x drops the callable CommonJS export the older `minimatch` build/test consumers rely on, a small `patch-package` shim restores it — no shipped or runtime code change. `npm audit` reports 0 high/critical findings
+
 ### Dependencies
 
 * **dompurify** 3.4.11 → 3.4.12 (Dependabot, low-severity alert; sanitizer hardening) ([#324](https://github.com/allamiro/grafana-network-weathermap-ng/pull/324))

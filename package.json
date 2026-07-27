@@ -3,6 +3,7 @@
   "version": "1.6.6",
   "description": "A modernized, actively maintained network weathermap plugin for Grafana. Continuation of the original knightss27-weathermap-panel.",
   "scripts": {
+    "postinstall": "patch-package",
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "e2e": "npx playwright test",
@@ -60,6 +61,7 @@
     "jest-canvas-mock": "^2.5.2",
     "jest-environment-jsdom": "^29.5.0",
     "make-coverage-badge": "^1.2.0",
+    "patch-package": "^8.0.1",
     "prettier": "^2.8.7",
     "replace-in-file-webpack-plugin": "^1.0.6",
     "sass": "1.63.2",
@@ -83,7 +85,7 @@
     "@grafana/runtime": "^11.0.0",
     "@grafana/ui": "^11.0.0",
     "lodash.merge": "^4.6.2",
-    "postcss": "^8.1.0",
+    "postcss": "^8.5.18",
     "prettier": "^2.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -105,8 +107,6 @@
     "@opentelemetry/core": "^2.8.0",
     "websocket-driver": "0.7.5",
     "protobufjs": "^7.6.5",
-    "brace-expansion@2": "2.1.2",
-    "brace-expansion@5": "5.0.7",
-    "brace-expansion@1": "1.1.16"
+    "brace-expansion": "5.0.8"
   }
 }
