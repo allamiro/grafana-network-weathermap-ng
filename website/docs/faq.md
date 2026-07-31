@@ -99,7 +99,8 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
     - Fixed in v1.5.0+ (React 19 compatibility). Upgrade to the latest release.
 
 - **Q: I exported my config from the original `knightss27-weathermap-panel`. Will it import here?**
-    - Yes — the JSON config format is backward-compatible. Use **Export / Import** in the panel editor.
+    - Yes — the JSON config format is backward-compatible. Use **Export / Import** in the panel editor, or change the panel's `"type"` to `tamirsuliman-weathermap-panel` in the dashboard JSON before importing. Don't switch plugins through the panel-type picker in the UI — Grafana resets the panel options on a UI type switch and the whole map is lost.
+    - Link query bindings (A/Z side and bandwidth queries) are stored by their query display name, which this plugin computes slightly differently than the original in some setups (multiple queries returning a same-named column, table-style results). Since v1.6.7 unambiguous old-style names are re-bound automatically as soon as the panel receives data; if a binding stays empty after import (it can be ambiguous — e.g. two queries whose results are indistinguishable by name), re-select it once in the link editor and re-save.
 
 ---
 

@@ -58,6 +58,7 @@ import {
   clampUtilization,
   utilizationToSpeed,
   utilizationToDotCount,
+  rebindLegacyQueryNames,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -127,7 +128,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Typed as the original `options.weathermap` was: non-null for the type
   // system, guarded by truthiness checks at runtime (it is undefined when the
   // panel has no saved weathermap yet).
-  const wm = useMemo(() => {
+  const savedWm = useMemo(() => {
     const normalized = normalizeWeathermap(options.weathermap);
     if (normalized && needsMigration(normalized)) {
       return handleVersionedStateUpdates(JSON.parse(JSON.stringify(normalized)), theme);
@@ -136,6 +137,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.weathermap, theme]) as Weathermap;
 
+  // Dashboards imported from the original knightss27 plugin carry query
+  // bindings under the display names that plugin computed, which this fork's
+  // naming scheme no longer produces — every link's queries silently show as
+  // unbound (#331). When the current data contains an unambiguous match for a
+  // stored legacy name, render from a rewritten copy immediately and persist
+  // it below; once saved, this returns null on every subsequent data refresh.
+  // The rewrite is destructive once persisted, so it only ever runs against a
+  // COMPLETE data snapshot: while queries are still loading or any errored,
+  // data.series is a partial namespace in which the alias ambiguity guards
+  // can't be trusted (a missing frame's name can make a colliding legacy
+  // alias look safe).
+  const dataComplete =
+    data.state === LoadingState.Done && !data.error && (data.errors === undefined || data.errors.length === 0);
+  const reboundWm = useMemo(
+    () => (savedWm && dataComplete && data.series.length > 0 ? rebindLegacyQueryNames(savedWm, data.series) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [savedWm, dataComplete, data]
+  );
+  const wm = (reboundWm ?? savedWm) as Weathermap;
+
   // Persist the migrated options only after commit: calling onOptionsChange
   // during render is illegal in React (it updates the panel wrapper while this
   // component renders). The render above already uses the migrated copy, so
@@ -143,11 +164,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // options.weathermap.version === CURRENT_VERSION and this effect goes quiet.
   const needsMigrationPersist = Boolean(options.weathermap && needsMigration(options.weathermap));
   useEffect(() => {
-    if (needsMigrationPersist) {
+    if (needsMigrationPersist || reboundWm) {
       onOptionsChange({ weathermap: wm });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsMigrationPersist, wm]);
+  }, [needsMigrationPersist, reboundWm, wm]);
 
   // Check for editing-related feature set
   const isEditMode = locationService.getSearch().has('editPanel');

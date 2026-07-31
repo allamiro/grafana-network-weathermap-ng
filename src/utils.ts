@@ -641,6 +641,132 @@ export const buildQueryOptions = (frames: DataFrame[]): QueryOption[] => {
 };
 
 /**
+ * The display name the ORIGINAL knightss27-weathermap-panel stored for a
+ * frame: getFieldDisplayName of fields[1], computed without allFrames. This
+ * fork changed both parts — the value field is now the first numeric field
+ * (getValueField) and allFrames is passed so Grafana disambiguates duplicate
+ * names with refId/labels — so query bindings saved by the old plugin no
+ * longer match any current name (#331).
+ */
+export function getLegacyDataFrameName(frame: DataFrame): string | undefined {
+  if (frame.fields.length < 2) {
+    return undefined;
+  }
+  return getFieldDisplayName(frame.fields[1], frame);
+}
+
+/**
+ * Map of legacy (old-plugin) display names -> the current name of the same
+ * frame's primary value series (#331). An alias is only produced when it is
+ * unambiguous in BOTH directions: the legacy name resolves to exactly one
+ * current name, does not collide with any name the current scheme produces
+ * (a legacy name that equals a live name must never redirect it), and its
+ * target identifies exactly one live series (dataFrameMap resolves duplicate
+ * names first-match, so redirecting onto a duplicated name would silently
+ * bind a different series than the frame the alias came from).
+ */
+export function buildLegacyNameAliases(frames: DataFrame[]): Map<string, string> {
+  const currentNameCounts = new Map<string, number>();
+  const legacyTargets = new Map<string, Set<string>>();
+
+  for (const frame of frames) {
+    if (frame.fields.length < 2) {
+      continue;
+    }
+    try {
+      for (const { name } of getValueSeries(frame, frames)) {
+        currentNameCounts.set(name, (currentNameCounts.get(name) ?? 0) + 1);
+      }
+      const legacy = getLegacyDataFrameName(frame);
+      if (legacy) {
+        const targets = legacyTargets.get(legacy) ?? new Set<string>();
+        targets.add(getDataFrameName(frame, frames));
+        legacyTargets.set(legacy, targets);
+      }
+    } catch (e) {
+      // Frames without a usable value field can't be bound either way.
+    }
+  }
+
+  const aliases = new Map<string, string>();
+  legacyTargets.forEach((targets, legacy) => {
+    if (targets.size !== 1 || currentNameCounts.has(legacy)) {
+      return;
+    }
+    const target = targets.values().next().value!;
+    if (currentNameCounts.get(target) === 1) {
+      aliases.set(legacy, target);
+    }
+  });
+  return aliases;
+}
+
+/** Every query-binding string stored in a weathermap, in a stable order. */
+function collectQueryBindings(wm: Weathermap): Array<string | undefined> {
+  const bindings: Array<string | undefined> = [];
+  for (const link of wm.links) {
+    for (const side of ['A', 'Z'] as const) {
+      bindings.push(link.sides[side].query, link.sides[side].bandwidthQuery);
+    }
+    bindings.push(link.statusQuery);
+    for (const metric of link.tooltipMetrics ?? []) {
+      bindings.push(metric.queryA, metric.queryZ);
+    }
+  }
+  for (const node of wm.nodes) {
+    bindings.push(node.statusQuery);
+    for (const metric of node.tooltipMetrics ?? []) {
+      bindings.push(metric.query);
+    }
+  }
+  return bindings;
+}
+
+/**
+ * Rewrite query bindings saved by the original knightss27 plugin to the names
+ * this fork computes for the same frames (#331). Returns a rewritten copy when
+ * anything changed, or null when every stored name already resolves (the
+ * steady state, and the fast path on every data refresh). Only names that
+ * currently resolve to nothing and unambiguously match a legacy name are
+ * touched, so template-variable queries and working bindings pass through
+ * untouched. The steady state (nothing to rewrite) is detected on the
+ * original object — no clone or traversal allocation on ordinary refreshes,
+ * even for datasources whose legacy and current names permanently differ.
+ */
+export function rebindLegacyQueryNames(wm: Weathermap, frames: DataFrame[]): Weathermap | null {
+  const aliases = buildLegacyNameAliases(frames);
+  if (aliases.size === 0) {
+    return null;
+  }
+  if (!collectQueryBindings(wm).some((stored) => stored !== undefined && aliases.has(stored))) {
+    return null;
+  }
+
+  const remap = (stored: string | undefined): string | undefined =>
+    stored !== undefined && aliases.has(stored) ? aliases.get(stored) : stored;
+
+  const copy: Weathermap = JSON.parse(JSON.stringify(wm));
+  for (const link of copy.links) {
+    for (const side of ['A', 'Z'] as const) {
+      link.sides[side].query = remap(link.sides[side].query);
+      link.sides[side].bandwidthQuery = remap(link.sides[side].bandwidthQuery);
+    }
+    link.statusQuery = remap(link.statusQuery);
+    for (const metric of link.tooltipMetrics ?? []) {
+      metric.queryA = remap(metric.queryA);
+      metric.queryZ = remap(metric.queryZ);
+    }
+  }
+  for (const node of copy.nodes) {
+    node.statusQuery = remap(node.statusQuery);
+    for (const metric of node.tooltipMetrics ?? []) {
+      metric.query = remap(metric.query);
+    }
+  }
+  return copy;
+}
+
+/**
  * Schemes that are explicitly unsafe for navigation or resource loading.
  * Any absolute URL must use http:// or https:// — everything else is rejected.
  */
