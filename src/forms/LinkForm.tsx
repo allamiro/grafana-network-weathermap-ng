@@ -18,7 +18,7 @@ import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Weathermap, Node, Link, Anchor, LinkSide, LinkTooltipMetric } from 'types';
 import { FormDivider } from './FormDivider';
-import { buildQueryOptions, finiteOrFallback, parseOptionalFiniteNumber, sanitizeUrl } from 'utils';
+import { buildQueryOptions, finiteOrFallback, parseOptionalFiniteNumber, sanitizeUrl, sanitizeWaypoints } from 'utils';
 
 interface Settings {
   placeholder: string;
@@ -454,6 +454,117 @@ export const LinkForm = (props: Props) => {
                   name={'linkOffset'}
                 />
               </InlineField>
+              <FormDivider title="Waypoints (Polyline)" />
+              {/* Saved waypoints are hostile-input territory (hand-edited
+                  JSON): render and mutate through sanitizeWaypoints so a
+                  malformed entry can neither crash the editor nor write NaN
+                  back into the panel geometry. Mutations rebuild the whole
+                  array from the sanitized view (indexes match the render). */}
+              {sanitizeWaypoints(link.waypoints).map((wp, wpIndex) => (
+                <InlineFieldRow key={wpIndex}>
+                  <InlineField label={`#${wpIndex + 1} X`}>
+                    <Input
+                      value={wp.x}
+                      type={'number'}
+                      onChange={(e) => {
+                        let wm = structuredClone(value);
+                        const wps = sanitizeWaypoints(wm.links[i].waypoints);
+                        wps[wpIndex] = { ...wps[wpIndex], x: finiteOrFallback(e.currentTarget.valueAsNumber, wp.x) };
+                        wm.links[i].waypoints = wps;
+                        onChange(wm);
+                      }}
+                    />
+                  </InlineField>
+                  <InlineField label={'Y'}>
+                    <Input
+                      value={wp.y}
+                      type={'number'}
+                      onChange={(e) => {
+                        let wm = structuredClone(value);
+                        const wps = sanitizeWaypoints(wm.links[i].waypoints);
+                        wps[wpIndex] = { ...wps[wpIndex], y: finiteOrFallback(e.currentTarget.valueAsNumber, wp.y) };
+                        wm.links[i].waypoints = wps;
+                        onChange(wm);
+                      }}
+                    />
+                  </InlineField>
+                  <Button
+                    variant="destructive"
+                    icon="trash-alt"
+                    size="md"
+                    onClick={() => {
+                      let wm = structuredClone(value);
+                      const wps = sanitizeWaypoints(wm.links[i].waypoints);
+                      wps.splice(wpIndex, 1);
+                      if (wps.length === 0) {
+                        delete wm.links[i].waypoints;
+                      } else {
+                        wm.links[i].waypoints = wps;
+                      }
+                      onChange(wm);
+                    }}
+                    aria-label={`Remove waypoint ${wpIndex + 1}`}
+                  />
+                </InlineFieldRow>
+              ))}
+              <InlineFieldRow>
+                <Button
+                  variant="secondary"
+                  icon="plus"
+                  size="md"
+                  onClick={() => {
+                    let wm = structuredClone(value);
+                    const l = wm.links[i];
+                    const wps = sanitizeWaypoints(l.waypoints);
+                    // Endpoint positions come from the LIVE nodes (resolved by
+                    // id) — the node copies embedded in link.nodes go stale as
+                    // soon as an endpoint is dragged, and a midpoint seeded
+                    // from them can land far from the visible link.
+                    const liveA = wm.nodes.find((n) => n.id === l.nodes[0]?.id);
+                    const liveZ = wm.nodes.find((n) => n.id === l.nodes[1]?.id);
+                    const aPos = liveA?.position ?? l.nodes[0]?.position;
+                    const zPos = liveZ?.position ?? l.nodes[1]?.position;
+                    if (!aPos || !zPos) {
+                      return;
+                    }
+                    const from = wps.length > 0 ? wps[wps.length - 1] : { x: aPos[0], y: aPos[1] };
+                    const to = { x: zPos[0], y: zPos[1] };
+                    l.waypoints = [...wps, { x: Math.round((from.x + to.x) / 2), y: Math.round((from.y + to.y) / 2) }];
+                    onChange(wm);
+                  }}
+                >
+                  Add Waypoint
+                </Button>
+                {sanitizeWaypoints(link.waypoints).length > 0 && link.linkOffset ? (
+                  <InlineLabel width="auto">Link Offset is ignored while waypoints are set.</InlineLabel>
+                ) : null}
+              </InlineFieldRow>
+              {sanitizeWaypoints(link.waypoints).length > 0 ? (
+                <InlineField
+                  grow
+                  label={'Corner Radius'}
+                  className={styles.inlineField}
+                  tooltip={
+                    'Rounds each waypoint bend with a curve of this radius (px). 0 keeps sharp corners. The radius is clamped so neighboring bends never overlap.'
+                  }
+                >
+                  <Slider
+                    min={0}
+                    max={40}
+                    step={1}
+                    value={link.cornerRadius ?? 0}
+                    onChange={(num) => {
+                      let wm = structuredClone(value);
+                      if (num > 0) {
+                        wm.links[i].cornerRadius = num;
+                      } else {
+                        delete wm.links[i].cornerRadius;
+                      }
+                      onChange(wm);
+                    }}
+                  />
+                </InlineField>
+              ) : null}
               <InlineField
                 grow
                 label={'Single Direction (A → Z)'}

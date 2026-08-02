@@ -33,10 +33,20 @@ import {
   formatBytes,
   BG_IMAGE_MAX_BYTES,
   BG_IMAGE_WARN_BYTES,
+  sanitizeWaypoints,
+  roundPathCorners,
   valueAtTime,
   buildLegacyNameAliases,
   getLegacyDataFrameName,
   rebindLegacyQueryNames,
+  pathTotalLength,
+  pointAtPathLength,
+  pointAtPathPercent,
+  directionAtPathLength,
+  subPath,
+  pathToSvg,
+  pathToPoints,
+  nearestSegmentIndex,
 } from 'utils';
 
 test('getSolidFromAlphaColor', () => {
@@ -1108,5 +1118,227 @@ describe('background image size limits (#344)', () => {
     expect(formatBytes(NaN)).toBe('0 B');
     expect(formatBytes(-5)).toBe('0 B');
     expect(formatBytes(Infinity)).toBe('0 B');
+  });
+});
+
+describe('polyline path helpers (#332)', () => {
+  // A 3-4-5 L-shape: (0,0) -> (30,0) -> (30,40). Segment lengths 30 and 40.
+  const L = [
+    { x: 0, y: 0 },
+    { x: 30, y: 0 },
+    { x: 30, y: 40 },
+  ];
+
+  test('pathTotalLength sums segments; degenerate inputs are 0', () => {
+    expect(pathTotalLength(L)).toBe(70);
+    expect(pathTotalLength([{ x: 5, y: 5 }])).toBe(0);
+    expect(pathTotalLength([])).toBe(0);
+  });
+
+  test('pointAtPathLength walks across joints and clamps both ends', () => {
+    expect(pointAtPathLength(L, 15)).toEqual({ x: 15, y: 0 });
+    expect(pointAtPathLength(L, 30)).toEqual({ x: 30, y: 0 }); // exactly at the joint
+    expect(pointAtPathLength(L, 50)).toEqual({ x: 30, y: 20 }); // into the second segment
+    expect(pointAtPathLength(L, -5)).toEqual({ x: 0, y: 0 }); // clamped to start
+    expect(pointAtPathLength(L, 999)).toEqual({ x: 30, y: 40 }); // clamped to end
+  });
+
+  test('pointAtPathPercent maps 0/0.5/1 to start/arc-midpoint/end', () => {
+    expect(pointAtPathPercent(L, 0)).toEqual({ x: 0, y: 0 });
+    expect(pointAtPathPercent(L, 0.5)).toEqual({ x: 30, y: 5 }); // 35 of 70 = 5 into segment 2
+    expect(pointAtPathPercent(L, 1)).toEqual({ x: 30, y: 40 });
+  });
+
+  test('directionAtPathLength returns the containing segment direction, skipping zero-length segments', () => {
+    expect(directionAtPathLength(L, 10)).toEqual({ x: 1, y: 0 });
+    expect(directionAtPathLength(L, 50)).toEqual({ x: 0, y: 1 });
+    // Duplicate point creates a zero-length segment that must not yield NaN.
+    const withDup = [L[0], L[1], L[1], L[2]];
+    expect(directionAtPathLength(withDup, 50)).toEqual({ x: 0, y: 1 });
+    // A fully degenerate path falls back to +x.
+    expect(
+      directionAtPathLength(
+        [
+          { x: 3, y: 3 },
+          { x: 3, y: 3 },
+        ],
+        0
+      )
+    ).toEqual({ x: 1, y: 0 });
+  });
+
+  test('subPath keeps interior bends and interpolates both cut points', () => {
+    expect(subPath(L, 10, 50)).toEqual([
+      { x: 10, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 20 },
+    ]);
+    // Cuts inside a single segment produce a straight two-point path.
+    expect(subPath(L, 5, 25)).toEqual([
+      { x: 5, y: 0 },
+      { x: 25, y: 0 },
+    ]);
+    // Degenerate range collapses to two identical points.
+    expect(subPath(L, 30, 30)).toEqual([
+      { x: 30, y: 0 },
+      { x: 30, y: 0 },
+    ]);
+    // A full-range subPath reproduces the whole polyline.
+    expect(subPath(L, 0, 70)).toEqual(L);
+  });
+
+  test('pathToSvg and pathToPoints serialize for animateMotion and <polyline>', () => {
+    expect(pathToSvg(L)).toBe('M 0 0 L 30 0 L 30 40');
+    expect(pathToPoints(L)).toBe('0,0 30,0 30,40');
+  });
+
+  test('spreadLabels slides polyline labels along the path, not the chord', () => {
+    // One label on the L-shape path with no competitors: keeps its preferred
+    // offset, and that offset resolves to a point ON the path.
+    const result = spreadLabels([
+      {
+        key: 'wp:A',
+        segment: { x1: 0, y1: 0, x2: 30, y2: 40 },
+        path: L,
+        offsetPercent: 50,
+        width: 10,
+        height: 5,
+      },
+    ]);
+    expect(result.get('wp:A')).toBe(50);
+  });
+});
+
+describe('waypoint sanitization and VIA interop (#332 review hardening)', () => {
+  test('sanitizeWaypoints drops malformed entries and non-arrays', () => {
+    expect(sanitizeWaypoints(undefined)).toEqual([]);
+    expect(sanitizeWaypoints('junk')).toEqual([]);
+    expect(sanitizeWaypoints({ x: 1, y: 2 })).toEqual([]);
+    expect(
+      sanitizeWaypoints([
+        { x: 10, y: 20 },
+        { x: NaN, y: 5 },
+        { x: 5, y: Infinity },
+        null,
+        'garbage',
+        { x: '30', y: 40 },
+        { y: 50 },
+        { x: 60, y: 70 },
+      ])
+    ).toEqual([
+      { x: 10, y: 20 },
+      { x: 60, y: 70 },
+    ]);
+    // returns fresh objects, never aliases of the input
+    const src = [{ x: 1, y: 2 }];
+    const out = sanitizeWaypoints(src);
+    expect(out[0]).not.toBe(src[0]);
+  });
+
+  test('inserting a VIA clears waypoints from BOTH resulting segments', () => {
+    const wm: Weathermap = JSON.parse(JSON.stringify(getData(theme)));
+    wm.links[0].waypoints = [
+      { x: 250, y: 200 },
+      { x: 350, y: 200 },
+    ];
+    const updated = addViaToLink(wm, wm.links[0].id, theme);
+    expect(updated.links).toHaveLength(2);
+    // Copying the full A->Z bend list onto each half would make both halves
+    // retrace every bend (looping); a VIA insert resets polyline routing.
+    expect(updated.links[0].waypoints).toBeUndefined();
+    expect(updated.links[1].waypoints).toBeUndefined();
+  });
+
+  test('removing a VIA concatenates the two segments’ waypoints in path order', () => {
+    const wm: Weathermap = JSON.parse(JSON.stringify(getData(theme)));
+    const split = addViaToLink(wm, wm.links[0].id, theme);
+    split.links[0].waypoints = [{ x: 210, y: 250 }];
+    split.links[1].waypoints = [{ x: 390, y: 250 }];
+    const conn = split.nodes.find((n) => n.isConnection)!;
+    const merged = removeVia(split, conn.id);
+    expect(merged.links).toHaveLength(1);
+    expect(merged.links[0].waypoints).toEqual([
+      { x: 210, y: 250 },
+      { x: 390, y: 250 },
+    ]);
+  });
+
+  test('removing a VIA between waypoint-less segments stays waypoint-less', () => {
+    const wm: Weathermap = JSON.parse(JSON.stringify(getData(theme)));
+    const split = addViaToLink(wm, wm.links[0].id, theme);
+    const conn = split.nodes.find((n) => n.isConnection)!;
+    const merged = removeVia(split, conn.id);
+    expect(merged.links[0].waypoints).toBeUndefined();
+  });
+});
+
+describe('roundPathCorners (#336)', () => {
+  const L = [
+    { x: 0, y: 0 },
+    { x: 30, y: 0 },
+    { x: 30, y: 40 },
+  ];
+
+  test('radius 0 and bend-less paths pass through untouched', () => {
+    expect(roundPathCorners(L, 0)).toBe(L);
+    const straight = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ];
+    expect(roundPathCorners(straight, 10)).toBe(straight);
+  });
+
+  test('a bend is replaced by a curve entering and exiting radius px from the corner', () => {
+    const out = roundPathCorners(L, 10);
+    expect(out[0]).toEqual({ x: 0, y: 0 });
+    expect(out[out.length - 1]).toEqual({ x: 30, y: 40 });
+    // curve entry: 10px before the corner along segment 1
+    expect(out[1]).toEqual({ x: 20, y: 0 });
+    // curve exit: 10px after the corner along segment 2
+    expect(out[out.length - 2]).toEqual({ x: 30, y: 10 });
+    // the sharp vertex itself is gone
+    expect(out.some((p) => p.x === 30 && p.y === 0)).toBe(false);
+    // rounding cuts the corner: total arc length strictly decreases
+    expect(pathTotalLength(out)).toBeLessThan(pathTotalLength(L));
+  });
+
+  test('radius clamps to half of the shorter adjacent segment', () => {
+    const out = roundPathCorners(L, 100); // min(100, 30/2, 40/2) -> symmetric r = 15
+    expect(out[1]).toEqual({ x: 15, y: 0 });
+    expect(out[out.length - 2]).toEqual({ x: 30, y: 15 });
+  });
+
+  test('zero-length segments at a bend are kept as sharp points, never NaN', () => {
+    const withDup = [{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 40 }];
+    const out = roundPathCorners(withDup, 10);
+    out.forEach((p) => {
+      expect(Number.isFinite(p.x)).toBe(true);
+      expect(Number.isFinite(p.y)).toBe(true);
+    });
+  });
+});
+
+describe('nearestSegmentIndex (#336)', () => {
+  const path = [
+    { x: 0, y: 0 },
+    { x: 100, y: 0 },
+    { x: 100, y: 100 },
+  ];
+  test('picks the segment closest to the point', () => {
+    expect(nearestSegmentIndex(path, { x: 50, y: 10 })).toBe(0);
+    expect(nearestSegmentIndex(path, { x: 90, y: 50 })).toBe(1);
+  });
+  test('clamps beyond segment ends and handles degenerate paths', () => {
+    expect(nearestSegmentIndex(path, { x: -50, y: 5 })).toBe(0);
+    expect(nearestSegmentIndex([{ x: 5, y: 5 }], { x: 0, y: 0 })).toBe(0);
+    expect(
+      nearestSegmentIndex(
+        [
+          { x: 5, y: 5 },
+          { x: 5, y: 5 },
+        ],
+        { x: 0, y: 0 }
+      )
+    ).toBe(0);
   });
 });

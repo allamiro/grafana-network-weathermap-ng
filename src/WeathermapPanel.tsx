@@ -61,6 +61,16 @@ import {
   utilizationToSpeed,
   utilizationToDotCount,
   rebindLegacyQueryNames,
+  pathTotalLength,
+  pointAtPathLength,
+  pointAtPathPercent,
+  directionAtPathLength,
+  subPath,
+  pathToSvg,
+  pathToPoints,
+  sanitizeWaypoints,
+  roundPathCorners,
+  nearestSegmentIndex,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -239,6 +249,22 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     };
   }, [isEditMode, bgConfiguredSrc, bgSafeSrc]);
 
+  // In-flight waypoint drag (#336): state drives the handle/preview render,
+  // wpDragRef is the commit source of truth (event closures can be stale),
+  // and wpPointerRef tracks the captured pointer with a FLOAT position
+  // accumulator so zoomed-in sub-pixel deltas never stall on rounding.
+  const [wpDrag, setWpDrag] = useState<{ linkId: string; wps: Position[] } | null>(null);
+  const wpDragRef = useRef<{ linkId: string; wps: Position[] } | null>(null);
+  const wpPointerRef = useRef<{
+    linkId: string;
+    wi: number;
+    pointerId: number;
+    lastX: number;
+    lastY: number;
+    accX: number;
+    accY: number;
+  } | null>(null);
+
   // Timeline slider (#158): when scrubbing, holds the selected timestamp (ms).
   // null means "live" — resolve values with the normal value-mapping mode.
   const timelineEnabled = Boolean(wm?.settings?.link?.timeline?.enabled);
@@ -290,18 +316,6 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     const newX = target.x + (source.x - target.x) * percent;
     const newY = target.y + (source.y - target.y) * percent;
     return { x: newX, y: newY };
-  }
-
-  // Shift a base point along the (from -> to) direction by `offset`. Lets the
-  // arrow "meeting point" sit at an arbitrary base rather than the fixed midpoint.
-  function shiftAlong(base: Position, from: Position, to: Position, offset: number): Position {
-    const a = to.x - from.x;
-    const b = to.y - from.y;
-    const dist = Math.sqrt(a * a + b * b);
-    if (dist === 0) {
-      return { x: base.x, y: base.y };
-    }
-    return { x: base.x - (offset * a) / dist, y: base.y - (offset * b) / dist };
   }
 
   // Find the points that create the two other points of a triangle for the arrow's tip
@@ -553,7 +567,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     toReturn.lineStartA = getMultiLinkPosition(tempNodes[toReturn.source.index], toReturn.sides.A);
     toReturn.lineStartZ = getMultiLinkPosition(tempNodes[toReturn.target.index], toReturn.sides.Z);
 
-    if (d.linkOffset) {
+    // Polyline waypoints (#332) and linkOffset are mutually exclusive —
+    // per-segment parallel offsetting of a bent path needs join math this
+    // renderer doesn't do, so waypoints win and linkOffset is ignored.
+    // Persisted waypoints are hostile-input territory (hand-edited JSON):
+    // sanitize before any arc-length math so NaN never reaches the SVG.
+    const waypoints = sanitizeWaypoints(d.waypoints);
+    const hasWaypoints = waypoints.length > 0;
+    if (d.linkOffset && !hasWaypoints) {
       const dx = toReturn.lineStartZ.x - toReturn.lineStartA.x;
       const dy = toReturn.lineStartZ.y - toReturn.lineStartA.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -565,44 +586,52 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       }
     }
 
+    // The full drawn path (#332): straight links are the two-point path, for
+    // which every arc-length computation below reduces to the old chord math.
+    // Optional rounded corners (#336): bends flatten to a dense polyline, so
+    // every arc-length consumer below works unchanged. Handles keep editing
+    // the RAW waypoints — rounding is render-only derivation.
+    const cornerRadius = Number.isFinite(d.cornerRadius) ? Math.max(0, d.cornerRadius!) : 0;
+    const rawPath: Position[] = [toReturn.lineStartA, ...waypoints, toReturn.lineStartZ];
+    const pathPoints: Position[] = hasWaypoints && cornerRadius > 0 ? roundPathCorners(rawPath, cornerRadius) : rawPath;
+    const totalLen = pathTotalLength(pathPoints);
+
     // The point where the two directional arrows meet. Defaults to the midpoint
-    // (50%) but can be shifted along the A->Z line via arrowMeetPercent (#62).
+    // (50%) but can be shifted along the path via arrowMeetPercent (#62).
     // Clamped to keep the junction from overlapping either node box.
     const meetPercent = Math.min(95, Math.max(5, d.arrowMeetPercent ?? 50)) / 100;
-    const meetPoint: Position = {
-      x: toReturn.lineStartA.x + (toReturn.lineStartZ.x - toReturn.lineStartA.x) * meetPercent,
-      y: toReturn.lineStartA.y + (toReturn.lineStartZ.y - toReturn.lineStartA.y) * meetPercent,
-    };
+    const meetDist = totalLen * meetPercent;
 
-    toReturn.lineEndA = shiftAlong(
-      meetPoint,
-      toReturn.lineStartZ,
-      toReturn.lineStartA,
-      -toReturn.arrows.offset - toReturn.arrows.height
-    );
+    let distEndA = Math.max(0, meetDist - toReturn.arrows.offset - toReturn.arrows.height);
+    toReturn.lineEndA = pointAtPathLength(pathPoints, distEndA);
 
     if (tempNodes[toReturn.target.index].isConnection) {
+      distEndA = totalLen;
       toReturn.lineEndA = toReturn.lineStartZ;
-      toReturn.lineEndZ = toReturn.lineStartZ;
     }
 
-    toReturn.arrowCenterA = shiftAlong(meetPoint, toReturn.lineStartZ, toReturn.lineStartA, -toReturn.arrows.offset);
+    // Arrow orientation uses the chord of the arrow's own FOOTPRINT (the
+    // path point one arrow-height behind the tip -> the tip), not the tip's
+    // containing segment. On straight paths this is identical; on polylines
+    // it keeps the arrowhead visually attached when its footprint crosses a
+    // bend, and it is unambiguous when the tip lands exactly on a joint.
+    const aCenterDist = Math.max(0, meetDist - toReturn.arrows.offset);
+    toReturn.arrowCenterA = pointAtPathLength(pathPoints, aCenterDist);
     toReturn.arrowPolygonA = getArrowPolygon(
-      toReturn.lineStartA,
+      pointAtPathLength(pathPoints, Math.max(0, aCenterDist - toReturn.arrows.height)),
       toReturn.arrowCenterA,
       toReturn.arrows.height,
       toReturn.arrows.width
     );
 
-    toReturn.lineEndZ = shiftAlong(
-      meetPoint,
-      toReturn.lineStartZ,
-      toReturn.lineStartA,
-      toReturn.arrows.offset + toReturn.arrows.height
-    );
-    toReturn.arrowCenterZ = shiftAlong(meetPoint, toReturn.lineStartZ, toReturn.lineStartA, toReturn.arrows.offset);
+    const distEndZ = Math.min(totalLen, meetDist + toReturn.arrows.offset + toReturn.arrows.height);
+    toReturn.lineEndZ = pointAtPathLength(pathPoints, distEndZ);
+    const zCenterDist = Math.min(totalLen, meetDist + toReturn.arrows.offset);
+    toReturn.arrowCenterZ = pointAtPathLength(pathPoints, zCenterDist);
+    // The Z arrow travels against the path direction (Z -> meet), so its
+    // footprint extends toward Z (further along the path).
     toReturn.arrowPolygonZ = getArrowPolygon(
-      toReturn.lineStartZ,
+      pointAtPathLength(pathPoints, Math.min(totalLen, zCenterDist + toReturn.arrows.height)),
       toReturn.arrowCenterZ,
       toReturn.arrows.height,
       toReturn.arrows.width
@@ -612,20 +641,22 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // arrow at the Z node edge. VIA middle segments (connection targets) are
     // already full-length with no arrows, so only final segments change.
     if (d.singleDirection && !tempNodes[toReturn.target.index].isConnection) {
-      toReturn.lineEndA = shiftAlong(
-        toReturn.lineStartZ,
-        toReturn.lineStartZ,
-        toReturn.lineStartA,
-        -toReturn.arrows.height
-      );
-      toReturn.arrowCenterA = toReturn.lineStartZ;
+      distEndA = Math.max(0, totalLen - toReturn.arrows.height);
+      toReturn.lineEndA = pointAtPathLength(pathPoints, distEndA);
+      toReturn.arrowCenterA = { ...toReturn.lineStartZ };
       toReturn.arrowPolygonA = getArrowPolygon(
-        toReturn.lineStartA,
-        toReturn.arrowCenterA,
+        pointAtPathLength(pathPoints, distEndA),
+        toReturn.lineStartZ,
         toReturn.arrows.height,
         toReturn.arrows.width
       );
     }
+
+    // The rendered halves: A draws node -> its arrow end, Z draws node -> its
+    // arrow end (reversed so index 0 is at the Z node, mirroring lineStartZ).
+    toReturn.pathPoints = pathPoints;
+    toReturn.pathPointsA = subPath(pathPoints, 0, distEndA);
+    toReturn.pathPointsZ = subPath(pathPoints, distEndZ, totalLen).reverse();
 
     if (d.statusQuery) {
       const sv = frameMap.get(d.statusQuery);
@@ -937,9 +968,17 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       if (d.nodes[0].id === d.nodes[1].id) {
         continue;
       }
+      // Polyline links (#332) slide their labels along the drawn path. The
+      // path must be oriented the way the RENDER measures each label: the A
+      // label percent counts from the A node (forward path), the Z label
+      // percent counts from the Z node (reversed path) — otherwise the
+      // collision solver evaluates boxes at the mirror-image position and
+      // resolves overlaps that don't exist while missing real ones.
+      const pts = d.pathPoints && d.pathPoints.length > 2 ? d.pathPoints : undefined;
       placements.push({
         key: `${d.id}:A`,
         segment: { x1: d.lineStartZ.x, y1: d.lineStartZ.y, x2: d.lineStartA.x, y2: d.lineStartA.y },
+        path: pts,
         offsetPercent: (tempNodes[d.target.index].isConnection ? 1 : 0.5) * d.sides.A.labelOffset,
         width: measureText(`${d.sides.A.currentText}`, fs).width + fs * 1.5,
         height: fs * 2,
@@ -948,6 +987,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         placements.push({
           key: `${d.id}:Z`,
           segment: { x1: d.lineStartA.x, y1: d.lineStartA.y, x2: d.lineStartZ.x, y2: d.lineStartZ.y },
+          path: pts ? [...pts].reverse() : undefined,
           offsetPercent: 0.5 * d.sides.Z.labelOffset,
           width: measureText(`${d.sides.Z.currentText}`, fs).width + fs * 1.5,
           height: fs * 2,
@@ -960,6 +1000,47 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // VIA editing on the canvas (#67): double-click a link to insert a waypoint
   // (a connection node at the link midpoint, which can then be dragged), and
   // right-click a VIA to remove it and merge the two segments back together.
+  // Right-click a link in edit mode to insert a WAYPOINT at the clicked spot
+  // (#336): the complement of double-click-adds-VIA. The click position maps
+  // to panel coordinates through the element's own screen CTM (covers zoom,
+  // pan, panel offset, and browser zoom); the new point is inserted into the
+  // waypoint list at the segment nearest the click so the path keeps its
+  // order. jsdom has no CTM — fall back to the path midpoint there.
+  const handleAddWaypointAt = (d: DrawnLink, e: React.MouseEvent<SVGElement>) => {
+    if (!isEditMode) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    // Map the click through the SVG ROOT's CTM: the panel pans/zooms via the
+    // viewBox (no inner transform group), so root-CTM inverse == panel
+    // coordinates regardless of WHICH child was clicked — the line, an arrow,
+    // or a translated value-label group.
+    const owner = (e.currentTarget as SVGGraphicsElement).ownerSVGElement;
+    let clickPt: Position | null = null;
+    const ctm = owner && typeof owner.getScreenCTM === 'function' ? owner.getScreenCTM() : null;
+    if (ctm && owner && typeof owner.createSVGPoint === 'function') {
+      const sp = owner.createSVGPoint();
+      sp.x = e.clientX;
+      sp.y = e.clientY;
+      const local = sp.matrixTransform(ctm.inverse());
+      clickPt = { x: Math.round(local.x), y: Math.round(local.y) };
+    }
+    const raw = sanitizeWaypoints(d.waypoints);
+    const pts: Position[] = [d.lineStartA, ...raw, d.lineStartZ];
+    const point = clickPt ?? pointAtPathPercent(pts, 0.5);
+    const insertAt = nearestSegmentIndex(pts, point);
+    const nextWps = [...raw];
+    nextWps.splice(insertAt, 0, point);
+    const updated = structuredClone(wm);
+    const li = updated.links.findIndex((l) => l.id === d.id);
+    if (li < 0) {
+      return;
+    }
+    updated.links[li].waypoints = nextWps;
+    onOptionsChange({ ...options, weathermap: updated });
+  };
+
   const handleAddVia = (linkId: string, e: React.MouseEvent<SVGElement>) => {
     if (!isEditMode) {
       return;
@@ -1748,8 +1829,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     height={Math.abs(d.target.y - d.source.y)}
                     style={isEditMode ? { cursor: 'copy' } : undefined}
                     onDoubleClick={(e) => handleAddVia(d.id, e)}
+                    onContextMenu={(e) => handleAddWaypointAt(d, e)}
                   >
-                    <line
+                    <polyline
                       strokeWidth={getLinkStroke(d.sides.A.currentValue, d.sides.A.bandwidth, d.stroke)}
                       stroke={
                         d.isDown
@@ -1759,10 +1841,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           : getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)
                       }
                       strokeDasharray={d.isDown ? '8 4' : undefined}
-                      x1={d.lineStartA.x}
-                      y1={d.lineStartA.y}
-                      x2={d.lineEndA.x}
-                      y2={d.lineEndA.y}
+                      fill="none"
+                      strokeLinejoin="round"
+                      points={pathToPoints(d.pathPointsA ?? [d.lineStartA, d.lineEndA])}
                       onMouseMove={(e) => {
                         handleLinkHover(d, 'A', e);
                       }}
@@ -1783,7 +1864,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                             }
                           : {}),
                       }}
-                    ></line>
+                    ></polyline>
                     {tempNodes[d.source.index].isConnection ? (
                       <circle
                         cx={d.lineStartA.x}
@@ -1828,7 +1909,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         ></polygon>
                         {!d.singleDirection && (
                         <React.Fragment>
-                        <line
+                        <polyline
                           strokeWidth={getLinkStroke(d.sides.Z.currentValue, d.sides.Z.bandwidth, d.stroke)}
                           stroke={
                             d.isDown
@@ -1838,10 +1919,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                               : getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)
                           }
                           strokeDasharray={d.isDown ? '8 4' : undefined}
-                          x1={d.lineStartZ.x}
-                          y1={d.lineStartZ.y}
-                          x2={d.lineEndZ.x}
-                          y2={d.lineEndZ.y}
+                          fill="none"
+                          strokeLinejoin="round"
+                          points={pathToPoints(d.pathPointsZ ?? [d.lineStartZ, d.lineEndZ])}
                           onMouseMove={(e) => {
                             handleLinkHover(d, 'Z', e);
                           }}
@@ -1862,7 +1942,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                                 }
                               : {}),
                           }}
-                        ></line>
+                        ></polyline>
                         <polygon
                           points={`
                                         ${d.arrowCenterZ.x}
@@ -1906,7 +1986,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 const aPct =
                   collisionOffsets?.get(`${d.id}:A`) ??
                   (tempNodes[d.target.index].isConnection ? 1 : 0.5) * d.sides.A.labelOffset;
-                const transform = getPercentPoint(d.lineStartZ, d.lineStartA, aPct / 100);
+                // Fraction measured from the A node, along the drawn path (#332).
+                const transform =
+                  d.pathPoints && d.pathPoints.length > 2
+                    ? pointAtPathPercent(d.pathPoints, aPct / 100)
+                    : getPercentPoint(d.lineStartZ, d.lineStartA, aPct / 100);
                 return (
                   <g
                     fontStyle={'italic'}
@@ -1916,6 +2000,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       handleLinkHover(d, 'A', e);
                     }}
                     onMouseOut={handleLinkHoverLoss}
+                    onContextMenu={(e) => handleAddWaypointAt(d, e)}
                     key={i}
                   >
                     <rect
@@ -1963,7 +2048,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   return;
                 }
                 const zPct = collisionOffsets?.get(`${d.id}:Z`) ?? 0.5 * d.sides.Z.labelOffset;
-                const transform = getPercentPoint(d.lineStartA, d.lineStartZ, zPct / 100);
+                // Fraction measured from the Z node, along the drawn path (#332).
+                const transform =
+                  d.pathPoints && d.pathPoints.length > 2
+                    ? pointAtPathPercent(d.pathPoints, 1 - zPct / 100)
+                    : getPercentPoint(d.lineStartA, d.lineStartZ, zPct / 100);
                 return (
                   <g
                     fontStyle={'italic'}
@@ -1973,6 +2062,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       handleLinkHover(d, 'Z', e);
                     }}
                     onMouseOut={handleLinkHoverLoss}
+                    onContextMenu={(e) => handleAddWaypointAt(d, e)}
                     key={i}
                   >
                     <rect
@@ -2014,34 +2104,73 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 if (d.nodes[0].id === d.nodes[1].id) {
                   return;
                 }
-                const dx = d.lineEndA.x - d.lineStartA.x;
-                const dy = d.lineEndA.y - d.lineStartA.y;
-                const len = Math.sqrt(dx * dx + dy * dy);
-                if (len === 0) {
-                  return;
-                }
-                let angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-                const flipped = angleDeg > 90 || angleDeg < -90;
-                if (flipped) {
-                  angleDeg += 180;
-                }
+                const hasBends = Boolean(d.pathPoints && d.pathPoints.length > 2);
                 const perpOffset = -(d.stroke / 2 + wm.settings.fontSizing.link / 2 + 2);
-                const labelDist = Math.min(len * 0.25, 30);
+                const normalize = (raw: number) => {
+                  const isFlipped = raw > 90 || raw < -90;
+                  return { angle: isFlipped ? raw + 180 : raw, flipped: isFlipped };
+                };
 
-                // Slide the port label along the link axis (#309): add a signed
-                // percentage of the link length to the default distance, clamped
-                // so it never lands behind its own endpoint. Unset/0 = default.
-                const zdx = d.lineEndZ.x - d.lineStartZ.x;
-                const zdy = d.lineEndZ.y - d.lineStartZ.y;
-                const zlen = Math.sqrt(zdx * zdx + zdy * zdy);
-                const aDist = Math.max(0, labelDist + ((d.sides.A.portLabelOffset ?? 0) / 100) * len);
-                const zDist = Math.max(0, labelDist + ((d.sides.Z.portLabelOffset ?? 0) / 100) * (zlen || len));
+                let aPosX: number, aPosY: number, zPosX: number, zPosY: number;
+                let aAngle: number, zAngle: number, zFlipped: boolean;
 
-                const aPosX = d.lineStartA.x + (dx / len) * aDist;
-                const aPosY = d.lineStartA.y + (dy / len) * aDist;
+                if (hasBends) {
+                  // Polyline link (#332): each port label sits at an arc
+                  // distance from its own node, but BOTH rotations come from
+                  // the forward (A->Z) path direction at that point. Sampling
+                  // the Z direction on the reversed half-path would flip its
+                  // normalized angle, silently moving the Z label to the other
+                  // side of the line than a straight link puts it.
+                  const full = d.pathPoints ?? [d.lineStartA, d.lineStartZ];
+                  const fullLen = pathTotalLength(full);
+                  const lenA = pathTotalLength(d.pathPointsA ?? [d.lineStartA, d.lineEndA]);
+                  const lenZ = pathTotalLength(d.pathPointsZ ?? [d.lineStartZ, d.lineEndZ]);
+                  if (lenA === 0 || fullLen === 0) {
+                    return;
+                  }
+                  const labelDist = Math.min(lenA * 0.25, 30);
+                  const aDist = Math.max(0, labelDist + ((d.sides.A.portLabelOffset ?? 0) / 100) * lenA);
+                  const zDist = Math.max(0, labelDist + ((d.sides.Z.portLabelOffset ?? 0) / 100) * (lenZ || lenA));
+                  const aPos = pointAtPathLength(full, aDist);
+                  const zPos = pointAtPathLength(full, Math.max(0, fullLen - zDist));
+                  const aDir = directionAtPathLength(full, aDist);
+                  const zDir = directionAtPathLength(full, Math.max(0, fullLen - zDist));
+                  aPosX = aPos.x;
+                  aPosY = aPos.y;
+                  zPosX = zPos.x;
+                  zPosY = zPos.y;
+                  const aNorm = normalize(Math.atan2(aDir.y, aDir.x) * (180 / Math.PI));
+                  const zNorm = normalize(Math.atan2(zDir.y, zDir.x) * (180 / Math.PI));
+                  aAngle = aNorm.angle;
+                  zAngle = zNorm.angle;
+                  zFlipped = zNorm.flipped;
+                } else {
+                  const dx = d.lineEndA.x - d.lineStartA.x;
+                  const dy = d.lineEndA.y - d.lineStartA.y;
+                  const len = Math.sqrt(dx * dx + dy * dy);
+                  if (len === 0) {
+                    return;
+                  }
+                  const norm = normalize(Math.atan2(dy, dx) * (180 / Math.PI));
+                  const labelDist = Math.min(len * 0.25, 30);
 
-                const zPosX = zlen > 0 ? d.lineStartZ.x + (zdx / zlen) * zDist : d.lineStartZ.x;
-                const zPosY = zlen > 0 ? d.lineStartZ.y + (zdy / zlen) * zDist : d.lineStartZ.y;
+                  // Slide the port label along the link axis (#309): add a signed
+                  // percentage of the link length to the default distance, clamped
+                  // so it never lands behind its own endpoint. Unset/0 = default.
+                  const zdx = d.lineEndZ.x - d.lineStartZ.x;
+                  const zdy = d.lineEndZ.y - d.lineStartZ.y;
+                  const zlen = Math.sqrt(zdx * zdx + zdy * zdy);
+                  const aDist = Math.max(0, labelDist + ((d.sides.A.portLabelOffset ?? 0) / 100) * len);
+                  const zDist = Math.max(0, labelDist + ((d.sides.Z.portLabelOffset ?? 0) / 100) * (zlen || len));
+
+                  aPosX = d.lineStartA.x + (dx / len) * aDist;
+                  aPosY = d.lineStartA.y + (dy / len) * aDist;
+                  zPosX = zlen > 0 ? d.lineStartZ.x + (zdx / zlen) * zDist : d.lineStartZ.x;
+                  zPosY = zlen > 0 ? d.lineStartZ.y + (zdy / zlen) * zDist : d.lineStartZ.y;
+                  aAngle = norm.angle;
+                  zAngle = norm.angle;
+                  zFlipped = norm.flipped;
+                }
 
                 return (
                   <React.Fragment key={i}>
@@ -2051,7 +2180,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         so without this guard the port label would re-render at
                         each VIA bend. */}
                     {d.sides.A.portLabel && !tempNodes[d.source.index]?.isConnection && (
-                      <g transform={`translate(${aPosX},${aPosY}) rotate(${angleDeg})`}>
+                      <g transform={`translate(${aPosX},${aPosY}) rotate(${aAngle})`}>
                         <text
                           x={0}
                           y={perpOffset - (d.sides.A.portLabelDistance ?? 0)}
@@ -2066,11 +2195,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       </g>
                     )}
                     {d.sides.Z.portLabel && !tempNodes[d.target.index]?.isConnection && (
-                      <g transform={`translate(${zPosX},${zPosY}) rotate(${angleDeg})`}>
+                      <g transform={`translate(${zPosX},${zPosY}) rotate(${zAngle})`}>
                         <text
                           x={0}
                           y={
-                            flipped
+                            zFlipped
                               ? -perpOffset + (d.sides.Z.portLabelDistance ?? 0)
                               : perpOffset - (d.sides.Z.portLabelDistance ?? 0)
                           }
@@ -2127,8 +2256,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     return (
                       <g key={`${d.id}-anim-down`} pointerEvents="none">
                         {[0.25, 0.5, 0.75].map((t) => {
-                          const mx = d.lineStartA.x + (d.lineStartZ.x - d.lineStartA.x) * t;
-                          const my = d.lineStartA.y + (d.lineStartZ.y - d.lineStartA.y) * t;
+                          // Along the drawn path (#332) — the straight chord for
+                          // ordinary links, the polyline for waypointed ones.
+                          const mPos = pointAtPathPercent(d.pathPoints ?? [d.lineStartA, d.lineStartZ], t);
+                          const mx = mPos.x;
+                          const my = mPos.y;
                           return (
                             <g key={t} data-testid="link-down-marker">
                               <circle
@@ -2157,11 +2289,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       </g>
                     );
                   }
-                  const dirs: Array<{ key: string; from: Position; to: Position; value: number; bandwidth: number }> = [
+                  // Dots travel the full drawn path (#332): the straight chord
+                  // for ordinary links, the polyline for waypointed ones.
+                  const fullPath = d.pathPoints ?? [d.lineStartA, d.lineStartZ];
+                  const dirs: Array<{ key: string; path: Position[]; value: number; bandwidth: number }> = [
                     {
                       key: 'A',
-                      from: d.lineStartA,
-                      to: d.lineStartZ,
+                      path: fullPath,
                       value: d.sides.A.currentValue,
                       bandwidth: d.sides.A.bandwidth,
                     },
@@ -2169,8 +2303,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   if (!d.singleDirection) {
                     dirs.push({
                       key: 'Z',
-                      from: d.lineStartZ,
-                      to: d.lineStartA,
+                      path: [...fullPath].reverse(),
                       value: d.sides.Z.currentValue,
                       bandwidth: d.sides.Z.bandwidth,
                     });
@@ -2185,7 +2318,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     if (dotCount === 0 || speed === 0) {
                       return null;
                     }
-                    const length = Math.hypot(dir.to.x - dir.from.x, dir.to.y - dir.from.y);
+                    const length = pathTotalLength(dir.path);
                     if (!Number.isFinite(length) || length === 0) {
                       return null;
                     }
@@ -2202,7 +2335,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                             opacity={0.9}
                           >
                             <animateMotion
-                              path={`M ${dir.from.x} ${dir.from.y} L ${dir.to.x} ${dir.to.y}`}
+                              path={pathToSvg(dir.path)}
                               dur={`${dur}s`}
                               begin={`${-((dotIndex * dur) / dotCount)}s`}
                               repeatCount="indefinite"
@@ -2312,6 +2445,190 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   }}
                 />
               ))}
+            </g>
+            <g>
+              {/*
+                Waypoint drag handles (#336 phase 3, edit mode only), built on
+                Pointer Events with setPointerCapture: the handle keeps
+                receiving moves even when the cursor leaves the handle, the
+                SVG, or the panel entirely, and pointerup/pointercancel are
+                delivered wherever the button is released. Same interaction
+                contract as node drags otherwise: zoom/aspect-corrected
+                deltas (kept as a FLOAT accumulator so zoomed-in sub-pixel
+                moves never stall), continuous preview by regenerating the
+                drawn links each move, ONE options commit on release
+                (undo-friendly). Right-click a handle removes its waypoint;
+                Delete/Backspace does the same from the keyboard, and arrow
+                keys nudge by 1px (Shift = 10px, grid size when snapping).
+                Handles edit RAW waypoints — cornerRadius is render-only.
+              */}
+              {isEditMode &&
+                resolvedLinks.map((d) => {
+                  const isDraggingThis = wpDrag && wpDrag.linkId === d.id;
+                  const wps = isDraggingThis ? wpDrag!.wps : sanitizeWaypoints(d.waypoints);
+                  const linkLabel = `${d.source?.label || 'A'} – ${d.target?.label || 'Z'}`;
+                  return wps.map((wp, wi) => {
+                    const snap = (v: number) =>
+                      wm.settings.panel.grid.enabled ? nearestMultiple(v, wm.settings.panel.grid.size) : Math.round(v);
+                    const commitWaypoints = (next: Position[] | null) => {
+                      const updated = structuredClone(wm);
+                      const li = updated.links.findIndex((l) => l.id === d.id);
+                      if (li < 0) {
+                        return;
+                      }
+                      if (next && next.length > 0) {
+                        updated.links[li].waypoints = next;
+                      } else {
+                        delete updated.links[li].waypoints;
+                      }
+                      onOptionsChange({ ...options, weathermap: updated });
+                    };
+                    const removeThis = () => {
+                      const remaining = sanitizeWaypoints(d.waypoints);
+                      remaining.splice(wi, 1);
+                      commitWaypoints(remaining);
+                    };
+                    const isActivePointer = (e: React.PointerEvent) =>
+                      wpPointerRef.current !== null &&
+                      wpPointerRef.current.pointerId === e.pointerId &&
+                      wpPointerRef.current.linkId === d.id &&
+                      wpPointerRef.current.wi === wi;
+                    return (
+                      <g
+                        key={`${d.id}-wp-${wi}`}
+                        onPointerDown={(e) => {
+                          // Modifier-drags stay pan gestures; only the primary
+                          // button starts a waypoint drag. (button ?? 0: jsdom
+                          // pointer events omit the field.)
+                          if ((e.button ?? 0) !== 0 || e.ctrlKey || e.metaKey) {
+                            return;
+                          }
+                          e.preventDefault();
+                          e.stopPropagation();
+                          wpPointerRef.current = {
+                            linkId: d.id,
+                            wi,
+                            pointerId: e.pointerId,
+                            lastX: e.clientX,
+                            lastY: e.clientY,
+                            accX: wp.x,
+                            accY: wp.y,
+                          };
+                          try {
+                            (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+                          } catch {
+                            // jsdom has no pointer capture; document-level
+                            // delivery still works for tests.
+                          }
+                        }}
+                        onPointerMove={(e) => {
+                          if (!isActivePointer(e)) {
+                            return;
+                          }
+                          const p = wpPointerRef.current!;
+                          const scaled = getScaledMousePos({ x: e.clientX - p.lastX, y: e.clientY - p.lastY });
+                          p.lastX = e.clientX;
+                          p.lastY = e.clientY;
+                          p.accX += scaled.x;
+                          p.accY += scaled.y;
+                          const base =
+                            wpDragRef.current && wpDragRef.current.linkId === d.id
+                              ? wpDragRef.current.wps
+                              : sanitizeWaypoints(d.waypoints);
+                          const next = base.map((q, idx) => (idx === wi ? { x: snap(p.accX), y: snap(p.accY) } : q));
+                          wpDragRef.current = { linkId: d.id, wps: next };
+                          setWpDrag(wpDragRef.current);
+                          setLinks(
+                            generateDrawnLinks(
+                              wm.links.map((l) => (l.id === d.id ? { ...l, waypoints: next } : l)),
+                              dataFrameMap
+                            )
+                          );
+                        }}
+                        onPointerUp={(e) => {
+                          if (!isActivePointer(e)) {
+                            return;
+                          }
+                          try {
+                            (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+                          } catch {}
+                          wpPointerRef.current = null;
+                          const drag = wpDragRef.current;
+                          wpDragRef.current = null;
+                          setWpDrag(null);
+                          if (drag) {
+                            commitWaypoints(drag.wps);
+                          }
+                        }}
+                        onPointerCancel={(e) => {
+                          // Canceled drags (e.g. browser gesture takeover)
+                          // revert the preview and commit nothing.
+                          if (!isActivePointer(e)) {
+                            return;
+                          }
+                          wpPointerRef.current = null;
+                          wpDragRef.current = null;
+                          setWpDrag(null);
+                          setLinks(generateDrawnLinks(wm.links, dataFrameMap));
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeThis();
+                        }}
+                      >
+                        {/* Fat invisible hit target so the 6px handle doesn't
+                            demand pixel-perfect grabs. */}
+                        <circle
+                          cx={wp.x}
+                          cy={wp.y}
+                          r={14}
+                          fill="transparent"
+                          style={{ cursor: isDraggingThis ? 'grabbing' : 'grab' }}
+                        />
+                        <circle
+                          data-testid="waypoint-handle"
+                          cx={wp.x}
+                          cy={wp.y}
+                          r={6}
+                          fill={theme.colors.background.primary}
+                          stroke={theme.colors.primary.main}
+                          strokeWidth={2}
+                          style={{ cursor: isDraggingThis ? 'grabbing' : 'grab' }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Waypoint ${wi + 1} of link ${linkLabel}. Arrow keys move, Delete removes.`}
+                          onKeyDown={(e) => {
+                            const step = e.shiftKey
+                              ? 10
+                              : wm.settings.panel.grid.enabled
+                              ? wm.settings.panel.grid.size
+                              : 1;
+                            const moves: { [key: string]: [number, number] } = {
+                              ArrowLeft: [-step, 0],
+                              ArrowRight: [step, 0],
+                              ArrowUp: [0, -step],
+                              ArrowDown: [0, step],
+                            };
+                            if (e.key === 'Delete' || e.key === 'Backspace') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              removeThis();
+                            } else if (moves[e.key]) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const [dx, dy] = moves[e.key];
+                              const next = sanitizeWaypoints(d.waypoints).map((q, idx) =>
+                                idx === wi ? { x: q.x + dx, y: q.y + dy } : q
+                              );
+                              commitWaypoints(next);
+                            }
+                          }}
+                        />
+                      </g>
+                    );
+                  });
+                })}
             </g>
           </g>
         </svg>
