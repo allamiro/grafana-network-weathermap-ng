@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.7) (2026-08-02)
+
+### Fixed
+
+* **automatic query re-binding for dashboards imported from the original `knightss27-weathermap-panel`** ([#331](https://github.com/allamiro/grafana-network-weathermap-ng/issues/331)): imported maps kept their nodes and links but every link's A/Z side, bandwidth, and status query dropdowns appeared empty — the bindings were still in the JSON, stored under display names the original plugin computed differently. The panel now recognizes those legacy names and rewrites them to the current ones automatically on first data load, so old-plugin dashboards bind their queries out of the box. The rewrite is deliberately conservative: it only touches names that currently resolve to nothing, only on an unambiguous match, and only from a complete data snapshot — working bindings, template-variable queries, and ambiguous cases are never altered ([#333](https://github.com/allamiro/grafana-network-weathermap-ng/pull/333))
+* the FAQ now documents the old-plugin import path accurately (JSON `"type"` edit vs. the UI panel-type picker, which resets options)
+
 ## [1.6.6](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.6) (2026-07-26)
 
 ### Features
