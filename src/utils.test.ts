@@ -29,6 +29,9 @@ import {
   sampleAtTime,
   sanitizeUrl,
   valueAtTime,
+  buildLegacyNameAliases,
+  getLegacyDataFrameName,
+  rebindLegacyQueryNames,
 } from 'utils';
 
 test('getSolidFromAlphaColor', () => {
@@ -801,5 +804,161 @@ describe('handleVersionedStateUpdates round-trip guarantees', () => {
     expect(migrated.version).toBe(CURRENT_VERSION);
     expect(migrated.nodes.map((n: { id: string }) => n.id)).toEqual(saved.nodes.map((n: { id: string }) => n.id));
     expect(migrated.settings.statusLegend).toBeUndefined();
+  });
+});
+
+describe('legacy knightss27 query-name rebind (#331)', () => {
+  // A table-style frame (Infinity JSON, SQL) where the value is NOT at index 1:
+  // the original plugin stored getFieldDisplayName(fields[1], frame) — here the
+  // string column — while this fork binds by the first numeric field's name.
+  const tableFrame = (refId: string, legacyName: string, currentName: string) =>
+    toDataFrame({
+      refId,
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'iface', type: FieldType.string, values: ['a', 'b'], config: { displayNameFromDS: legacyName } },
+        { name: 'bps', values: [100, 200], config: { displayNameFromDS: currentName } },
+      ],
+    });
+
+  const wmWithQueries = (names: { [path: string]: string }): Weathermap => {
+    const wm = JSON.parse(JSON.stringify(getData(theme)));
+    wm.links[0].sides.A.query = names.aQuery;
+    wm.links[0].sides.A.bandwidthQuery = names.aBandwidth;
+    wm.links[0].sides.Z.query = names.zQuery;
+    wm.links[0].statusQuery = names.status;
+    wm.links[0].tooltipMetrics = [{ label: 'm', queryA: names.metricA, queryZ: names.metricZ }];
+    wm.nodes[0].statusQuery = names.nodeStatus;
+    wm.nodes[0].tooltipMetrics = [{ label: 'n', query: names.nodeMetric }];
+    return wm;
+  };
+
+  test('getLegacyDataFrameName reproduces the old fields[1] naming', () => {
+    const frame = tableFrame('A', 'Interface A', 'Throughput A');
+    expect(getLegacyDataFrameName(frame)).toBe('Interface A');
+    expect(getDataFrameName(frame, [frame])).toBe('Throughput A');
+    expect(getLegacyDataFrameName(toDataFrame({ fields: [] }))).toBeUndefined();
+  });
+
+  test('aliases map legacy names to current names, unambiguously only', () => {
+    const frames = [tableFrame('A', 'Interface A', 'Throughput A'), tableFrame('B', 'Interface B', 'Throughput B')];
+    const aliases = buildLegacyNameAliases(frames);
+    expect(aliases.get('Interface A')).toBe('Throughput A');
+    expect(aliases.get('Interface B')).toBe('Throughput B');
+    expect(aliases.size).toBe(2);
+  });
+
+  test('a legacy name shared by two frames produces no alias', () => {
+    const frames = [tableFrame('A', 'SAME', 'Throughput A'), tableFrame('B', 'SAME', 'Throughput B')];
+    expect(buildLegacyNameAliases(frames).size).toBe(0);
+  });
+
+  test('a legacy name that equals a live current name is never redirected', () => {
+    // Frame B's current name IS "Interface A" — redirecting it would break a
+    // working binding, so no alias may exist for it.
+    const frames = [tableFrame('A', 'Interface A', 'Throughput A'), tableFrame('B', 'Interface B', 'Interface A')];
+    const aliases = buildLegacyNameAliases(frames);
+    expect(aliases.has('Interface A')).toBe(false);
+    expect(aliases.get('Interface B')).toBe('Interface A');
+  });
+
+  test('rebind rewrites every query-holding field to the current name', () => {
+    const frames = [tableFrame('A', 'Interface A', 'Throughput A'), tableFrame('B', 'Interface B', 'Throughput B')];
+    const wm = wmWithQueries({
+      aQuery: 'Interface A',
+      aBandwidth: 'Interface B',
+      zQuery: 'Interface B',
+      status: 'Interface A',
+      metricA: 'Interface A',
+      metricZ: 'Interface B',
+      nodeStatus: 'Interface B',
+      nodeMetric: 'Interface A',
+    });
+    const rebound = rebindLegacyQueryNames(wm, frames);
+    expect(rebound).not.toBeNull();
+    expect(rebound!.links[0].sides.A.query).toBe('Throughput A');
+    expect(rebound!.links[0].sides.A.bandwidthQuery).toBe('Throughput B');
+    expect(rebound!.links[0].sides.Z.query).toBe('Throughput B');
+    expect(rebound!.links[0].statusQuery).toBe('Throughput A');
+    expect(rebound!.links[0].tooltipMetrics![0].queryA).toBe('Throughput A');
+    expect(rebound!.links[0].tooltipMetrics![0].queryZ).toBe('Throughput B');
+    expect(rebound!.nodes[0].statusQuery).toBe('Throughput B');
+    expect(rebound!.nodes[0].tooltipMetrics![0].query).toBe('Throughput A');
+    // the input map is never mutated
+    expect(wm.links[0].sides.A.query).toBe('Interface A');
+  });
+
+  test('a map whose names already resolve returns null (steady state)', () => {
+    const frames = [tableFrame('A', 'Interface A', 'Throughput A')];
+    const wm = wmWithQueries({ aQuery: 'Throughput A' });
+    expect(rebindLegacyQueryNames(wm, frames)).toBeNull();
+  });
+
+  test('template-variable and unknown query strings pass through untouched', () => {
+    const frames = [tableFrame('A', 'Interface A', 'Throughput A')];
+    const wm = wmWithQueries({ aQuery: '$myVar', zQuery: 'not-a-known-name', aBandwidth: 'Interface A' });
+    const rebound = rebindLegacyQueryNames(wm, frames);
+    expect(rebound).not.toBeNull();
+    expect(rebound!.links[0].sides.A.query).toBe('$myVar');
+    expect(rebound!.links[0].sides.Z.query).toBe('not-a-known-name');
+    expect(rebound!.links[0].sides.A.bandwidthQuery).toBe('Throughput A');
+  });
+
+  test('no frames or no aliasable frames yields no rewrite', () => {
+    const wm = wmWithQueries({ aQuery: 'Interface A' });
+    expect(rebindLegacyQueryNames(wm, [])).toBeNull();
+    // time-series frames where old and new naming agree produce no aliases
+    const agreeing = toDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'Value', values: [1, 2], config: { displayNameFromDS: 'wan-in' } },
+      ],
+    });
+    expect(rebindLegacyQueryNames(wm, [agreeing])).toBeNull();
+  });
+});
+
+// Codex review hardening (#333): aliases must also be unambiguous on the
+// TARGET side, and the steady state must not clone.
+describe('legacy rebind alias target guards (#331 review)', () => {
+  const tableFrame = (refId: string, legacyName: string, currentName: string) =>
+    toDataFrame({
+      refId,
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'iface', type: FieldType.string, values: ['a', 'b'], config: { displayNameFromDS: legacyName } },
+        { name: 'bps', values: [100, 200], config: { displayNameFromDS: currentName } },
+      ],
+    });
+
+  test('aliases whose current target name is duplicated are rejected', () => {
+    // Two frames with distinct legacy names but the SAME current name: the
+    // frame map resolves that name first-match, so redirecting either legacy
+    // name onto it could silently bind the wrong series.
+    const frames = [tableFrame('A', 'Interface A', 'DUP'), tableFrame('B', 'Interface B', 'DUP')];
+    expect(buildLegacyNameAliases(frames).size).toBe(0);
+  });
+
+  test('a duplicated target only disqualifies its own aliases', () => {
+    const frames = [
+      tableFrame('A', 'Interface A', 'DUP'),
+      tableFrame('B', 'Interface B', 'DUP'),
+      tableFrame('C', 'Interface C', 'Throughput C'),
+    ];
+    const aliases = buildLegacyNameAliases(frames);
+    expect(aliases.size).toBe(1);
+    expect(aliases.get('Interface C')).toBe('Throughput C');
+  });
+
+  test('steady state returns null even when aliases exist (no clone path)', () => {
+    // The datasource's legacy/current names permanently differ, so the alias
+    // map is non-empty on every refresh — but nothing stored matches, so the
+    // fast path must return null without rewriting.
+    const frames = [tableFrame('A', 'Interface A', 'Throughput A')];
+    const wm = JSON.parse(JSON.stringify(getData(theme)));
+    wm.links[0].sides.A.query = 'Throughput A';
+    expect(buildLegacyNameAliases(frames).size).toBe(1);
+    expect(rebindLegacyQueryNames(wm, frames)).toBeNull();
   });
 });
