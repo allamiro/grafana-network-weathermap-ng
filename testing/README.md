@@ -47,6 +47,7 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — Interactive Rack View** | The rack-cabling topology with the dense-map readability features on (plugin ≥ 1.5.12): hover highlight with VIA-chain tracing, one-way power cables, label collision avoidance, zoom-dependent labels, built-in status legend, bold PSU labels. |
 | **WAN Demo — Multi-hop Path (VIAs)** | One DC interconnect routed through three VIA points, as double-click VIA editing produces. |
 | **WAN Demo — Parallel Links (LAG members)** | Three-member LAG spread with Link Offset, each member with its own query, port label, and utilization %. |
+| **WAN Demo — Polyline Links + Link Offset** | The same three-member LAG routed around a firewall pair through shared waypoints: Link Offset (-14 / 0 / +14) combined with a bent path and a 26 px corner radius, so the bundle keeps even spacing and in-step animation through both corners. |
 | **WAN Demo — Animated Traffic Flow** | Metric-driven particle animation: dots flow per direction, speed/density scale with utilization, a permanently-down CORE trunk shows ✕ badges. |
 | **WAN Demo — BGP Neighbor Map** | BGP sessions as links: session state = link status (dashed + ✕ + DOWN + blink on drop), prefixes as labels, max-prefix fullness as color. iBGP core + eBGP transits (Cisco/Juniper/F5), a permanently-down eBGP peer (EDGE2↔PEER-Y), parallel IPv4/IPv6. Click a router for session detail. |
 | **WAN Demo — BGP Session Detail** | Per-router drill-down (state / prefixes / uptime / flaps), reached from the map; `node_name` variable. |
@@ -63,7 +64,13 @@ python3 testing/scripts/generate-animated-dashboard.py     # animated traffic
 python3 testing/scripts/generate-bgp-dashboards.py         # BGP neighbor map + detail + overview
 python3 testing/scripts/generate-port-label-demo.py        # port label offset + distance
 python3 testing/scripts/generate-drag-demo.py             # drag & arrange playground
+python3 testing/scripts/generate-polyline-demo.py          # polyline waypoints
+python3 testing/scripts/generate-polyline-offset-demo.py   # polyline waypoints + Link Offset
 ```
+
+Run the polyline generators from `testing/` (they read and write paths relative
+to it). Dashboards are baked into the Grafana image, so after regenerating:
+`docker compose --project-directory testing up -d --build grafana`.
 
 The world-map background is `BlankMap-World-Equirectangular.svg` from Wikimedia
 Commons (public domain), recolored for dark dashboards and embedded in the

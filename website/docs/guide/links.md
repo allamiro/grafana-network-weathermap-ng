@@ -98,6 +98,31 @@ By default a link is a straight line. Add **waypoints** (Link Options → **Wayp
 
 One current limitation: **gradient link coloring** still shades along the straight A→Z axis, which can look odd on sharp bends.
 
+### Step by step: bend a link
+
+Everything below happens in **edit mode** (open the panel editor). Click any screenshot to enlarge it.
+
+**1. Open the link.** In the panel options, under **Network Weathermap NG → Links**, pick the link from **Select a link**. Scroll down to **Link Options**.
+
+**2. Add the bend points.** Press **Add Waypoint** once per bend. Each one appears as an `#n X` / `Y` coordinate pair in panel space, ordered A → Z. Type exact numbers here, or place them roughly and drag them on the canvas in step 4.
+
+![The link editor showing Link Offset, the Waypoints (Polyline) coordinate list, Add Waypoint, and the Corner Radius slider](../img/getting-started/polyline-offset-editor.png)
+
+*The link form for one LAG member: **Link Offset** `-14`, two waypoints at `(290, 175)` and `(610, 175)`, and **Corner Radius** `26`. The two settings combine — this member follows the shared bent route, shifted 14 px off it.*
+
+**3. Round the corners (optional).** The **Corner Radius** slider appears as soon as the link has a waypoint. `0` keeps sharp corners; higher values curve each bend. The radius is clamped to half of each adjacent segment automatically, so neighbouring bends can never overlap however high you push it.
+
+**4. Shape it on the canvas.** Each waypoint draws a circular **drag handle**. Drag one to reshape the link live — the whole path follows as you move, and the change is saved once when you release (so it is a single undo step). **Right-click** a handle to delete that waypoint, or focus it with Tab and use the arrow keys (Shift = 10 px) and Delete.
+
+![Three parallel bent links in edit mode, each waypoint showing a circular drag handle at the bend](../img/getting-started/polyline-waypoint-handles.png)
+
+*Edit mode on the demo bundle: three drag handles at each bend, one per member. The handles sit on the line as drawn — including the Link Offset shift — while the coordinates they write back stay unshifted, so changing the offset never moves your waypoints.*
+
+**5. Spread parallel links (optional).** To run more than one link along the same route, give each a different **Link Offset**. See [Parallel links](#parallel-links-link-offset) below.
+
+!!! tip "Adding a waypoint without the form"
+    **Right-click anywhere on a link** in edit mode inserts a waypoint at that exact spot, in the right position along the path. It is the fastest way to add a bend where you want it — then drag the handle to fine-tune.
+
 ---
 
 ## Parallel links (link offset)
@@ -109,6 +134,18 @@ This works on [polyline links](#waypoints-polyline-links) too: the **entire path
 ![Three parallel LAG member links between the same two nodes](../img/use-cases/wm-parallel-lag.png)
 
 *A three-member LAG drawn with per-link offsets — each member keeps its own query, port label, and utilization %.*
+
+### A bundle on a bent route
+
+The same LAG, routed around an obstruction through two shared waypoints. Each member keeps its own offset, so the three stay evenly spaced through both corners instead of converging:
+
+![A three-member LAG bundle routed around a firewall pair through shared waypoints, animated](../img/use-cases/wm-polyline-offset.gif)
+
+*`Link Offset` `-14` / `0` / `+14` on three links that share the same two waypoints and a `26` px corner radius. [Traffic animation](animation.md) follows each bent path, and because shifting a polyline preserves its length, all three members animate in step — the dashes stay aligned across the bundle the whole way round.*
+
+To build it: give each link the **same** waypoints and corner radius, then a **different** Link Offset. Because waypoints are stored unshifted, you can copy the same coordinates to every member and let the offsets do the spreading.
+
+The demo above ships as the `WAN Demo — Polyline Links + Link Offset` dashboard in the [testing environment](https://github.com/allamiro/grafana-network-weathermap-ng/tree/main/testing).
 
 ---
 
