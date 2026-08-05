@@ -1009,6 +1009,12 @@ describe('finitePosition (#339)', () => {
     expect(finitePosition([200, NaN], 50)).toEqual([200, 50]);
   });
 
+  test('a non-finite fallback cannot reintroduce what this helper removes', () => {
+    expect(finitePosition([NaN, 0], NaN)).toEqual([0, 0]);
+    expect(finitePosition(null, Infinity)).toEqual([0, 0]);
+    expect(finitePosition([undefined, undefined], -Infinity)).toEqual([0, 0]);
+  });
+
   test('never mutates or aliases its input', () => {
     const input: [number, number] = [10, 20];
     const out = finitePosition(input);

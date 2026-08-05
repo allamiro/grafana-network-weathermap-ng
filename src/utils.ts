@@ -304,7 +304,11 @@ export function finiteOrFallback(value: number, fallback: number): number {
  */
 export function finitePosition(pos: unknown, fallback = 0): [number, number] {
   const arr = Array.isArray(pos) ? pos : [];
-  return [finiteOrFallback(Number(arr[0]), fallback), finiteOrFallback(Number(arr[1]), fallback)];
+  // The fallback is normalized too. A caller passing a non-finite fallback
+  // would otherwise reintroduce exactly what this helper exists to remove —
+  // finitePosition([NaN, 0], NaN) would hand back [NaN, 0].
+  const safeFallback = Number.isFinite(fallback) ? fallback : 0;
+  return [finiteOrFallback(Number(arr[0]), safeFallback), finiteOrFallback(Number(arr[1]), safeFallback)];
 }
 
 /** Optional numeric fields: blank or unparsable input becomes undefined. */

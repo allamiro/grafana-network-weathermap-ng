@@ -168,10 +168,13 @@ describe('malformed links and geometry (#198)', () => {
     });
 
     test('still renders with gradient coloring and grid guides on', () => {
-      // Both read node positions by separate paths from the link geometry.
+      // These read node positions by paths separate from the link geometry —
+      // and the grid-guide rect specifically reads nodes[0], so the malformed
+      // value has to go there as well or that path is never actually stressed.
       expect(() =>
         renderPanel([goodFrame('A QUERY')], (wm) => {
           withPosition(wm);
+          (wm.nodes[0] as unknown as { position: unknown }).position = position;
           wm.settings.link.gradientColor = true;
           wm.settings.panel.grid.guidesEnabled = true;
         })
