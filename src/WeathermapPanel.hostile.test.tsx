@@ -8,7 +8,11 @@ import { WeathermapPanel } from 'WeathermapPanel';
 import { SimpleOptions, Weathermap } from 'types';
 import { getData, theme } from 'testData';
 
-const renderPanel = (series: unknown[], mutate?: (wm: Weathermap) => void) => {
+const renderPanel = (
+  series: unknown[],
+  mutate?: (wm: Weathermap) => void,
+  onOptionsChange: (o: unknown) => void = () => {}
+) => {
   const wm = getData(theme);
   wm.links[0].sides.A.query = 'A QUERY';
   wm.links[0].sides.Z.query = 'Z QUERY';
@@ -29,7 +33,7 @@ const renderPanel = (series: unknown[], mutate?: (wm: Weathermap) => void) => {
     renderCounter: 1,
     title: 'T',
     eventBus: {},
-    onOptionsChange: () => {},
+    onOptionsChange,
   } as unknown as PanelProps<SimpleOptions>;
   render(<WeathermapPanel {...props} />);
 };
@@ -138,5 +142,59 @@ describe('malformed links and geometry (#198)', () => {
     });
     expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
     expect(document.body.innerHTML).not.toContain('NaN');
+  });
+
+  // #339: every one of these came from a real failure mode. `null` and a
+  // missing key threw and took down the WHOLE panel; the rest rendered NaN
+  // into link points, arrow polygons and gradient axes with no error shown.
+  describe.each([
+    ['a NaN coordinate', [NaN, 300]],
+    ['an Infinity coordinate', [Infinity, 300]],
+    ['a short array', [200]],
+    ['an empty array', []],
+    ['a null position', null],
+    ['a missing position', undefined],
+    ['a non-array position', {}],
+    ['numeric strings', ['200', '300']],
+  ])('node with %s (#339)', (_name, position) => {
+    const withPosition = (wm: Weathermap) => {
+      (wm.nodes[1] as unknown as { position: unknown }).position = position;
+    };
+
+    test('renders without throwing, and emits no NaN geometry', () => {
+      expect(() => renderPanel([goodFrame('A QUERY')], withPosition)).not.toThrow();
+      expect(screen.getAllByTestId('link').length).toBeGreaterThan(0);
+      expect(document.body.innerHTML).not.toContain('NaN');
+    });
+
+    test('still renders with gradient coloring and grid guides on', () => {
+      // Both read node positions by separate paths from the link geometry.
+      expect(() =>
+        renderPanel([goodFrame('A QUERY')], (wm) => {
+          withPosition(wm);
+          wm.settings.link.gradientColor = true;
+          wm.settings.panel.grid.guidesEnabled = true;
+        })
+      ).not.toThrow();
+      expect(document.body.innerHTML).not.toContain('NaN');
+    });
+  });
+
+  test('a malformed position is never repaired in the saved options', () => {
+    // The coercion is render-only: options.weathermap is user data, and a bad
+    // coordinate must not be silently overwritten with a guess. This fixture
+    // is pre-migration, so the version migration does persist once — what
+    // matters is that the position it writes is still the user's original.
+    const onOptionsChange = jest.fn();
+    renderPanel(
+      [goodFrame('A QUERY')],
+      (wm) => {
+        (wm.nodes[1] as unknown as { position: unknown }).position = null;
+      },
+      onOptionsChange
+    );
+    for (const [saved] of onOptionsChange.mock.calls) {
+      expect((saved as { weathermap: Weathermap }).weathermap.nodes[1].position).toBeNull();
+    }
   });
 });

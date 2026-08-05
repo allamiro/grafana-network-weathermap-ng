@@ -39,6 +39,7 @@ import {
 import { getTemplateSrv, locationService } from '@grafana/runtime';
 import {
   measureText,
+  finitePosition,
   getSolidFromAlphaColor,
   nearestMultiple,
   calculateRectangleAutoWidth,
@@ -67,8 +68,14 @@ import ColorScale from 'components/ColorScale';
 function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
   let toReturn: DrawnNode = { ...d } as DrawnNode;
   toReturn.index = i;
-  toReturn.x = toReturn.position[0];
-  toReturn.y = toReturn.position[1];
+  // Saved positions are hostile input (#339): a missing or null position used
+  // to throw here and take down the whole panel, and a non-finite one seeded
+  // NaN into every coordinate derived from it. Normalize both the drawn x/y
+  // and the DrawnNode's own position so downstream editing math agrees.
+  const [posX, posY] = finitePosition(toReturn.position);
+  toReturn.position = [posX, posY];
+  toReturn.x = posX;
+  toReturn.y = posY;
 
   // Resolve Grafana template variables ($var) at draw time
   const tmplSrv = getTemplateSrv();
@@ -1616,13 +1623,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                 <rect
                   x={
                     wm.nodes.length > 0
-                      ? wm.nodes[0].position[0] -
+                      ? finitePosition(wm.nodes[0].position)[0] -
                         wm.settings.panel.panelSize.width * Math.pow(1.2, renderedZoomScale) * 2
                       : 0
                   }
                   y={
                     wm.nodes.length > 0
-                      ? wm.nodes[0].position[1] -
+                      ? finitePosition(wm.nodes[0].position)[1] -
                         wm.settings.panel.panelSize.height * Math.pow(1.2, renderedZoomScale) * 2
                       : 0
                   }
@@ -2168,15 +2175,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         prevState.map((val, index) => {
                           if (index === d.index || selectedNodes.find((n) => n.id === nodes[index].id)) {
                             const scaledPos = getScaledMousePos({ x: position.deltaX, y: position.deltaY });
+                            // Saved position is read back here, so an unreadable
+                            // one would otherwise write NaN into the options the
+                            // moment a broken node is dragged (#339).
+                            const [savedX, savedY] = finitePosition(wm.nodes[index].position);
                             val.x = Math.round(
-                              wm.settings.panel.grid.enabled
-                                ? wm.nodes[index].position[0] + (val.x + scaledPos.x - wm.nodes[index].position[0])
-                                : val.x + scaledPos.x
+                              wm.settings.panel.grid.enabled ? savedX + (val.x + scaledPos.x - savedX) : val.x + scaledPos.x
                             );
                             val.y = Math.round(
-                              wm.settings.panel.grid.enabled
-                                ? wm.nodes[index].position[1] + (val.y + scaledPos.y - wm.nodes[index].position[1])
-                                : val.y + scaledPos.y
+                              wm.settings.panel.grid.enabled ? savedY + (val.y + scaledPos.y - savedY) : val.y + scaledPos.y
                             );
                           }
                           return val;
