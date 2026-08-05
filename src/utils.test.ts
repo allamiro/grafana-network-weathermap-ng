@@ -47,6 +47,9 @@ import {
   pathToSvg,
   pathToPoints,
   nearestSegmentIndex,
+  chordNormalOffset,
+  translatePoint,
+  translatePath,
 } from 'utils';
 
 test('getSolidFromAlphaColor', () => {
@@ -1340,5 +1343,138 @@ describe('nearestSegmentIndex (#336)', () => {
         { x: 0, y: 0 }
       )
     ).toBe(0);
+  });
+});
+
+// linkOffset on bent paths (#336 item 3). The rejected alternative was
+// per-segment miter offsetting; these tests pin the properties that made
+// chord-normal translation the correct operation instead.
+describe('chordNormalOffset and path translation (#336)', () => {
+  const segments = (pts: Array<{ x: number; y: number }>) =>
+    pts.slice(1).map((p, i) => ({ x: p.x - pts[i].x, y: p.y - pts[i].y }));
+  const length = (pts: Array<{ x: number; y: number }>) =>
+    segments(pts).reduce((t, s) => t + Math.hypot(s.x, s.y), 0);
+
+  test('offsets perpendicular to the chord, keeping the pre-#336 sign convention', () => {
+    // A horizontal A->Z chord offsets straight down (+y), exactly as the
+    // straight-link code did before waypoints existed.
+    expect(chordNormalOffset({ x: 0, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({ x: 0, y: 20 });
+    // A vertical chord offsets to -x.
+    expect(chordNormalOffset({ x: 0, y: 0 }, { x: 0, y: 100 }, 20)).toEqual({ x: -20, y: 0 });
+    // Reversing the chord reverses the shift.
+    expect(chordNormalOffset({ x: 100, y: 0 }, { x: 0, y: 0 }, 20)).toEqual({ x: 0, y: -20 });
+  });
+
+  test('the offset vector has exactly the requested magnitude on any chord angle', () => {
+    const v = chordNormalOffset({ x: 0, y: 0 }, { x: 30, y: 40 }, 12);
+    expect(Math.hypot(v.x, v.y)).toBeCloseTo(12, 10);
+    // Perpendicular to the chord.
+    expect(v.x * 30 + v.y * 40).toBeCloseTo(0, 10);
+  });
+
+  test('returns a zero vector for absent, zero and non-finite offsets', () => {
+    const a = { x: 0, y: 0 };
+    const z = { x: 100, y: 0 };
+    expect(chordNormalOffset(a, z, undefined)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset(a, z, 0)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset(a, z, NaN)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset(a, z, Infinity)).toEqual({ x: 0, y: 0 });
+  });
+
+  test('returns a zero vector for coincident endpoints instead of NaN', () => {
+    const v = chordNormalOffset({ x: 50, y: 50 }, { x: 50, y: 50 }, 20);
+    expect(v).toEqual({ x: 0, y: 0 });
+    expect(Number.isNaN(v.x) || Number.isNaN(v.y)).toBe(false);
+  });
+
+  test('translation preserves arc length exactly, at every offset', () => {
+    // Arc length is the parameter arrows, labels, collision spreading and
+    // animation duration all key off. Per-segment offsetting changes it;
+    // translation cannot.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+      { x: 80, y: 60 },
+      { x: 160, y: 60 },
+    ];
+    const rounded = roundPathCorners(path, 18);
+    for (const offset of [-40, -18, -6, 6, 18, 40]) {
+      const shifted = translatePath(rounded, chordNormalOffset(rounded[0], rounded[rounded.length - 1], offset));
+      expect(length(shifted)).toBeCloseTo(length(rounded), 9);
+      expect(shifted).toHaveLength(rounded.length);
+    }
+  });
+
+  test('translation never reverses a segment, so it cannot introduce a self-intersection', () => {
+    // This shape is the miter-offset failure case: a short (12px) segment
+    // between two same-handed bends. Offsetting it per-segment by 15px flips
+    // that middle segment and the path doubles back through itself.
+    // Translation leaves every segment direction identical.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 12 },
+      { x: 0, y: 12 },
+    ];
+    const shifted = translatePath(path, chordNormalOffset(path[0], path[path.length - 1], 15));
+    const before = segments(path);
+    const after = segments(shifted);
+    after.forEach((s, i) => {
+      expect(s.x).toBeCloseTo(before[i].x, 10);
+      expect(s.y).toBeCloseTo(before[i].y, 10);
+    });
+  });
+
+  test('two opposite offsets keep a constant separation the whole way along', () => {
+    // What linkOffset is actually for: spreading a parallel bundle. Every
+    // vertex pair stays exactly |offsetA - offsetZ| apart.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 50, y: -30 },
+      { x: 120, y: -30 },
+      { x: 170, y: 0 },
+    ];
+    const lo = translatePath(path, chordNormalOffset(path[0], path[3], -8));
+    const hi = translatePath(path, chordNormalOffset(path[0], path[3], 8));
+    lo.forEach((p, i) => expect(Math.hypot(hi[i].x - p.x, hi[i].y - p.y)).toBeCloseTo(16, 9));
+  });
+
+  test('translating by a zero vector is the identity', () => {
+    const path = [
+      { x: 3, y: 4 },
+      { x: 9, y: 1 },
+    ];
+    expect(translatePath(path, { x: 0, y: 0 })).toEqual(path);
+  });
+
+  test('produces fresh objects and never mutates its input', () => {
+    const path = [
+      { x: 3, y: 4 },
+      { x: 9, y: 1 },
+    ];
+    const snapshot = JSON.parse(JSON.stringify(path));
+    const shifted = translatePath(path, { x: 5, y: 5 });
+    expect(path).toEqual(snapshot);
+    expect(shifted[0]).not.toBe(path[0]);
+    const p = { x: 1, y: 2 };
+    expect(translatePoint(p, { x: 0, y: 0 })).not.toBe(p);
+  });
+
+  test('rounding corners then translating equals translating then rounding', () => {
+    // Rounding is translation-equivariant, so the render order of the two is
+    // free — the offset can be applied to the raw waypoints before rounding.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+      { x: 80, y: 60 },
+    ];
+    const delta = chordNormalOffset(path[0], path[2], 14);
+    const roundThenShift = translatePath(roundPathCorners(path, 20), delta);
+    const shiftThenRound = roundPathCorners(translatePath(path, delta), 20);
+    expect(roundThenShift).toHaveLength(shiftThenRound.length);
+    roundThenShift.forEach((p, i) => {
+      expect(p.x).toBeCloseTo(shiftThenRound[i].x, 9);
+      expect(p.y).toBeCloseTo(shiftThenRound[i].y, 9);
+    });
   });
 });

@@ -93,15 +93,18 @@ By default a link is a straight line. Add **waypoints** (Link Options → **Wayp
 - **Edit directly on the canvas** (edit mode): every waypoint shows a circular **drag handle** — drag it to reshape the link live (grid snapping applies; the drag keeps tracking even if your cursor leaves the panel), release to save. **Right-click** a handle to remove that waypoint. Keyboard: focus a handle with Tab, nudge with **arrow keys** (Shift = 10 px), remove with **Delete**.
 - **Corner Radius** (shown once waypoints exist) rounds each bend with a smooth curve — `0` keeps sharp corners; the radius clamps automatically so neighboring bends never overlap.
 - Everything follows the drawn path by **arc length**: both directional halves, the arrowheads (which rotate with the segment they sit on), the value labels, the [arrow meeting point](#arrow-meeting-point) percentage, port labels, and [traffic animation](animation.md) dots — which travel around the bends.
+- **Link Offset (parallel links)** combines with waypoints: the whole polyline shifts sideways, keeping its shape. See [Parallel links](#parallel-links-link-offset).
 - An empty waypoint list is exactly the old straight link, so existing maps are unchanged.
 
-Two current limitations: while waypoints are set, **Link Offset (parallel links)** is ignored (bend the links apart with their waypoints instead), and **gradient link coloring** still shades along the straight A→Z axis, which can look odd on sharp bends.
+One current limitation: **gradient link coloring** still shades along the straight A→Z axis, which can look odd on sharp bends.
 
 ---
 
 ## Parallel links (link offset)
 
-To draw **multiple links between the same two nodes** without overlap, set a different **Link Offset (parallel links)** on each. The offset shifts the line perpendicular to its A→Z direction; arrows, labels, and coloring all follow the offset line. Zero (default) keeps the straight line. On a link with [waypoints](#waypoints-polyline-links), the offset is ignored.
+To draw **multiple links between the same two nodes** without overlap, set a different **Link Offset (parallel links)** on each. The offset shifts the line perpendicular to its A→Z axis; arrows, labels, and coloring all follow the offset line. Zero (default) keeps the straight line.
+
+This works on [polyline links](#waypoints-polyline-links) too: the **entire path** — bends included — shifts along that one axis, so the link keeps its exact shape and its arc length. That matters in practice, because it means every member of a parallel bundle keeps its arrows, value labels, and animation in step with the others, and a bend can never fold in on itself no matter how large the offset or how tight the corner. Waypoint coordinates are stored unshifted, so changing the offset never rewrites them — the drag handles move with the drawn line and keep editing the underlying points.
 
 ![Three parallel LAG member links between the same two nodes](../img/use-cases/wm-parallel-lag.png)
 

@@ -438,7 +438,9 @@ export const LinkForm = (props: Props) => {
                 grow
                 label={'Link Offset (parallel links)'}
                 style={{ width: '100%' }}
-                tooltip={'Shifts the link line perpendicular to its direction. Use different values on parallel links between the same nodes to separate them visually.'}
+                tooltip={
+                  'Shifts the whole link sideways, perpendicular to its A–Z axis. Use different values on parallel links between the same nodes to separate them visually. Works with waypoints: the entire polyline shifts, keeping its shape.'
+                }
               >
                 <Input
                   value={link.linkOffset ?? ''}
@@ -535,9 +537,6 @@ export const LinkForm = (props: Props) => {
                 >
                   Add Waypoint
                 </Button>
-                {sanitizeWaypoints(link.waypoints).length > 0 && link.linkOffset ? (
-                  <InlineLabel width="auto">Link Offset is ignored while waypoints are set.</InlineLabel>
-                ) : null}
               </InlineFieldRow>
               {sanitizeWaypoints(link.waypoints).length > 0 ? (
                 <InlineField

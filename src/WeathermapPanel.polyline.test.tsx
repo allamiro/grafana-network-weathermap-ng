@@ -314,3 +314,171 @@ describe('waypoint drag handles and rounded corners (#336)', () => {
     expect(allPoints).not.toMatch(/NaN/);
   });
 });
+
+// Link Offset now combines with waypoints (#336 item 3). The whole polyline is
+// translated along the A->Z chord normal, so its shape and arc length survive
+// intact; waypoints stay STORED unshifted and only the drawing moves.
+describe('linkOffset on polyline links (#336)', () => {
+  let getSearchSpy: jest.SpyInstance | undefined;
+  afterEach(() => {
+    getSearchSpy?.mockRestore();
+    getSearchSpy = undefined;
+  });
+  const enterEditMode = () => {
+    getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  };
+  const firePointer = (el: Element, type: string, opts: MouseEventInit = {}) =>
+    fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...opts }));
+
+  // Every rendered point of both halves, in order.
+  const drawnPoints = (container: HTMLElement) =>
+    linkPolylines(container).flatMap((p) =>
+      (p.getAttribute('points') ?? '')
+        .trim()
+        .split(/\s+/)
+        .map((pt) => {
+          const [x, y] = pt.split(',').map(Number);
+          return { x, y };
+        })
+    );
+
+  // The house fixture's nodes both sit at y=300, so the A->Z chord is
+  // horizontal and its normal is +y: a linkOffset of 20 shifts the link down
+  // by exactly 20.
+  test('a straight link with an offset keeps its pre-#336 geometry', () => {
+    const { container } = renderPanel((wm) => {
+      wm.links[0].linkOffset = 20;
+    });
+    const halves = linkPolylines(container);
+    expect(halves.length).toBe(2);
+    halves.forEach((p) => expect(pointCount(p)).toBe(2));
+    drawnPoints(container).forEach((p) => expect(p.y).toBeCloseTo(320, 5));
+  });
+
+  test('an offset shifts the whole bent path rigidly — same shape, no distortion', () => {
+    const bend = (wm: Weathermap) => {
+      wm.links[0].waypoints = [
+        { x: 260, y: 200 },
+        { x: 340, y: 240 },
+      ];
+      wm.links[0].cornerRadius = 18;
+    };
+    const plain = drawnPoints(renderPanel(bend).container);
+    const shifted = drawnPoints(
+      renderPanel((wm) => {
+        bend(wm);
+        wm.links[0].linkOffset = 20;
+      }).container
+    );
+    // Identical structure (rounding is unaffected) and an exact rigid shift.
+    expect(shifted).toHaveLength(plain.length);
+    expect(plain.length).toBeGreaterThan(4);
+    shifted.forEach((p, i) => {
+      expect(p.x).toBeCloseTo(plain[i].x, 5);
+      expect(p.y).toBeCloseTo(plain[i].y + 20, 5);
+    });
+  });
+
+  test('the bend point itself lands at waypoint + offset, not at the stored coordinate', () => {
+    const { container } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    const all = linkPolylines(container)
+      .map((p) => p.getAttribute('points') ?? '')
+      .join(' ');
+    expect(all).toContain('260,220');
+    expect(all).not.toContain('260,200');
+    expect(all).not.toMatch(/NaN/);
+  });
+
+  test('opposite offsets spread a bundle apart without ever touching', () => {
+    const bend = (wm: Weathermap) => {
+      wm.links[0].waypoints = [{ x: 300, y: 220 }];
+    };
+    const lo = drawnPoints(
+      renderPanel((wm) => {
+        bend(wm);
+        wm.links[0].linkOffset = -12;
+      }).container
+    );
+    const hi = drawnPoints(
+      renderPanel((wm) => {
+        bend(wm);
+        wm.links[0].linkOffset = 12;
+      }).container
+    );
+    expect(lo).toHaveLength(hi.length);
+    lo.forEach((p, i) => expect(hi[i].y - p.y).toBeCloseTo(24, 5));
+  });
+
+  test('drag handles sit on the drawn line, at waypoint + offset', () => {
+    enterEditMode();
+    const { container } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    const handle = container.querySelector('[data-testid="waypoint-handle"]')!;
+    expect(Number(handle.getAttribute('cx'))).toBeCloseTo(260, 5);
+    expect(Number(handle.getAttribute('cy'))).toBeCloseTo(220, 5);
+  });
+
+  test('dragging an offset link commits stored coordinates — the link never creeps', () => {
+    // The failure this guards: mixing drawn and stored space would add
+    // linkOffset to the waypoint on every gesture, walking the link away by 20px
+    // per drag. A zero-distance drag must round-trip the waypoint unchanged.
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    const handle = container.querySelector('[data-testid="waypoint-handle"]')!;
+    firePointer(handle, 'pointerdown', { clientX: 100, clientY: 100 });
+    firePointer(handle, 'pointermove', { clientX: 100, clientY: 100 });
+    firePointer(handle, 'pointerup', { clientX: 100, clientY: 100 });
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    expect(onOptionsChange.mock.calls[0][0].weathermap.links[0].waypoints[0]).toEqual({ x: 260, y: 200 });
+  });
+
+  test('keyboard nudges on an offset link stay in stored space', () => {
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    fireEvent.keyDown(container.querySelector('[data-testid="waypoint-handle"]')!, { key: 'ArrowRight' });
+    expect(onOptionsChange.mock.calls[0][0].weathermap.links[0].waypoints[0]).toEqual({ x: 261, y: 200 });
+  });
+
+  test('right-clicking an offset link stores the unshifted waypoint', () => {
+    // The click lands on the DRAWN line (y=320 for a 20px offset); the saved
+    // waypoint must come back through the offset to y=300, so that turning the
+    // offset off leaves the link where it always was.
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].linkOffset = 20;
+    });
+    fireEvent.contextMenu(container.querySelector('g[data-testid="link"]')!, { clientX: 300, clientY: 320 });
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const saved = onOptionsChange.mock.calls[0][0].weathermap;
+    expect(saved.links[0].waypoints).toHaveLength(1);
+    expect(saved.links[0].waypoints[0].y).toBeCloseTo(300, 0);
+  });
+
+  test('an offset polyline renders without persisting anything', () => {
+    const { onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    expect(onOptionsChange).not.toHaveBeenCalled();
+  });
+
+  test('linkOffset and waypoints survive the versioned migration together', () => {
+    const raw = getData(theme);
+    raw.links[0].linkOffset = 14;
+    raw.links[0].waypoints = [{ x: 111, y: 222 }];
+    const wm = handleVersionedStateUpdates(raw, theme);
+    expect(wm.links[0].linkOffset).toBe(14);
+    expect(wm.links[0].waypoints).toEqual([{ x: 111, y: 222 }]);
+  });
+});

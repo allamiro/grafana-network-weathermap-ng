@@ -1343,6 +1343,54 @@ export function roundPathCorners(pts: Position[], radius: number): Position[] {
 }
 
 /**
+ * Perpendicular offset vector for a link, taken from its A->Z chord (#336).
+ *
+ * `linkOffset` spreads parallel links between the same node pair apart. On a
+ * polyline the whole path is TRANSLATED by this vector rather than offset
+ * per-segment with miter joins, and that choice is deliberate:
+ *
+ *   - A translation is an isometry, so it cannot introduce a self-intersection
+ *     that the drawn path did not already have. True per-segment offsetting
+ *     inverts wherever the offset exceeds the local radius of curvature, which
+ *     for a rounded bend IS the corner radius — a cornerRadius of 18 with a
+ *     linkOffset of 18 self-intersects, and there is no safe sign to pick
+ *     because a route that turns both ways has an inner bend either way.
+ *   - It preserves arc length exactly, so `arrowMeetPercent`, value labels,
+ *     collision spreading and animation duration land at the same place on
+ *     every link of a parallel bundle. Per-segment offsetting reparametrizes
+ *     the path and silently drifts them apart — the opposite of what the
+ *     option exists to do.
+ *
+ * The chord is measured between the UNOFFSET endpoints so every link in a
+ * bundle shifts along the same axis. Returns a zero vector for a zero/absent
+ * offset or coincident endpoints, so callers need no special-casing.
+ */
+export function chordNormalOffset(from: Position, to: Position, offset: number | undefined): Position {
+  if (!offset || !Number.isFinite(offset)) {
+    return { x: 0, y: 0 };
+  }
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist === 0) {
+    return { x: 0, y: 0 };
+  }
+  // `+ 0` normalizes negative zero — `-dy` is -0 on a horizontal chord, and a
+  // "-0" would otherwise reach the rendered SVG coordinate strings.
+  return { x: (-dy / dist) * offset + 0, y: (dx / dist) * offset + 0 };
+}
+
+/** A point shifted by `delta`. Fresh object; never mutates the input. */
+export function translatePoint(p: Position, delta: Position): Position {
+  return { x: p.x + delta.x, y: p.y + delta.y };
+}
+
+/** Every point of a path shifted by `delta`. Fresh objects. */
+export function translatePath(pts: Position[], delta: Position): Position[] {
+  return pts.map((p) => translatePoint(p, delta));
+}
+
+/**
  * Index of the polyline segment nearest to a point (#336): used to decide
  * where along a link a right-click-inserted waypoint belongs. Returns i such
  * that the segment pts[i] -> pts[i+1] minimizes point-to-segment distance;
