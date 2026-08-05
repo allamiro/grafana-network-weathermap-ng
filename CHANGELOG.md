@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.9](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.9) (2026-08-06)
+
+### Features
+
+* **links can be drawn as polylines** ([#332](https://github.com/allamiro/grafana-network-weathermap-ng/issues/332)): a link was always a straight line, so on a dense map the only way to stop links crossing each other was to move the devices. Each link now takes an optional list of **waypoints** and bends through them as ONE logical link — not split into segments the way a VIA is — keeping its own A/Z queries, bandwidths, port labels and tooltip. Everything follows the drawn path by arc length: both directional halves, the arrowheads (which rotate with the segment they sit on), value labels, the arrow meeting point, port labels, and traffic-animation dots, which travel around the bends. Add a bend by **right-clicking a link** in edit mode, then drag its handle; **Corner Radius** rounds each bend into a smooth curve. An empty waypoint list is exactly the old straight link, so existing maps are untouched and no migration is needed ([#334](https://github.com/allamiro/grafana-network-weathermap-ng/pull/334))
+* **Link Offset now works on bent links** ([#336](https://github.com/allamiro/grafana-network-weathermap-ng/issues/336)): parallel-link spreading used to be ignored the moment a link had waypoints, so a bundle sharing a route could not be separated. The whole polyline is now translated along its A→Z axis. That choice is deliberate rather than convenient — offsetting each segment instead would fold the path in on itself wherever the offset exceeds the corner radius (an 18 px radius with an 18 px offset self-intersects, with no safe side to pick), and would stretch the path so arrows, labels and animation drift apart across a bundle. A translation cannot self-intersect and preserves length exactly, so every member of a bundle stays in step. Waypoints are stored unshifted, so changing the offset never rewrites saved coordinates ([#338](https://github.com/allamiro/grafana-network-weathermap-ng/pull/338))
+* **gradient link colouring follows the drawn path** ([#336](https://github.com/allamiro/grafana-network-weathermap-ng/issues/336)): gradients shaded along the straight A→Z axis, so on a bent link the colour ramp did not match the line you see — a route bowing off its axis squashed most of its range into the ends. Colours are now placed by distance *along the path*. One exception, by nature rather than oversight: a segment running perpendicular to the A→Z axis has no room on the gradient axis and renders a single flat colour there
+
+### Fixed
+
+* **double-clicking a link to add a VIA now works where the value label sits** ([#336](https://github.com/allamiro/grafana-network-weathermap-ng/issues/336)): value labels are drawn on top of the link and swallow its pointer events, so a double-click aimed at the middle of a link — the spot most people go for — landed on the label and did nothing at all, while right-click on the same pixel worked. Both gestures now behave identically anywhere on a link
+
+### Documentation
+
+* the Links guide gains a step-by-step for bending a link, with screenshots of the editor and the canvas drag handles, guidance on spacing bends relative to the corner radius, and a worked example of a parallel bundle routed around an obstruction
+
+### Testing
+
+* a Playwright suite covering the canvas gestures runs in CI against Grafana 11.0.0 and latest: right-click creation, cursor-locked dragging (including at the panel's bottom edge, while zoomed, and released outside the panel), removal, Link Offset translating the path rigidly, a no-creep drag round-trip, and waypoint persistence across a dashboard save and reload
+* two demo dashboards — `WAN Demo — Polyline Links` and `WAN Demo — Polyline Links + Link Offset`
+
 ## [1.6.8](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.8) (2026-08-05)
 
 ### Features
