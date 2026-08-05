@@ -233,15 +233,23 @@ describe('background image upload (#344)', () => {
     expect(field.readOnly).toBe(true);
   });
 
+  // Restored in afterEach, not inline: an inline restore is skipped when an
+  // assertion throws, leaking a confirm() that always returns true into every
+  // later test that branches on it.
+  let confirmSpy: jest.SpyInstance | undefined;
+  afterEach(() => {
+    confirmSpy?.mockRestore();
+    confirmSpy = undefined;
+  });
+
   test('removing the background clears a previous upload note', async () => {
     const spy = jest.fn();
-    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
     render(<Harness initial={withBackground()} onChangeSpy={spy} />);
     fireEvent.change(screen.getByTestId('bg-image-upload'), { target: { files: [svgFile()] } });
     await screen.findByTestId('bg-image-upload-note');
     fireEvent.click(screen.getByTestId('bg-image-remove'));
     expect(screen.queryByTestId('bg-image-upload-note')).toBeNull();
-    confirmSpy.mockRestore();
   });
 
   test('a linked URL stays editable and is shown verbatim', () => {

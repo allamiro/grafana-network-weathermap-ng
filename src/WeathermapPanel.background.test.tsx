@@ -30,7 +30,10 @@ const renderPanel = (mutate?: (wm: Weathermap) => void) => {
     eventBus: {},
     onOptionsChange: jest.fn(),
   } as unknown as PanelProps<SimpleOptions>;
-  return render(<WeathermapPanel {...props} />);
+  // `props` is handed back so a test can re-render the SAME instance with a
+  // FRESH element — passing the identical element object back to rerender()
+  // lets React bail out, and nothing re-reads the edit-mode flag.
+  return { ...render(<WeathermapPanel {...props} />), props };
 };
 
 const withBackground = (url: string, attachToCanvas: boolean) => (wm: Weathermap) => {
@@ -129,15 +132,21 @@ describe('background image failure notice (#344)', () => {
     // notice is gated on isEditMode at render too.
     enterEditMode();
     const bad = 'data:text/html;base64,PHNjcmlwdD4=';
-    const first = renderPanel(withBackground(bad, true));
+    const { rerender, props } = renderPanel(withBackground(bad, true));
     await waitFor(() => expect(screen.getByTestId('weathermap-data-notice')).toBeTruthy());
-    // Unmount before re-rendering: RTL keeps every render in the document, so
-    // without this the assertion below would find the FIRST render's banner.
-    first.unmount();
+    // Re-render the SAME instance with the mode flipped, so the carried-over
+    // failure state is what the view-mode render has to deal with.
+    //
+    // Honest limitation: this pins the OUTCOME (no banner in view mode), not
+    // the render-time gate specifically. RTL wraps rerender in act(), which
+    // flushes the effect that resets the status in the same tick, so the
+    // intermediate render is not observable here — the test passes with the
+    // `isEditMode &&` guards removed. The guards still matter in a real
+    // browser, where React commits and paints a frame before effects run, and
+    // that frame would otherwise show the stale banner over a dashboard.
     spy?.mockRestore();
     spy = undefined;
-    renderPanel(withBackground(bad, true));
-    await settle();
+    rerender(<WeathermapPanel {...props} />);
     expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
   });
 });

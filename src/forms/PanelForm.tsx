@@ -37,7 +37,7 @@ interface Props extends StandardEditorProps<Weathermap, Settings> {}
  * uppercase scheme is recognized the same as a freshly uploaded one — otherwise
  * the editor shows it as a wall of raw base64 in an editable field.
  */
-const isEmbeddedImage = (src: string | undefined) => sanitizeImageSource(src ?? '').startsWith('data:');
+const isEmbeddedImage = (src: string | undefined) => /^data:/i.test(sanitizeImageSource(src ?? ''));
 
 /** "SVG, 53 KB" for the read-only source field of an embedded image. */
 const embeddedImageLabel = (raw: string) => {
@@ -166,6 +166,9 @@ export const PanelForm = ({ value, onChange }: Props) => {
                 type={'text'}
                 name={'bgImageURL'}
                 onChange={(e) => {
+                  // Typing a URL is a newer choice than any read still in
+                  // flight — invalidate it so it cannot land on top.
+                  resetUploads();
                   let options = structuredClone(value);
                   if (options.settings.panel.backgroundImage) {
                     options.settings.panel.backgroundImage.url = sanitizeUrl(e.currentTarget.value);
@@ -189,6 +192,9 @@ export const PanelForm = ({ value, onChange }: Props) => {
                       return;
                     }
                     if (file.size > BG_IMAGE_MAX_BYTES) {
+                      // Picking this file supersedes any read still running,
+                      // even though this one is refused.
+                      uploadSeq.current += 1;
                       setBgUploadNote({
                         level: 'error',
                         text: `${file.name} is ${formatBytes(file.size)} — too large to embed (limit ${formatBytes(

@@ -1024,6 +1024,8 @@ describe('finitePosition (#339)', () => {
     const out = finitePosition(input);
     expect(out).not.toBe(input);
     expect(input).toEqual([10, 20]);
+  });
+});
 
 // Embedded background images (#344). The security boundary matters most here:
 // sanitizeUrl also guards NAVIGATION targets, so data: URIs must be accepted
