@@ -293,6 +293,33 @@ describe('waypoint drag handles and rounded corners (#336)', () => {
     expect(wp.y).toBeCloseTo(300, 0); // on the horizontal link
   });
 
+  test('double-click on a value label adds a VIA, like double-click on the line', () => {
+    // Labels sit ON the line and swallow its pointer events. Right-click was
+    // already wired through to them; double-click was not, so VIA creation was
+    // silently dead at the middle of a link — the spot users aim for. Both
+    // gestures must behave identically wherever you click on a link.
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel();
+    const label = container.querySelector('g[font-style="italic"]')!;
+    expect(label).not.toBeNull();
+    fireEvent.doubleClick(label);
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const saved = onOptionsChange.mock.calls[0][0].weathermap;
+    // A VIA splits one link into two and adds a connection node.
+    expect(saved.links.length).toBeGreaterThan(1);
+    expect(saved.nodes.some((n: { isConnection?: boolean }) => n.isConnection)).toBe(true);
+  });
+
+  test('right-click on a value label still adds a waypoint (not a VIA)', () => {
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel();
+    const label = container.querySelector('g[font-style="italic"]')!;
+    fireEvent.contextMenu(label, { clientX: 300, clientY: 300 });
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const saved = onOptionsChange.mock.calls[0][0].weathermap;
+    expect(saved.links[0].waypoints).toHaveLength(1);
+  });
+
   test('cornerRadius flattens bends into curves — the sharp vertex disappears', () => {
     const { container } = renderPanel((wm) => {
       wm.links[0].waypoints = [{ x: 260, y: 200 }];

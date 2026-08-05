@@ -1051,6 +1051,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     onOptionsChange({ ...options, weathermap: updated });
   };
 
+  // Bound to the link's polyline AND to both value-label groups: labels sit ON
+  // the line and swallow its pointer events, so a gesture aimed at the middle
+  // of a link — the spot users actually go for — would otherwise land on the
+  // label and do nothing. Right-click (add waypoint) was already wired to the
+  // labels; double-click was not, which left VIA creation silently dead there.
   const handleAddVia = (linkId: string, e: React.MouseEvent<SVGElement>) => {
     if (!isEditMode) {
       return;
@@ -2025,6 +2030,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       handleLinkHover(d, 'A', e);
                     }}
                     onMouseOut={handleLinkHoverLoss}
+                    onDoubleClick={(e) => handleAddVia(d.id, e)}
                     onContextMenu={(e) => handleAddWaypointAt(d, e)}
                     key={i}
                   >
@@ -2087,6 +2093,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       handleLinkHover(d, 'Z', e);
                     }}
                     onMouseOut={handleLinkHoverLoss}
+                    onDoubleClick={(e) => handleAddVia(d.id, e)}
                     onContextMenu={(e) => handleAddWaypointAt(d, e)}
                     key={i}
                   >

@@ -170,11 +170,25 @@ test.describe('Polyline waypoints', () => {
     const handle = await addWaypointOnCanvas(page, panel);
     const svg = (await panel.locator('svg[id^="nw-"]').boundingBox())!;
 
-    // Plain wheel zooms in edit mode.
+    // Plain wheel zooms in edit mode. Poll for the zoom to actually land
+    // rather than sleeping: a fixed wait flaked here on a loaded machine,
+    // dragging before the new scale applied and missing the cursor lock.
+    const handleX = async () => Number(await handle.getAttribute('cx'));
+    const beforeZoom = await handleX();
     await page.mouse.move(svg.x + svg.width / 2, svg.y + svg.height / 2);
     await page.mouse.wheel(0, -100);
     await page.mouse.wheel(0, -100);
-    await page.waitForTimeout(400);
+    await expect(async () => {
+      const box = await handle.boundingBox();
+      expect(box).not.toBeNull();
+      // The handle keeps its panel coordinate but moves on screen once the
+      // zoom transform is applied; wait until its screen position is stable.
+      const first = box!.x;
+      await page.waitForTimeout(120);
+      const second = (await handle.boundingBox())!.x;
+      expect(Math.abs(second - first)).toBeLessThan(0.5);
+    }).toPass({ timeout: 8000 });
+    expect(await handleX()).toBe(beforeZoom); // zoom must not move stored coords
 
     const start = await center(handle);
     const target = { x: start.x + 50, y: start.y + 40 };
