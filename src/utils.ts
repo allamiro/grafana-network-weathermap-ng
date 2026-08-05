@@ -1372,11 +1372,19 @@ export function chordNormalOffset(from: Position, to: Position, offset: number |
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const dist = Math.hypot(dx, dy);
-  if (dist === 0) {
+  // Non-finite as well as zero. The pre-#336 straight-link code guarded this
+  // with `if (dist > 0)`, which is false for NaN and so produced no shift from
+  // corrupted node coordinates. `dist === 0` alone is TRUE-skipping for NaN, so
+  // it would return {NaN, NaN} — and the caller's `x !== 0 || y !== 0` check
+  // reads that as a real offset, letting NaN reach the rendered SVG. This keeps
+  // the old safety semantics.
+  if (!Number.isFinite(dist) || dist === 0) {
     return { x: 0, y: 0 };
   }
-  // `+ 0` normalizes negative zero — `-dy` is -0 on a horizontal chord, and a
-  // "-0" would otherwise reach the rendered SVG coordinate strings.
+  // `+ 0` normalizes negative zero, which -dy produces on a horizontal chord.
+  // Purely so the value is canonical: JavaScript already stringifies -0 as "0",
+  // so it could never have surfaced in an SVG attribute, and -0 === 0 leaves
+  // the caller's zero-check unaffected either way.
   return { x: (-dy / dist) * offset + 0, y: (dx / dist) * offset + 0 };
 }
 

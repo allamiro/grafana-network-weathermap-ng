@@ -39,6 +39,21 @@ const linkPolylines = (container: HTMLElement) =>
 
 const pointCount = (polyline: Element) => (polyline.getAttribute('points') ?? '').trim().split(/\s+/).length;
 
+// Edit-mode helpers shared by every describe below. jsdom's PointerEvent does
+// not inherit MouseEvent fields (clientX/button/metaKey all arrive undefined),
+// so pointer gestures are dispatched as MouseEvents, which carry every field
+// exactly as real browsers do.
+let getSearchSpy: jest.SpyInstance | undefined;
+afterEach(() => {
+  getSearchSpy?.mockRestore();
+  getSearchSpy = undefined;
+});
+const enterEditMode = () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+};
+const firePointer = (el: Element, type: string, opts: MouseEventInit = {}) =>
+  fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...opts }));
+
 describe('polyline links (#332)', () => {
   test('a straight link renders both halves as two-point polylines (unchanged geometry)', () => {
     const { container } = renderPanel();
@@ -111,8 +126,7 @@ describe('polyline links — precision and hardening (#334 review)', () => {
       wm.links[0].waypoints = [wp];
     });
     const halves = linkPolylines(container);
-    const firstPoint = (p: Element) =>
-      (p.getAttribute('points') ?? '').trim().split(/\s+/)[0].split(',').map(Number);
+    const firstPoint = (p: Element) => (p.getAttribute('points') ?? '').trim().split(/\s+/)[0].split(',').map(Number);
     const [ax, ay] = firstPoint(halves[0]);
     const [zx, zy] = firstPoint(halves[1]);
     const path = [{ x: ax, y: ay }, wp, { x: zx, y: zy }];
@@ -123,9 +137,7 @@ describe('polyline links — precision and hardening (#334 review)', () => {
       const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(l.getAttribute('transform') ?? '');
       return m ? { x: Number(m[1]), y: Number(m[2]) } : null;
     });
-    const match = positions.some(
-      (p) => p && Math.abs(p.x - expected.x) < 0.01 && Math.abs(p.y - expected.y) < 0.01
-    );
+    const match = positions.some((p) => p && Math.abs(p.x - expected.x) < 0.01 && Math.abs(p.y - expected.y) < 0.01);
     expect(match).toBe(true);
   });
 
@@ -154,12 +166,7 @@ describe('polyline links — precision and hardening (#334 review)', () => {
 
   test('malformed saved waypoints render sanitized — no NaN reaches the SVG', () => {
     const { container } = renderPanel((wm) => {
-      wm.links[0].waypoints = [
-        { x: NaN, y: 100 },
-        'garbage',
-        { x: 260, y: 200 },
-        { x: 5, y: Infinity },
-      ] as never;
+      wm.links[0].waypoints = [{ x: NaN, y: 100 }, 'garbage', { x: 260, y: 200 }, { x: 5, y: Infinity }] as never;
     });
     const halves = linkPolylines(container);
     expect(halves.length).toBe(2);
@@ -174,22 +181,6 @@ describe('polyline links — precision and hardening (#334 review)', () => {
 import { locationService } from '@grafana/runtime';
 
 describe('waypoint drag handles and rounded corners (#336)', () => {
-  let getSearchSpy: jest.SpyInstance | undefined;
-  afterEach(() => {
-    getSearchSpy?.mockRestore();
-    getSearchSpy = undefined;
-  });
-  const enterEditMode = () => {
-    getSearchSpy = jest
-      .spyOn(locationService, 'getSearch')
-      .mockReturnValue(new URLSearchParams('editPanel=1'));
-  };
-  // jsdom's PointerEvent does not inherit MouseEvent fields (clientX/button/
-  // metaKey all arrive undefined), so dispatch MouseEvent-based pointer events
-  // — which carry every field, exactly as real browsers do.
-  const firePointer = (el: Element, type: string, opts: MouseEventInit = {}) =>
-    fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...opts }));
-
   test('handles render only in edit mode, one per waypoint', () => {
     enterEditMode();
     const { container } = renderPanel((wm) => {
@@ -319,17 +310,6 @@ describe('waypoint drag handles and rounded corners (#336)', () => {
 // translated along the A->Z chord normal, so its shape and arc length survive
 // intact; waypoints stay STORED unshifted and only the drawing moves.
 describe('linkOffset on polyline links (#336)', () => {
-  let getSearchSpy: jest.SpyInstance | undefined;
-  afterEach(() => {
-    getSearchSpy?.mockRestore();
-    getSearchSpy = undefined;
-  });
-  const enterEditMode = () => {
-    getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
-  };
-  const firePointer = (el: Element, type: string, opts: MouseEventInit = {}) =>
-    fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...opts }));
-
   // Every rendered point of both halves, in order.
   const drawnPoints = (container: HTMLElement) =>
     linkPolylines(container).flatMap((p) =>

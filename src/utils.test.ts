@@ -154,7 +154,10 @@ describe('needsMigration (#224)', () => {
     ['panel.backgroundColor', (st: Record<string, Record<string, unknown>>) => delete st.panel.backgroundColor],
     ['panel.zoomScale', (st: Record<string, Record<string, unknown>>) => delete st.panel.zoomScale],
     ['link.stroke.color', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.stroke.color],
-    ['link.label.background', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.background],
+    [
+      'link.label.background',
+      (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.background,
+    ],
     ['link.label.border', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.border],
     ['link.label.font', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.font],
     ['tooltip.fontSize', (st: Record<string, Record<string, unknown>>) => delete st.tooltip.fontSize],
@@ -758,7 +761,11 @@ describe('buildQueryOptions (#49, #191)', () => {
   test('long unique disambiguation strings stay concise (#49)', () => {
     const frames = [
       frame('A', 'node_cpu_seconds_total{mode="idle",instance="host-1:9100",job="node"}', 'node_cpu_seconds_total'),
-      frame('B', 'node_network_transmit_bytes_total{device="eth0",instance="host-1:9100"}', 'node_network_transmit_bytes_total'),
+      frame(
+        'B',
+        'node_network_transmit_bytes_total{device="eth0",instance="host-1:9100"}',
+        'node_network_transmit_bytes_total'
+      ),
     ];
     const opts = buildQueryOptions(frames);
     expect(opts.map((o) => o.label)).toEqual(['A: node_cpu_seconds_total', 'B: node_network_transmit_bytes_total']);
@@ -1313,7 +1320,12 @@ describe('roundPathCorners (#336)', () => {
   });
 
   test('zero-length segments at a bend are kept as sharp points, never NaN', () => {
-    const withDup = [{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 40 }];
+    const withDup = [
+      { x: 0, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 40 },
+    ];
     const out = roundPathCorners(withDup, 10);
     out.forEach((p) => {
       expect(Number.isFinite(p.x)).toBe(true);
@@ -1353,8 +1365,7 @@ describe('nearestSegmentIndex (#336)', () => {
 describe('chordNormalOffset and path translation (#336)', () => {
   const segments = (pts: Array<{ x: number; y: number }>) =>
     pts.slice(1).map((p, i) => ({ x: p.x - pts[i].x, y: p.y - pts[i].y }));
-  const length = (pts: Array<{ x: number; y: number }>) =>
-    segments(pts).reduce((t, s) => t + Math.hypot(s.x, s.y), 0);
+  const length = (pts: Array<{ x: number; y: number }>) => segments(pts).reduce((t, s) => t + Math.hypot(s.x, s.y), 0);
 
   test('offsets perpendicular to the chord, keeping the pre-#336 sign convention', () => {
     // A horizontal A->Z chord offsets straight down (+y), exactly as the
@@ -1380,6 +1391,23 @@ describe('chordNormalOffset and path translation (#336)', () => {
     expect(chordNormalOffset(a, z, 0)).toEqual({ x: 0, y: 0 });
     expect(chordNormalOffset(a, z, NaN)).toEqual({ x: 0, y: 0 });
     expect(chordNormalOffset(a, z, Infinity)).toEqual({ x: 0, y: 0 });
+  });
+
+  test('treats non-finite endpoints as no offset, as the pre-#336 code did', () => {
+    // The old straight-link math guarded with `if (dist > 0)`, false for NaN,
+    // so corrupted coordinates produced no shift. `dist === 0` alone is not
+    // enough: NaN would slip through as {NaN, NaN}, and the caller's
+    // `x !== 0 || y !== 0` check reads that as a real offset.
+    expect(chordNormalOffset({ x: NaN, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset({ x: 0, y: 0 }, { x: NaN, y: NaN }, 20)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset({ x: -Infinity, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({ x: 0, y: 0 });
+    // ...and nothing non-finite escapes for any of them.
+    for (const v of [
+      chordNormalOffset({ x: NaN, y: 0 }, { x: 100, y: 0 }, 20),
+      chordNormalOffset({ x: 0, y: 0 }, { x: Infinity, y: 0 }, 20),
+    ]) {
+      expect(Number.isFinite(v.x) && Number.isFinite(v.y)).toBe(true);
+    }
   });
 
   test('returns a zero vector for coincident endpoints instead of NaN', () => {
@@ -1591,15 +1619,19 @@ describe('pathGradientStops (#336)', () => {
   });
 
   test('every stop stays inside 0..1 and carries a parseable color', () => {
-    const stops = pathGradientStops(roundPathCorners(
-      [
-        { x: 0, y: 0 },
-        { x: 80, y: 0 },
-        { x: 80, y: 60 },
-        { x: 160, y: 60 },
-      ],
-      18
-    ), RED, BLUE);
+    const stops = pathGradientStops(
+      roundPathCorners(
+        [
+          { x: 0, y: 0 },
+          { x: 80, y: 0 },
+          { x: 80, y: 60 },
+          { x: 160, y: 60 },
+        ],
+        18
+      ),
+      RED,
+      BLUE
+    );
     expect(stops.length).toBeGreaterThan(8); // dense rounded path
     stops.forEach((s) => {
       expect(s.offset).toBeGreaterThanOrEqual(0);
