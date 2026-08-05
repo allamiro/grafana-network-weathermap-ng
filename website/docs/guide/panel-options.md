@@ -6,17 +6,19 @@ Panel-level options apply to the whole weathermap. Open the panel options sideba
 
 ## Background
 
-!!! tip "Where do I host my floor plan / map image?"
-    The **Image** field takes a URL — the plugin does not upload files. Your options:
+!!! tip "Where do I put my floor plan / map image?"
+    Either **embed it in the dashboard** with **Upload Image** — nothing to host, and it travels with exports — or **link it** and host it yourself:
 
     1. **Any `http://` or `https://` URL** your dashboard viewers' browsers can reach (an internal web server, a wiki attachment, an S3/object-storage link, Wikimedia Commons, ...). Prefer `https` where you have it — but plain `http` is accepted, which matters for lab and air-gapped intranets.
     2. **Grafana's own `public/` folder** — copy the file onto the Grafana server, e.g. `/usr/share/grafana/public/img/floorplan.png`, then use the relative URL `public/img/floorplan.png`. Works fully air-gapped and survives viewer networks that can't reach external hosts.
     3. **A provisioned sidecar** — the demo dashboards serve their floor-plan and world-map images from the `testing/` stack's exporter container on `:8080`; any tiny static file server works the same way.
 
-    SVG or PNG both work; prefer SVG for crisp zooming with **Move With Map**.
+    Uploading is the simplest choice for a one-off image; linking is better for large files or art shared across several dashboards. See [Linked vs embedded](#linked-vs-embedded-background-images).
 
-!!! warning "Image URLs are validated"
-    Only relative Grafana paths and `http`/`https` URLs are accepted. `data:`, `file:`, `javascript:` and other schemes are **rejected** by the plugin's URL sanitization — pasting a base64 data URL will not work.
+!!! warning "Sources are validated"
+    The **Image Source** field accepts only relative Grafana paths and `http`/`https` URLs. `data:`, `file:`, `javascript:` and other schemes are **rejected** — pasting a base64 data URL into that box will not work.
+
+    To embed an image, use **Upload Image** instead. That is deliberate rather than an inconsistency: the upload path is where the type and [size limits](#size-limits-for-embedded-images) are enforced, so pasting cannot be used to slip an oversized or unsupported image past them.
 
 - **Color** — the canvas background color.
 - **Image** — set a background image (floor plan, geographic map, building outline, rack elevation). Choose an **Image Fit** (contain / cover / auto). You can either **link** it by URL or **upload** it to embed it in the dashboard — see [Linked vs embedded](#linked-vs-embedded-background-images) below.
