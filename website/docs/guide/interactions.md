@@ -19,7 +19,7 @@ How to navigate and edit the map with mouse, trackpad, and keyboard — on **Lin
 
     ![The map in edit mode with grid guides visible behind the nodes](../img/getting-started/drag-arrange-canvas.png)
 
-    *The same map in the editor. Grid guides are drawn behind the nodes here because **Grid → Show Guides** is on, so you can see what a drag is snapping to.*
+    *The same map in the editor. Grid guides are drawn behind the nodes here because **Grid Guides** is on, so you can see what a drag is snapping to — they appear only while editing, never on the saved dashboard.*
 
 4. Click **Back to dashboard**, then **Save dashboard** — positions are stored in the panel options, so nothing is kept until you save.
 
