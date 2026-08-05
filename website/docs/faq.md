@@ -47,6 +47,9 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
 - **Q: How do I add a bend/waypoint (VIA) to a link?**
     - In edit mode, **double-click** a link to insert a VIA, **drag** it to position, and **right-click** it to remove. See [Interactions](guide/interactions.md#editing-vias-on-the-canvas).
 
+- **Q: There are grid lines all over my map — how do I turn them off?**
+    - Those are **Grid Guides** (Panel Options → **Grid Options**). Turn off **Grid Guides** to remove the lines while keeping drag snapping, or turn off **Enable Node Grid Snapping** to remove both in one toggle — it clears the guides for you. Note the lines only ever appear **while editing the panel**; a saved dashboard never shows them. See [Panel Options → Grid](guide/panel-options.md#grid-snapping-and-guide-lines).
+
 - **Q: Can the background image move and zoom with the map?**
     - Yes — set a background image, then enable **Move With Map**. See [Panel Options → Background](guide/panel-options.md#background).
 

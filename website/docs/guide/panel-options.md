@@ -35,17 +35,43 @@ Panel-level options apply to the whole weathermap. Open the panel options sideba
 
 ---
 
-## Grid
+## Grid (snapping and guide lines)
 
-Enable **Grid** to snap node dragging to a fixed grid, set the **grid size**, and optionally show **guides**. Great for aligning large maps.
+The grid makes node dragging snap to fixed steps, so a large map can be aligned cleanly instead of by eye. It is **off by default** — a new panel has no grid and no guide lines.
+
+### Where the options are
+
+**Edit** the panel → in the options sidebar, scroll to **Grid Options**:
+
+![The Grid Options section of the panel editor: Enable Node Grid Snapping, Grid Size, and Grid Guides](../img/getting-started/grid-options.png)
 
 | Option | What it does |
 |---|---|
-| **Enable Node Grid Snapping** | Node drags snap to the grid. Turning this off also clears the guides. |
-| **Grid Size (px)** | The spacing that drags snap to. |
-| **Grid Guides** | Draws the grid so you can see what you are snapping to. **Shown only while editing the panel** — it is an alignment aid, and a viewer cannot drag anything, so a saved dashboard is never covered in graph paper. |
+| **Enable Node Grid Snapping** | The master switch. Node drags snap to the grid. Turning this **off also clears Grid Guides** for you. |
+| **Grid Size (px)** | The step that drags snap to. Only shown while snapping is on. |
+| **Grid Guides** | Draws the grid lines so you can see what you are snapping to. |
 
-To remove the grid lines but keep snapping, turn off **Grid Guides**. To remove both at once, turn off **Enable Node Grid Snapping** — it clears the guides for you.
+### Turning the grid lines on
+
+1. **Edit** the panel (hover it and press `e`).
+2. Open **Grid Options** and turn on **Enable Node Grid Snapping**.
+3. Set a **Grid Size** — 10–25 px suits most maps.
+4. Turn on **Grid Guides** to see the lines.
+5. **Back to dashboard → Save dashboard.**
+
+### Turning the grid lines off
+
+| Goal | Do this |
+|---|---|
+| Remove the lines, **keep** snapping | Turn off **Grid Guides** |
+| Remove **both**, in one toggle | Turn off **Enable Node Grid Snapping** — it clears the guides for you |
+
+![The same map in the panel editor with Grid Guides on and off](../img/getting-started/grid-guides-on-off.png)
+
+*The same map while editing: **Grid Guides on** (left) and **off** (right). Snapping is on in both — the lines only change whether you can see the grid you are snapping to.*
+
+!!! note "Guide lines are an editing aid only"
+    Grid Guides are drawn **only while the panel editor is open**. A saved dashboard never shows them, because a viewer cannot drag anything and the lines would just be graph paper over the map. Snapping is unaffected, and the setting itself is preserved — reopen the editor and the guides come back.
 
 ---
 
