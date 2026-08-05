@@ -100,7 +100,8 @@ Publish the exporter somewhere else and regenerate the dashboards to match:
 #     ports: !override ["8082:8080"]
 
 WM_EXPORTER_URL=http://localhost:8082 node testing/scripts/generate-scenario-dashboards.js
-docker compose --project-directory testing up -d --build grafana
+# Recreate the exporter (it is what binds the new port) as well as Grafana:
+docker compose --project-directory testing up -d --build exporter grafana
 ```
 
 `WM_EXPORTER_URL` defaults to `http://localhost:8080`, so the committed
