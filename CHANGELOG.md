@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [1.6.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.7) (2026-08-02)
 
+### Security
+
+* patched two newly-disclosed high-severity advisories flagged by the Grafana plugin validator's osv-scanner (both dev/build-only, not shipped in the plugin). **brace-expansion** 5.0.8 → 5.0.9 (GHSA-rgw5-rvv9-x895 / CVE-2026-69152; still pinned tree-wide and kept callable in CommonJS via the existing `patch-package` shim so the older `minimatch` build/test consumers work). **fast-uri** pinned to 3.1.5 (GHSA-7p8r-x3mc-p8w7 / CVE-2026-18446). `npm audit` reports 0 high/critical findings; no shipped or runtime code change
+
 ### Fixed
 
 * **automatic query re-binding for dashboards imported from the original `knightss27-weathermap-panel`** ([#331](https://github.com/allamiro/grafana-network-weathermap-ng/issues/331)): imported maps kept their nodes and links but every link's A/Z side, bandwidth, and status query dropdowns appeared empty — the bindings were still in the JSON, stored under display names the original plugin computed differently. The panel now recognizes those legacy names and rewrites them to the current ones automatically on first data load, so old-plugin dashboards bind their queries out of the box. The rewrite is deliberately conservative: it only touches names that currently resolve to nothing, only on an unambiguous match, and only from a complete data snapshot — working bindings, template-variable queries, and ambiguous cases are never altered ([#333](https://github.com/allamiro/grafana-network-weathermap-ng/pull/333))
