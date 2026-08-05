@@ -11,20 +11,44 @@ import {
   Slider,
   useStyles2,
   UnitPicker,
+  useTheme2,
 } from '@grafana/ui';
 import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
 import { Weathermap, ValueMappingMode } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
-import { finiteOrFallback, sanitizeUrl } from 'utils';
+import {
+  finiteOrFallback,
+  sanitizeUrl,
+  sanitizeImageSource,
+  formatBytes,
+  BG_IMAGE_MAX_BYTES,
+  BG_IMAGE_WARN_BYTES,
+} from 'utils';
 
 interface Settings {}
 
 interface Props extends StandardEditorProps<Weathermap, Settings> {}
 
+/** An embedded background is a data: URI; a linked one is a URL. */
+const isEmbeddedImage = (src: string | undefined) => Boolean(src && src.startsWith('data:'));
+
+/** "SVG, 53 KB" for the read-only source field of an embedded image. */
+const embeddedImageLabel = (src: string) => {
+  const type = /^data:image\/([a-z0-9+.-]+);/i.exec(src)?.[1] ?? 'image';
+  // 4 base64 chars per 3 bytes, minus padding.
+  const b64 = src.slice(src.indexOf(',') + 1);
+  const bytes = Math.max(0, Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0));
+  return `${type.replace('+xml', '').toUpperCase()}, ${formatBytes(bytes)}`;
+};
+
 export const PanelForm = ({ value, onChange }: Props) => {
   const styles = useStyles2(getStyles);
+  const theme = useTheme2();
+  const [bgUploadNote, setBgUploadNote] = React.useState<{ level: 'info' | 'warn' | 'error'; text: string } | null>(
+    null
+  );
 
   // Immutable panel-settings update (#225): clone the settings path so
   // onChange delivers new references instead of mutating props.value.
@@ -97,9 +121,22 @@ export const PanelForm = ({ value, onChange }: Props) => {
         </InlineField>
         {value.settings.panel.backgroundImage ? (
           <>
-            <InlineField grow label="Image Source" className={styles.inlineField} style={{ marginLeft: '24px' }}>
+            <InlineField
+              grow
+              label="Image Source"
+              className={styles.inlineField}
+              style={{ marginLeft: '24px' }}
+              tooltip={
+                'Link an image by URL, or upload one to embed it in the dashboard. Embedding makes the dashboard self-contained (it travels with exports and needs no image host) at the cost of dashboard size — prefer SVG, and keep files small.'
+              }
+            >
               <Input
-                value={value.settings.panel.backgroundImage.url}
+                value={
+                  isEmbeddedImage(value.settings.panel.backgroundImage.url)
+                    ? `Embedded image (${embeddedImageLabel(value.settings.panel.backgroundImage.url)})`
+                    : value.settings.panel.backgroundImage.url
+                }
+                readOnly={isEmbeddedImage(value.settings.panel.backgroundImage.url)}
                 placeholder={'https://example.com/background.jpg'}
                 type={'text'}
                 name={'bgImageURL'}
@@ -111,6 +148,78 @@ export const PanelForm = ({ value, onChange }: Props) => {
                   onChange(options);
                 }}
               ></Input>
+            </InlineField>
+            <InlineField grow label="Upload Image" className={styles.inlineField} style={{ marginLeft: '24px' }}>
+              <div>
+                <input
+                  type="file"
+                  name="bgImageUpload"
+                  data-testid="bg-image-upload"
+                  accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                  onChange={(e) => {
+                    const file = e.currentTarget.files?.[0];
+                    // Reset so re-picking the same file fires change again.
+                    e.currentTarget.value = '';
+                    if (!file) {
+                      return;
+                    }
+                    if (file.size > BG_IMAGE_MAX_BYTES) {
+                      setBgUploadNote({
+                        level: 'error',
+                        text: `${file.name} is ${formatBytes(file.size)} — too large to embed (limit ${formatBytes(
+                          BG_IMAGE_MAX_BYTES
+                        )}). Link it by URL instead, or use an SVG.`,
+                      });
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onerror = () =>
+                      setBgUploadNote({ level: 'error', text: `Could not read ${file.name}.` });
+                    reader.onload = () => {
+                      const dataUri = sanitizeImageSource(String(reader.result ?? ''));
+                      if (!dataUri) {
+                        setBgUploadNote({
+                          level: 'error',
+                          text: `${file.name} is not a supported image type (PNG, JPEG, GIF, WebP, SVG).`,
+                        });
+                        return;
+                      }
+                      let options = structuredClone(value);
+                      if (options.settings.panel.backgroundImage) {
+                        options.settings.panel.backgroundImage.url = dataUri;
+                      }
+                      onChange(options);
+                      setBgUploadNote(
+                        file.size > BG_IMAGE_WARN_BYTES
+                          ? {
+                              level: 'warn',
+                              text: `Embedded ${formatBytes(
+                                file.size
+                              )}. Large embeds are stored in the dashboard itself and slow every save — an SVG or a linked URL is usually better.`,
+                            }
+                          : { level: 'info', text: `Embedded ${file.name} (${formatBytes(file.size)}).` }
+                      );
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                {bgUploadNote ? (
+                  <div
+                    data-testid="bg-image-upload-note"
+                    className={css`
+                      margin-top: 4px;
+                      font-size: 11px;
+                      color: ${bgUploadNote.level === 'error'
+                        ? theme.colors.error.text
+                        : bgUploadNote.level === 'warn'
+                        ? theme.colors.warning.text
+                        : theme.colors.text.secondary};
+                    `}
+                  >
+                    {bgUploadNote.text}
+                  </div>
+                ) : null}
+              </div>
             </InlineField>
             <InlineField grow label="Image Fit" className={styles.inlineField} style={{ marginLeft: '24px' }}>
               <Select

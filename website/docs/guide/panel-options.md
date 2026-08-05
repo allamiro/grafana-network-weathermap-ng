@@ -19,8 +19,41 @@ Panel-level options apply to the whole weathermap. Open the panel options sideba
     Only relative Grafana paths and `http`/`https` URLs are accepted. `data:`, `file:`, `javascript:` and other schemes are **rejected** by the plugin's URL sanitization — pasting a base64 data URL will not work.
 
 - **Color** — the canvas background color.
-- **Image** — set a background image by URL (floor plan, geographic map, building outline, network zones). Choose an **Image Fit** (contain / cover / auto).
+- **Image** — set a background image (floor plan, geographic map, building outline, rack elevation). Choose an **Image Fit** (contain / cover / auto). You can either **link** it by URL or **upload** it to embed it in the dashboard — see [Linked vs embedded](#linked-vs-embedded-background-images) below.
 - **Move With Map** — when enabled, the background image is drawn *inside* the map canvas so it **pans and zooms together** with the nodes and links. When off (default), the image stays fixed like a wallpaper.
+
+### Linked vs embedded background images
+
+There are two ways to give the panel a background, and the trade-off between them is worth understanding before you pick one.
+
+| | **Linked** (Image Source URL) | **Embedded** (Upload Image) |
+|---|---|---|
+| Where the image lives | On a web server you control | Inside the dashboard JSON |
+| Dashboard size | Unchanged | Grows by ~1.33× the file size |
+| Sharing / export | Recipient must be able to reach the URL | Travels with the dashboard, works anywhere |
+| Changing the image | Replace it on the server; every dashboard using it updates | Re-upload per dashboard |
+| Breaks when… | The host moves, a port changes, or the viewer's network can't reach it | Never — there is nothing external to reach |
+
+**Link** when the image is large, shared across several dashboards, or updated independently. **Embed** when you want the dashboard to be self-contained — exports, imports, and air-gapped installs all keep their background with no image hosting at all.
+
+Both accept **PNG, JPEG, GIF, WebP, and SVG**.
+
+#### Size limits for embedded images
+
+An embedded image is stored as text inside the dashboard, which Grafana keeps in its database and re-serialises on **every save**. An oversized embed doesn't just bloat exports — it makes saving noticeably slower, in a way that's hard to trace back to the image. So:
+
+| Size of the original file | What happens |
+|---|---|
+| Up to **1 MB** | Embedded silently — the normal case |
+| **1 MB – 4 MB** | Embedded, with a warning suggesting SVG or a linked URL |
+| Over **4 MB** | **Refused.** Link it by URL instead, or convert it to SVG |
+
+Base64 encoding adds about 33%, so a 1 MB file becomes roughly 1.33 MB of dashboard JSON.
+
+!!! tip "Prefer SVG"
+    Vector art is dramatically smaller for exactly the kind of image this panel wants. The rack elevation used in the demo dashboards is a detailed multi-device drawing and it embeds in **53 KB** — a screenshot of the same rack would cost megabytes and look worse when zoomed. If your source is a photo or screenshot, consider linking it rather than embedding.
+
+Whichever you choose, if the image can't be loaded the panel tells you: while **editing**, a broken or rejected background shows a notice naming the problem, rather than silently drawing your nodes on an empty canvas. The notice is edit-mode only, so a dashboard on a wall display is never interrupted by it.
 
 ---
 

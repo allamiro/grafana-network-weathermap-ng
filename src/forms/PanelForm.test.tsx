@@ -158,3 +158,76 @@ test('clearing a configured scale font color restores auto contrast (#278)', asy
   fireEvent.click(screen.getByRole('button', { name: 'None' }));
   expect(lastValue(spy).settings.scale.backgroundColor).toBeUndefined();
 });
+
+// Background image upload (#344). jsdom has a real FileReader, so the whole
+// read -> sanitize -> store path runs for real here.
+describe('background image upload (#344)', () => {
+  const withBackground = () => {
+    const initial = getData(theme);
+    initial.settings.panel.backgroundImage = { url: '', fit: 'contain' };
+    return initial;
+  };
+  const svgFile = (name = 'rack.svg', bytes = 512) =>
+    new File([new Uint8Array(bytes).fill(60)], name, { type: 'image/svg+xml' });
+
+  test('uploading embeds the file as a data URI in the existing url field', async () => {
+    const spy = jest.fn();
+    render(<Harness initial={withBackground()} onChangeSpy={spy} />);
+    const input = screen.getByTestId('bg-image-upload') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [svgFile()] } });
+    await screen.findByTestId('bg-image-upload-note');
+    const saved = lastValue(spy).settings.panel.backgroundImage!.url;
+    expect(saved.startsWith('data:image/svg+xml;base64,')).toBe(true);
+    // No schema change: fit and attachToCanvas are untouched.
+    expect(lastValue(spy).settings.panel.backgroundImage!.fit).toBe('contain');
+  });
+
+  test('a file over the hard cap is refused and nothing is saved', () => {
+    const spy = jest.fn();
+    render(<Harness initial={withBackground()} onChangeSpy={spy} />);
+    const huge = svgFile('huge.png');
+    Object.defineProperty(huge, 'size', { value: 5 * 1024 * 1024 });
+    fireEvent.change(screen.getByTestId('bg-image-upload'), { target: { files: [huge] } });
+    expect(screen.getByTestId('bg-image-upload-note').textContent).toMatch(/too large to embed/i);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  test('a file over the warn threshold embeds but says so', async () => {
+    const spy = jest.fn();
+    render(<Harness initial={withBackground()} onChangeSpy={spy} />);
+    const big = svgFile('big.svg', 2048);
+    Object.defineProperty(big, 'size', { value: 2 * 1024 * 1024 });
+    fireEvent.change(screen.getByTestId('bg-image-upload'), { target: { files: [big] } });
+    await screen.findByTestId('bg-image-upload-note');
+    expect(screen.getByTestId('bg-image-upload-note').textContent).toMatch(/slow every save|Large embeds/i);
+    expect(lastValue(spy).settings.panel.backgroundImage!.url.startsWith('data:')).toBe(true);
+  });
+
+  test('an unsupported type is refused even if the picker is bypassed', async () => {
+    const spy = jest.fn();
+    render(<Harness initial={withBackground()} onChangeSpy={spy} />);
+    const bad = new File(['<script>'], 'evil.html', { type: 'text/html' });
+    fireEvent.change(screen.getByTestId('bg-image-upload'), { target: { files: [bad] } });
+    await screen.findByTestId('bg-image-upload-note');
+    expect(screen.getByTestId('bg-image-upload-note').textContent).toMatch(/not a supported image type/i);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  test('an embedded source shows as read-only summary, not a wall of base64', () => {
+    const initial = withBackground();
+    initial.settings.panel.backgroundImage!.url = 'data:image/svg+xml;base64,PHN2Zy8+';
+    render(<Harness initial={initial} onChangeSpy={jest.fn()} />);
+    const field = document.querySelector('input[name="bgImageURL"]') as HTMLInputElement;
+    expect(field.value).toMatch(/^Embedded image \(SVG, /);
+    expect(field.readOnly).toBe(true);
+  });
+
+  test('a linked URL stays editable and is shown verbatim', () => {
+    const initial = withBackground();
+    initial.settings.panel.backgroundImage!.url = 'https://example.com/bg.png';
+    render(<Harness initial={initial} onChangeSpy={jest.fn()} />);
+    const field = document.querySelector('input[name="bgImageURL"]') as HTMLInputElement;
+    expect(field.value).toBe('https://example.com/bg.png');
+    expect(field.readOnly).toBe(false);
+  });
+});
