@@ -9,6 +9,7 @@
     "tests/",
     "testing/scripts/",
     "website/scripts/",
+    "website/docs/javascripts/",
     "website/site/",
     "scripts/"
   ]
