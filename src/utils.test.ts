@@ -47,6 +47,10 @@ import {
   pathToSvg,
   pathToPoints,
   nearestSegmentIndex,
+  chordNormalOffset,
+  translatePoint,
+  translatePath,
+  pathGradientStops,
 } from 'utils';
 
 test('getSolidFromAlphaColor', () => {
@@ -150,7 +154,10 @@ describe('needsMigration (#224)', () => {
     ['panel.backgroundColor', (st: Record<string, Record<string, unknown>>) => delete st.panel.backgroundColor],
     ['panel.zoomScale', (st: Record<string, Record<string, unknown>>) => delete st.panel.zoomScale],
     ['link.stroke.color', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.stroke.color],
-    ['link.label.background', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.background],
+    [
+      'link.label.background',
+      (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.background,
+    ],
     ['link.label.border', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.border],
     ['link.label.font', (st: Record<string, Record<string, Record<string, unknown>>>) => delete st.link.label.font],
     ['tooltip.fontSize', (st: Record<string, Record<string, unknown>>) => delete st.tooltip.fontSize],
@@ -754,7 +761,11 @@ describe('buildQueryOptions (#49, #191)', () => {
   test('long unique disambiguation strings stay concise (#49)', () => {
     const frames = [
       frame('A', 'node_cpu_seconds_total{mode="idle",instance="host-1:9100",job="node"}', 'node_cpu_seconds_total'),
-      frame('B', 'node_network_transmit_bytes_total{device="eth0",instance="host-1:9100"}', 'node_network_transmit_bytes_total'),
+      frame(
+        'B',
+        'node_network_transmit_bytes_total{device="eth0",instance="host-1:9100"}',
+        'node_network_transmit_bytes_total'
+      ),
     ];
     const opts = buildQueryOptions(frames);
     expect(opts.map((o) => o.label)).toEqual(['A: node_cpu_seconds_total', 'B: node_network_transmit_bytes_total']);
@@ -1309,7 +1320,12 @@ describe('roundPathCorners (#336)', () => {
   });
 
   test('zero-length segments at a bend are kept as sharp points, never NaN', () => {
-    const withDup = [{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 40 }];
+    const withDup = [
+      { x: 0, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 40 },
+    ];
     const out = roundPathCorners(withDup, 10);
     out.forEach((p) => {
       expect(Number.isFinite(p.x)).toBe(true);
@@ -1340,5 +1356,397 @@ describe('nearestSegmentIndex (#336)', () => {
         { x: 0, y: 0 }
       )
     ).toBe(0);
+  });
+});
+
+// linkOffset on bent paths (#336 item 3). The rejected alternative was
+// per-segment miter offsetting; these tests pin the properties that made
+// chord-normal translation the correct operation instead.
+describe('chordNormalOffset and path translation (#336)', () => {
+  const segments = (pts: Array<{ x: number; y: number }>) =>
+    pts.slice(1).map((p, i) => ({ x: p.x - pts[i].x, y: p.y - pts[i].y }));
+  const length = (pts: Array<{ x: number; y: number }>) => segments(pts).reduce((t, s) => t + Math.hypot(s.x, s.y), 0);
+
+  test('offsets perpendicular to the chord, keeping the pre-#336 sign convention', () => {
+    // A horizontal A->Z chord offsets straight down (+y), exactly as the
+    // straight-link code did before waypoints existed.
+    expect(chordNormalOffset({ x: 0, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({ x: 0, y: 20 });
+    // A vertical chord offsets to -x.
+    expect(chordNormalOffset({ x: 0, y: 0 }, { x: 0, y: 100 }, 20)).toEqual({ x: -20, y: 0 });
+    // Reversing the chord reverses the shift.
+    expect(chordNormalOffset({ x: 100, y: 0 }, { x: 0, y: 0 }, 20)).toEqual({ x: 0, y: -20 });
+  });
+
+  test('the offset vector has exactly the requested magnitude on any chord angle', () => {
+    const v = chordNormalOffset({ x: 0, y: 0 }, { x: 30, y: 40 }, 12);
+    expect(Math.hypot(v.x, v.y)).toBeCloseTo(12, 10);
+    // Perpendicular to the chord.
+    expect(v.x * 30 + v.y * 40).toBeCloseTo(0, 10);
+  });
+
+  test('returns a zero vector for absent, zero and non-finite offsets', () => {
+    const a = { x: 0, y: 0 };
+    const z = { x: 100, y: 0 };
+    expect(chordNormalOffset(a, z, undefined)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset(a, z, 0)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset(a, z, NaN)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset(a, z, Infinity)).toEqual({ x: 0, y: 0 });
+  });
+
+  test('treats non-finite endpoints as no offset, as the pre-#336 code did', () => {
+    // The old straight-link math guarded with `if (dist > 0)`, false for NaN,
+    // so corrupted coordinates produced no shift. `dist === 0` alone is not
+    // enough: NaN would slip through as {NaN, NaN}, and the caller's
+    // `x !== 0 || y !== 0` check reads that as a real offset.
+    expect(chordNormalOffset({ x: NaN, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset({ x: 0, y: 0 }, { x: NaN, y: NaN }, 20)).toEqual({ x: 0, y: 0 });
+    expect(chordNormalOffset({ x: -Infinity, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({ x: 0, y: 0 });
+    // ...and nothing non-finite escapes for any of them.
+    for (const v of [
+      chordNormalOffset({ x: NaN, y: 0 }, { x: 100, y: 0 }, 20),
+      chordNormalOffset({ x: 0, y: 0 }, { x: Infinity, y: 0 }, 20),
+    ]) {
+      expect(Number.isFinite(v.x) && Number.isFinite(v.y)).toBe(true);
+    }
+  });
+
+  test('returns a zero vector for coincident endpoints instead of NaN', () => {
+    const v = chordNormalOffset({ x: 50, y: 50 }, { x: 50, y: 50 }, 20);
+    expect(v).toEqual({ x: 0, y: 0 });
+    expect(Number.isNaN(v.x) || Number.isNaN(v.y)).toBe(false);
+  });
+
+  test('translation preserves arc length exactly, at every offset', () => {
+    // Arc length is the parameter arrows, labels, collision spreading and
+    // animation duration all key off. Per-segment offsetting changes it;
+    // translation cannot.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+      { x: 80, y: 60 },
+      { x: 160, y: 60 },
+    ];
+    const rounded = roundPathCorners(path, 18);
+    for (const offset of [-40, -18, -6, 6, 18, 40]) {
+      const shifted = translatePath(rounded, chordNormalOffset(rounded[0], rounded[rounded.length - 1], offset));
+      expect(length(shifted)).toBeCloseTo(length(rounded), 9);
+      expect(shifted).toHaveLength(rounded.length);
+    }
+  });
+
+  test('translation never reverses a segment, so it cannot introduce a self-intersection', () => {
+    // This shape is the miter-offset failure case: a short (12px) segment
+    // between two same-handed bends. Offsetting it per-segment by 15px flips
+    // that middle segment and the path doubles back through itself.
+    // Translation leaves every segment direction identical.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 12 },
+      { x: 0, y: 12 },
+    ];
+    const shifted = translatePath(path, chordNormalOffset(path[0], path[path.length - 1], 15));
+    const before = segments(path);
+    const after = segments(shifted);
+    after.forEach((s, i) => {
+      expect(s.x).toBeCloseTo(before[i].x, 10);
+      expect(s.y).toBeCloseTo(before[i].y, 10);
+    });
+  });
+
+  test('two opposite offsets keep a constant separation the whole way along', () => {
+    // What linkOffset is actually for: spreading a parallel bundle. Every
+    // vertex pair stays exactly |offsetA - offsetZ| apart.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 50, y: -30 },
+      { x: 120, y: -30 },
+      { x: 170, y: 0 },
+    ];
+    const lo = translatePath(path, chordNormalOffset(path[0], path[3], -8));
+    const hi = translatePath(path, chordNormalOffset(path[0], path[3], 8));
+    lo.forEach((p, i) => expect(Math.hypot(hi[i].x - p.x, hi[i].y - p.y)).toBeCloseTo(16, 9));
+  });
+
+  test('translating by a zero vector is the identity', () => {
+    const path = [
+      { x: 3, y: 4 },
+      { x: 9, y: 1 },
+    ];
+    expect(translatePath(path, { x: 0, y: 0 })).toEqual(path);
+  });
+
+  test('produces fresh objects and never mutates its input', () => {
+    const path = [
+      { x: 3, y: 4 },
+      { x: 9, y: 1 },
+    ];
+    const snapshot = JSON.parse(JSON.stringify(path));
+    const shifted = translatePath(path, { x: 5, y: 5 });
+    expect(path).toEqual(snapshot);
+    expect(shifted[0]).not.toBe(path[0]);
+    const p = { x: 1, y: 2 };
+    expect(translatePoint(p, { x: 0, y: 0 })).not.toBe(p);
+  });
+
+  test('rounding corners then translating equals translating then rounding', () => {
+    // Rounding is translation-equivariant, so the render order of the two is
+    // free — the offset can be applied to the raw waypoints before rounding.
+    const path = [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+      { x: 80, y: 60 },
+    ];
+    const delta = chordNormalOffset(path[0], path[2], 14);
+    const roundThenShift = translatePath(roundPathCorners(path, 20), delta);
+    const shiftThenRound = roundPathCorners(translatePath(path, delta), 20);
+    expect(roundThenShift).toHaveLength(shiftThenRound.length);
+    roundThenShift.forEach((p, i) => {
+      expect(p.x).toBeCloseTo(shiftThenRound[i].x, 9);
+      expect(p.y).toBeCloseTo(shiftThenRound[i].y, 9);
+    });
+  });
+});
+
+// Gradient coloring on bent paths (#336 item 4). An SVG linearGradient axis is
+// always straight, so the stops are repositioned instead: each vertex sits at
+// its chord projection, colored by its ARC-LENGTH fraction.
+describe('pathGradientStops (#336)', () => {
+  const RED = '#ff0000';
+  const BLUE = '#0000ff';
+
+  test('a straight link keeps the plain two-stop chord gradient', () => {
+    // The regression guarantee: no waypoints must render exactly as before.
+    expect(
+      pathGradientStops(
+        [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+        ],
+        RED,
+        BLUE
+      )
+    ).toEqual([
+      { offset: 0, color: RED },
+      { offset: 1, color: BLUE },
+    ]);
+  });
+
+  test('a collinear midpoint keeps the ramp linear (projection == arc length)', () => {
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(stops.map((s) => s.offset)).toEqual([0, 0.5, 1]);
+    // Halfway along, the color is the halfway blend.
+    expect(stops[1].color).toBe('rgb(128,0,128)');
+  });
+
+  test('a bend puts the mid-path color where the path is halfway, not the chord', () => {
+    // An isoceles "roof": both segments are 50 long, so the apex is at 50% of
+    // the ARC length but only 50% of the chord by projection — and the color
+    // there must be the 50% blend.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 40, y: 30 },
+        { x: 80, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(stops).toHaveLength(3);
+    expect(stops[1].color).toBe('rgb(128,0,128)');
+    expect(stops[0].offset).toBe(0);
+    expect(stops[2].offset).toBe(1);
+  });
+
+  test('a bow-out path shifts stops away from their arc-length fraction', () => {
+    // The whole point of the fix: on this path the apex is at 50% of the arc
+    // length but only 25% of the chord, so the 50% color must be pinned to
+    // offset 0.25 — with the old two-stop gradient it appeared at 0.5.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 25, y: 60 },
+        { x: 50, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(stops[1].offset).toBeCloseTo(0.5, 6);
+    // Now an asymmetric bend: apex much closer to A along the chord.
+    const asym = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 10, y: 60 },
+        { x: 100, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(asym[1].offset).toBeCloseTo(0.1, 6); // chord projection
+    // ...while its color is the arc-length blend, which is NOT 10%.
+    const channels = /rgb\((\d+),/.exec(asym[1].color);
+    expect(channels).not.toBeNull();
+    const midChannel = Number(channels![1]);
+    expect(midChannel).toBeLessThan(255 * 0.9); // red has decayed well past 10%
+    expect(midChannel).toBeGreaterThan(255 * 0.2);
+  });
+
+  test('a segment perpendicular to the chord renders flat, and says so', () => {
+    // Known limitation, pinned so it cannot regress silently: a run at right
+    // angles to the A->Z chord has zero extent on the gradient axis, so both
+    // its endpoints land on the same stop offset and the stretch shows one
+    // colour instead of a ramp. Every other segment still tracks arc length.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 50, y: 80 }, // straight up: perpendicular to the horizontal chord
+        { x: 100, y: 80 },
+        { x: 150, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    // The perpendicular segment's two endpoints share an offset...
+    expect(stops[1].offset).toBeCloseTo(stops[2].offset, 9);
+    // ...while their arc-length colours differ, which is what makes it flat.
+    expect(stops[1].color).not.toBe(stops[2].color);
+    // The rest of the path still advances along the axis.
+    expect(stops[3].offset).toBeGreaterThan(stops[2].offset);
+    expect(stops[0].offset).toBe(0);
+    expect(stops[stops.length - 1].offset).toBe(1);
+  });
+
+  test('offsets are non-decreasing even when the path doubles back', () => {
+    // A hairpin projects non-monotonically; SVG requires sorted offsets.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 100, y: 10 },
+        { x: 40, y: 20 },
+        { x: 60, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    for (let i = 1; i < stops.length; i++) {
+      expect(stops[i].offset).toBeGreaterThanOrEqual(stops[i - 1].offset);
+    }
+    expect(stops[0].offset).toBe(0);
+    expect(stops[stops.length - 1].offset).toBe(1);
+  });
+
+  test('every stop stays inside 0..1 and carries a parseable color', () => {
+    const stops = pathGradientStops(
+      roundPathCorners(
+        [
+          { x: 0, y: 0 },
+          { x: 80, y: 0 },
+          { x: 80, y: 60 },
+          { x: 160, y: 60 },
+        ],
+        18
+      ),
+      RED,
+      BLUE
+    );
+    expect(stops.length).toBeGreaterThan(8); // dense rounded path
+    stops.forEach((s) => {
+      expect(s.offset).toBeGreaterThanOrEqual(0);
+      expect(s.offset).toBeLessThanOrEqual(1);
+      expect(s.color).toMatch(/^rgba?\([\d.,]+\)$|^#[0-9a-fA-F]+$/);
+    });
+  });
+
+  test('a non-finite coordinate anywhere in the path never reaches a stop', () => {
+    // Node positions come straight from saved options, so a hand-edited
+    // coordinate can be junk. Without the finiteness guard this emitted
+    // offset NaN and "rgba(NaN,NaN,NaN,NaN)" into the SVG.
+    const cases = [
+      // bad interior vertex — only pathTotalLength sees it
+      [
+        { x: 0, y: 0 },
+        { x: NaN, y: 30 },
+        { x: 80, y: 0 },
+      ],
+      // bad endpoint — the chord sees it too
+      [
+        { x: 0, y: 0 },
+        { x: 40, y: 30 },
+        { x: NaN, y: NaN },
+      ],
+      [
+        { x: Infinity, y: 0 },
+        { x: 40, y: 30 },
+        { x: 80, y: 0 },
+      ],
+    ];
+    for (const pts of cases) {
+      const stops = pathGradientStops(pts, RED, BLUE);
+      expect(stops).toEqual([
+        { offset: 0, color: RED },
+        { offset: 1, color: BLUE },
+      ]);
+      stops.forEach((s) => {
+        expect(Number.isFinite(s.offset)).toBe(true);
+        expect(s.color).not.toMatch(/NaN/);
+      });
+    }
+  });
+
+  test('falls back to two stops for coincident endpoints and zero-length paths', () => {
+    const closed = [
+      { x: 10, y: 10 },
+      { x: 60, y: 40 },
+      { x: 10, y: 10 },
+    ];
+    expect(pathGradientStops(closed, RED, BLUE)).toEqual([
+      { offset: 0, color: RED },
+      { offset: 1, color: BLUE },
+    ]);
+    const degenerate = [
+      { x: 5, y: 5 },
+      { x: 5, y: 5 },
+      { x: 5, y: 5 },
+    ];
+    expect(pathGradientStops(degenerate, RED, BLUE)).toEqual([
+      { offset: 0, color: RED },
+      { offset: 1, color: BLUE },
+    ]);
+  });
+
+  test('falls back to two stops rather than mis-rendering an unreadable color', () => {
+    const bent = [
+      { x: 0, y: 0 },
+      { x: 40, y: 30 },
+      { x: 80, y: 0 },
+    ];
+    // Named CSS colors are not handled by the parser — keep the original
+    // strings instead of emitting black.
+    expect(pathGradientStops(bent, 'red', BLUE)).toEqual([
+      { offset: 0, color: 'red' },
+      { offset: 1, color: BLUE },
+    ]);
+  });
+
+  test('preserves alpha when the scale colors are translucent', () => {
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      'rgba(255, 0, 0, 0)',
+      'rgba(0, 0, 255, 1)'
+    );
+    expect(stops[1].color).toBe('rgba(128,0,128,0.5)');
   });
 });

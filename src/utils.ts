@@ -1343,6 +1343,174 @@ export function roundPathCorners(pts: Position[], radius: number): Position[] {
 }
 
 /**
+ * Perpendicular offset vector for a link, taken from its A->Z chord (#336).
+ *
+ * `linkOffset` spreads parallel links between the same node pair apart. On a
+ * polyline the whole path is TRANSLATED by this vector rather than offset
+ * per-segment with miter joins, and that choice is deliberate:
+ *
+ *   - A translation is an isometry, so it cannot introduce a self-intersection
+ *     that the drawn path did not already have. True per-segment offsetting
+ *     inverts wherever the offset exceeds the local radius of curvature, which
+ *     for a rounded bend IS the corner radius — a cornerRadius of 18 with a
+ *     linkOffset of 18 self-intersects, and there is no safe sign to pick
+ *     because a route that turns both ways has an inner bend either way.
+ *   - It preserves arc length exactly, so `arrowMeetPercent`, value labels,
+ *     collision spreading and animation duration land at the same place on
+ *     every link of a parallel bundle. Per-segment offsetting reparametrizes
+ *     the path and silently drifts them apart — the opposite of what the
+ *     option exists to do.
+ *
+ * The chord is measured between the UNOFFSET endpoints so every link in a
+ * bundle shifts along the same axis. Returns a zero vector for a zero/absent
+ * offset or coincident endpoints, so callers need no special-casing.
+ */
+export function chordNormalOffset(from: Position, to: Position, offset: number | undefined): Position {
+  if (!offset || !Number.isFinite(offset)) {
+    return { x: 0, y: 0 };
+  }
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dist = Math.hypot(dx, dy);
+  // Non-finite as well as zero. The pre-#336 straight-link code guarded this
+  // with `if (dist > 0)`, which is false for NaN and so produced no shift from
+  // corrupted node coordinates. `dist === 0` alone is TRUE-skipping for NaN, so
+  // it would return {NaN, NaN} — and the caller's `x !== 0 || y !== 0` check
+  // reads that as a real offset, letting NaN reach the rendered SVG. This keeps
+  // the old safety semantics.
+  if (!Number.isFinite(dist) || dist === 0) {
+    return { x: 0, y: 0 };
+  }
+  // `+ 0` normalizes negative zero, which -dy produces on a horizontal chord.
+  // Purely so the value is canonical: JavaScript already stringifies -0 as "0",
+  // so it could never have surfaced in an SVG attribute, and -0 === 0 leaves
+  // the caller's zero-check unaffected either way.
+  return { x: (-dy / dist) * offset + 0, y: (dx / dist) * offset + 0 };
+}
+
+/** A point shifted by `delta`. Fresh object; never mutates the input. */
+export function translatePoint(p: Position, delta: Position): Position {
+  return { x: p.x + delta.x, y: p.y + delta.y };
+}
+
+/** Every point of a path shifted by `delta`. Fresh objects. */
+export function translatePath(pts: Position[], delta: Position): Position[] {
+  return pts.map((p) => translatePoint(p, delta));
+}
+
+export interface GradientStop {
+  /** Position along the gradient axis, 0..1, non-decreasing. */
+  offset: number;
+  color: string;
+}
+
+/** rgb/rgba string for a linear blend of two parsed colors. Alpha-aware. */
+function blendRgb(a: number[], b: number[], f: number): string {
+  const t = Math.min(1, Math.max(0, f));
+  const ch = (i: number) => Math.round(a[i] + (b[i] - a[i]) * t);
+  const alphaA = a.length > 3 ? a[3] : 1;
+  const alphaZ = b.length > 3 ? b[3] : 1;
+  const alpha = alphaA + (alphaZ - alphaA) * t;
+  return alpha >= 1
+    ? `rgb(${ch(0)},${ch(1)},${ch(2)})`
+    : `rgba(${ch(0)},${ch(1)},${ch(2)},${Math.round(alpha * 1000) / 1000})`;
+}
+
+/** parseColor, but returns null instead of throwing on formats it can't read. */
+function tryParseColor(input: string): number[] | null {
+  try {
+    const parsed = parseColor(input.toUpperCase());
+    return Array.isArray(parsed) && parsed.length >= 3 && parsed.every((n) => Number.isFinite(n)) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stops for a link's color gradient, placed so the A->Z ramp follows the DRAWN
+ * path by ARC LENGTH rather than the straight A->Z chord (#336 item 4).
+ *
+ * The gradient axis stays the chord — an SVG linearGradient has no other
+ * option — but a point at arc length s along the path lands at chord fraction
+ * `project(s)`, which on a bent path is not s/L. Emitting one stop per vertex,
+ * positioned at that vertex's chord projection and colored by its arc-length
+ * fraction, makes the two agree: the color seen at s becomes ramp(s / L).
+ * Wherever a segment has extent along the chord, projection and arc length are
+ * both linear in the segment parameter, so the gradient's own linear
+ * interpolation is exact there.
+ *
+ * The one case it cannot be exact is a segment running PERPENDICULAR to the
+ * chord: it has zero extent along the gradient axis, so both of its endpoints
+ * land on the same stop offset and it renders as a single flat color rather
+ * than a ramp. No single-axis gradient can do better — an SVG linearGradient
+ * has exactly one axis, and a perpendicular run has no room on it. This is a
+ * limitation, not a corruption: that stretch simply does not change color,
+ * and every other part of the path still tracks arc length. Per-segment
+ * gradients would fix it, at the cost of rendering each segment as its own
+ * element — see the note below on why that trade is not worth making.
+ *
+ * This keeps ONE gradient element per link. The alternative — a gradient per
+ * segment — would also require rendering every segment as its own element,
+ * multiplying SVG nodes by the bend count on exactly the dense maps that need
+ * polylines most.
+ *
+ * Falls back to the plain two-stop chord gradient (byte-identical to the
+ * pre-#336 output) for straight paths, coincident endpoints, zero-length
+ * paths, and colors the parser cannot read — the last of which keeps an
+ * unexpected color format from silently rendering as black.
+ *
+ * A path that doubles back projects non-monotonically. Offsets are clamped
+ * non-decreasing, as SVG requires: the backtracking stretch collapses onto a
+ * single offset, so it renders as one color step at that point rather than a
+ * reversed ramp. Only a hairpin tighter than the link's own chord does this.
+ */
+export function pathGradientStops(pts: Position[], colorA: string, colorZ: string): GradientStop[] {
+  const plain: GradientStop[] = [
+    { offset: 0, color: colorA },
+    { offset: 1, color: colorZ },
+  ];
+  if (pts.length < 3) {
+    return plain;
+  }
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const cx = last.x - first.x;
+  const cy = last.y - first.y;
+  const chordLen2 = cx * cx + cy * cy;
+  const total = pathTotalLength(pts);
+  // Node positions reach here straight from saved options, so a hand-edited
+  // coordinate can be NaN/Infinity. pathTotalLength propagates a bad interior
+  // vertex into `total` and a bad endpoint into `chordLen2`, so these two
+  // checks cover the whole path — without them a single junk number renders as
+  // offset="NaN%" and stop-color="rgba(NaN,NaN,NaN,NaN)".
+  if (!Number.isFinite(chordLen2) || !Number.isFinite(total) || chordLen2 === 0 || total === 0) {
+    return plain;
+  }
+  const rgbA = tryParseColor(colorA);
+  const rgbZ = tryParseColor(colorZ);
+  if (!rgbA || !rgbZ) {
+    return plain;
+  }
+
+  const stops: GradientStop[] = [];
+  let walked = 0;
+  let highest = 0;
+  for (let i = 0; i < pts.length; i++) {
+    if (i > 0) {
+      walked += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    }
+    const raw = ((pts[i].x - first.x) * cx + (pts[i].y - first.y) * cy) / chordLen2;
+    const offset = Math.max(highest, Math.min(1, Math.max(0, raw)));
+    highest = offset;
+    stops.push({ offset, color: blendRgb(rgbA, rgbZ, walked / total) });
+  }
+  // The endpoints ARE the axis ends; pin them past any floating-point drift.
+  stops[0].offset = 0;
+  stops[stops.length - 1].offset = 1;
+  return stops;
+}
+
+/**
  * Index of the polyline segment nearest to a point (#336): used to decide
  * where along a link a right-click-inserted waypoint belongs. Returns i such
  * that the segment pts[i] -> pts[i+1] minimizes point-to-segment distance;

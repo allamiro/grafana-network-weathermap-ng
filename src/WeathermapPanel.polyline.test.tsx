@@ -39,6 +39,21 @@ const linkPolylines = (container: HTMLElement) =>
 
 const pointCount = (polyline: Element) => (polyline.getAttribute('points') ?? '').trim().split(/\s+/).length;
 
+// Edit-mode helpers shared by every describe below. jsdom's PointerEvent does
+// not inherit MouseEvent fields (clientX/button/metaKey all arrive undefined),
+// so pointer gestures are dispatched as MouseEvents, which carry every field
+// exactly as real browsers do.
+let getSearchSpy: jest.SpyInstance | undefined;
+afterEach(() => {
+  getSearchSpy?.mockRestore();
+  getSearchSpy = undefined;
+});
+const enterEditMode = () => {
+  getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+};
+const firePointer = (el: Element, type: string, opts: MouseEventInit = {}) =>
+  fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...opts }));
+
 describe('polyline links (#332)', () => {
   test('a straight link renders both halves as two-point polylines (unchanged geometry)', () => {
     const { container } = renderPanel();
@@ -111,8 +126,7 @@ describe('polyline links — precision and hardening (#334 review)', () => {
       wm.links[0].waypoints = [wp];
     });
     const halves = linkPolylines(container);
-    const firstPoint = (p: Element) =>
-      (p.getAttribute('points') ?? '').trim().split(/\s+/)[0].split(',').map(Number);
+    const firstPoint = (p: Element) => (p.getAttribute('points') ?? '').trim().split(/\s+/)[0].split(',').map(Number);
     const [ax, ay] = firstPoint(halves[0]);
     const [zx, zy] = firstPoint(halves[1]);
     const path = [{ x: ax, y: ay }, wp, { x: zx, y: zy }];
@@ -123,9 +137,7 @@ describe('polyline links — precision and hardening (#334 review)', () => {
       const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(l.getAttribute('transform') ?? '');
       return m ? { x: Number(m[1]), y: Number(m[2]) } : null;
     });
-    const match = positions.some(
-      (p) => p && Math.abs(p.x - expected.x) < 0.01 && Math.abs(p.y - expected.y) < 0.01
-    );
+    const match = positions.some((p) => p && Math.abs(p.x - expected.x) < 0.01 && Math.abs(p.y - expected.y) < 0.01);
     expect(match).toBe(true);
   });
 
@@ -154,12 +166,7 @@ describe('polyline links — precision and hardening (#334 review)', () => {
 
   test('malformed saved waypoints render sanitized — no NaN reaches the SVG', () => {
     const { container } = renderPanel((wm) => {
-      wm.links[0].waypoints = [
-        { x: NaN, y: 100 },
-        'garbage',
-        { x: 260, y: 200 },
-        { x: 5, y: Infinity },
-      ] as never;
+      wm.links[0].waypoints = [{ x: NaN, y: 100 }, 'garbage', { x: 260, y: 200 }, { x: 5, y: Infinity }] as never;
     });
     const halves = linkPolylines(container);
     expect(halves.length).toBe(2);
@@ -174,22 +181,6 @@ describe('polyline links — precision and hardening (#334 review)', () => {
 import { locationService } from '@grafana/runtime';
 
 describe('waypoint drag handles and rounded corners (#336)', () => {
-  let getSearchSpy: jest.SpyInstance | undefined;
-  afterEach(() => {
-    getSearchSpy?.mockRestore();
-    getSearchSpy = undefined;
-  });
-  const enterEditMode = () => {
-    getSearchSpy = jest
-      .spyOn(locationService, 'getSearch')
-      .mockReturnValue(new URLSearchParams('editPanel=1'));
-  };
-  // jsdom's PointerEvent does not inherit MouseEvent fields (clientX/button/
-  // metaKey all arrive undefined), so dispatch MouseEvent-based pointer events
-  // — which carry every field, exactly as real browsers do.
-  const firePointer = (el: Element, type: string, opts: MouseEventInit = {}) =>
-    fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...opts }));
-
   test('handles render only in edit mode, one per waypoint', () => {
     enterEditMode();
     const { container } = renderPanel((wm) => {
@@ -302,6 +293,33 @@ describe('waypoint drag handles and rounded corners (#336)', () => {
     expect(wp.y).toBeCloseTo(300, 0); // on the horizontal link
   });
 
+  test('double-click on a value label adds a VIA, like double-click on the line', () => {
+    // Labels sit ON the line and swallow its pointer events. Right-click was
+    // already wired through to them; double-click was not, so VIA creation was
+    // silently dead at the middle of a link — the spot users aim for. Both
+    // gestures must behave identically wherever you click on a link.
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel();
+    const label = container.querySelector('g[font-style="italic"]')!;
+    expect(label).not.toBeNull();
+    fireEvent.doubleClick(label);
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const saved = onOptionsChange.mock.calls[0][0].weathermap;
+    // A VIA splits one link into two and adds a connection node.
+    expect(saved.links.length).toBeGreaterThan(1);
+    expect(saved.nodes.some((n: { isConnection?: boolean }) => n.isConnection)).toBe(true);
+  });
+
+  test('right-click on a value label still adds a waypoint (not a VIA)', () => {
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel();
+    const label = container.querySelector('g[font-style="italic"]')!;
+    fireEvent.contextMenu(label, { clientX: 300, clientY: 300 });
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const saved = onOptionsChange.mock.calls[0][0].weathermap;
+    expect(saved.links[0].waypoints).toHaveLength(1);
+  });
+
   test('cornerRadius flattens bends into curves — the sharp vertex disappears', () => {
     const { container } = renderPanel((wm) => {
       wm.links[0].waypoints = [{ x: 260, y: 200 }];
@@ -312,5 +330,250 @@ describe('waypoint drag handles and rounded corners (#336)', () => {
     expect(allPoints).not.toContain('260,200'); // vertex replaced by curve points
     expect(Math.max(...halves.map(pointCount))).toBeGreaterThan(4); // dense flattening
     expect(allPoints).not.toMatch(/NaN/);
+  });
+});
+
+// Link Offset now combines with waypoints (#336 item 3). The whole polyline is
+// translated along the A->Z chord normal, so its shape and arc length survive
+// intact; waypoints stay STORED unshifted and only the drawing moves.
+describe('linkOffset on polyline links (#336)', () => {
+  // Every rendered point of both halves, in order.
+  const drawnPoints = (container: HTMLElement) =>
+    linkPolylines(container).flatMap((p) =>
+      (p.getAttribute('points') ?? '')
+        .trim()
+        .split(/\s+/)
+        .map((pt) => {
+          const [x, y] = pt.split(',').map(Number);
+          return { x, y };
+        })
+    );
+
+  // The house fixture's nodes both sit at y=300, so the A->Z chord is
+  // horizontal and its normal is +y: a linkOffset of 20 shifts the link down
+  // by exactly 20.
+  test('a straight link with an offset keeps its pre-#336 geometry', () => {
+    const { container } = renderPanel((wm) => {
+      wm.links[0].linkOffset = 20;
+    });
+    const halves = linkPolylines(container);
+    expect(halves.length).toBe(2);
+    halves.forEach((p) => expect(pointCount(p)).toBe(2));
+    drawnPoints(container).forEach((p) => expect(p.y).toBeCloseTo(320, 5));
+  });
+
+  test('an offset shifts the whole bent path rigidly — same shape, no distortion', () => {
+    const bend = (wm: Weathermap) => {
+      wm.links[0].waypoints = [
+        { x: 260, y: 200 },
+        { x: 340, y: 240 },
+      ];
+      wm.links[0].cornerRadius = 18;
+    };
+    const plain = drawnPoints(renderPanel(bend).container);
+    const shifted = drawnPoints(
+      renderPanel((wm) => {
+        bend(wm);
+        wm.links[0].linkOffset = 20;
+      }).container
+    );
+    // Identical structure (rounding is unaffected) and an exact rigid shift.
+    expect(shifted).toHaveLength(plain.length);
+    expect(plain.length).toBeGreaterThan(4);
+    shifted.forEach((p, i) => {
+      expect(p.x).toBeCloseTo(plain[i].x, 5);
+      expect(p.y).toBeCloseTo(plain[i].y + 20, 5);
+    });
+  });
+
+  test('the bend point itself lands at waypoint + offset, not at the stored coordinate', () => {
+    const { container } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    const all = linkPolylines(container)
+      .map((p) => p.getAttribute('points') ?? '')
+      .join(' ');
+    expect(all).toContain('260,220');
+    expect(all).not.toContain('260,200');
+    expect(all).not.toMatch(/NaN/);
+  });
+
+  test('opposite offsets spread a bundle apart without ever touching', () => {
+    const bend = (wm: Weathermap) => {
+      wm.links[0].waypoints = [{ x: 300, y: 220 }];
+    };
+    const lo = drawnPoints(
+      renderPanel((wm) => {
+        bend(wm);
+        wm.links[0].linkOffset = -12;
+      }).container
+    );
+    const hi = drawnPoints(
+      renderPanel((wm) => {
+        bend(wm);
+        wm.links[0].linkOffset = 12;
+      }).container
+    );
+    expect(lo).toHaveLength(hi.length);
+    lo.forEach((p, i) => expect(hi[i].y - p.y).toBeCloseTo(24, 5));
+  });
+
+  test('drag handles sit on the drawn line, at waypoint + offset', () => {
+    enterEditMode();
+    const { container } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    const handle = container.querySelector('[data-testid="waypoint-handle"]')!;
+    expect(Number(handle.getAttribute('cx'))).toBeCloseTo(260, 5);
+    expect(Number(handle.getAttribute('cy'))).toBeCloseTo(220, 5);
+  });
+
+  test('dragging an offset link commits stored coordinates — the link never creeps', () => {
+    // The failure this guards: mixing drawn and stored space would add
+    // linkOffset to the waypoint on every gesture, walking the link away by 20px
+    // per drag. A zero-distance drag must round-trip the waypoint unchanged.
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    const handle = container.querySelector('[data-testid="waypoint-handle"]')!;
+    firePointer(handle, 'pointerdown', { clientX: 100, clientY: 100 });
+    firePointer(handle, 'pointermove', { clientX: 100, clientY: 100 });
+    firePointer(handle, 'pointerup', { clientX: 100, clientY: 100 });
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    expect(onOptionsChange.mock.calls[0][0].weathermap.links[0].waypoints[0]).toEqual({ x: 260, y: 200 });
+  });
+
+  test('keyboard nudges on an offset link stay in stored space', () => {
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    fireEvent.keyDown(container.querySelector('[data-testid="waypoint-handle"]')!, { key: 'ArrowRight' });
+    expect(onOptionsChange.mock.calls[0][0].weathermap.links[0].waypoints[0]).toEqual({ x: 261, y: 200 });
+  });
+
+  test('right-clicking an offset link stores the unshifted waypoint', () => {
+    // The click lands on the DRAWN line (y=320 for a 20px offset); the saved
+    // waypoint must come back through the offset to y=300, so that turning the
+    // offset off leaves the link where it always was.
+    enterEditMode();
+    const { container, onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].linkOffset = 20;
+    });
+    fireEvent.contextMenu(container.querySelector('g[data-testid="link"]')!, { clientX: 300, clientY: 320 });
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    const saved = onOptionsChange.mock.calls[0][0].weathermap;
+    expect(saved.links[0].waypoints).toHaveLength(1);
+    expect(saved.links[0].waypoints[0].y).toBeCloseTo(300, 0);
+  });
+
+  test('an offset polyline renders without persisting anything', () => {
+    const { onOptionsChange } = renderPanel((wm) => {
+      wm.links[0].waypoints = [{ x: 260, y: 200 }];
+      wm.links[0].linkOffset = 20;
+    });
+    expect(onOptionsChange).not.toHaveBeenCalled();
+  });
+
+  test('linkOffset and waypoints survive the versioned migration together', () => {
+    const raw = getData(theme);
+    raw.links[0].linkOffset = 14;
+    raw.links[0].waypoints = [{ x: 111, y: 222 }];
+    const wm = handleVersionedStateUpdates(raw, theme);
+    expect(wm.links[0].linkOffset).toBe(14);
+    expect(wm.links[0].waypoints).toEqual([{ x: 111, y: 222 }]);
+  });
+});
+
+// Gradient coloring follows the drawn path (#336 item 4).
+describe('gradient coloring on bent links (#336)', () => {
+  const withGradient = (mutate?: (wm: Weathermap) => void) =>
+    renderPanel((wm) => {
+      wm.settings.link.gradientColor = true;
+      mutate?.(wm);
+    });
+
+  const stopsOf = (container: HTMLElement, which: 'a' | 'z' = 'a') =>
+    Array.from(container.querySelectorAll(`linearGradient[id^="grad-${which}-"] stop`)).map((s) => ({
+      offset: s.getAttribute('offset') ?? '',
+      color: s.getAttribute('stop-color') ?? '',
+    }));
+
+  test('a straight link still renders exactly two stops at 0% and 100%', () => {
+    const { container } = withGradient();
+    const stops = stopsOf(container);
+    expect(stops).toHaveLength(2);
+    expect(stops[0].offset).toBe('0%');
+    expect(stops[1].offset).toBe('100%');
+  });
+
+  test('a bent link renders a stop per path vertex, in non-decreasing order', () => {
+    const { container } = withGradient((wm) => {
+      wm.links[0].waypoints = [{ x: 300, y: 180 }];
+    });
+    const stops = stopsOf(container);
+    expect(stops.length).toBeGreaterThan(2);
+    const offsets = stops.map((s) => parseFloat(s.offset));
+    offsets.forEach((o) => {
+      expect(o).toBeGreaterThanOrEqual(0);
+      expect(o).toBeLessThanOrEqual(100);
+      expect(Number.isNaN(o)).toBe(false);
+    });
+    for (let i = 1; i < offsets.length; i++) {
+      expect(offsets[i]).toBeGreaterThanOrEqual(offsets[i - 1]);
+    }
+    expect(offsets[0]).toBe(0);
+    expect(offsets[offsets.length - 1]).toBe(100);
+  });
+
+  test('both halves sample identical stops, so there is no break at the arrow tips', () => {
+    const { container } = withGradient((wm) => {
+      wm.links[0].waypoints = [{ x: 300, y: 180 }];
+    });
+    expect(stopsOf(container, 'a')).toEqual(stopsOf(container, 'z'));
+  });
+
+  test('a rounded bend produces a dense, still-valid stop list', () => {
+    const { container } = withGradient((wm) => {
+      wm.links[0].waypoints = [
+        { x: 260, y: 200 },
+        { x: 340, y: 200 },
+      ];
+      wm.links[0].cornerRadius = 16;
+    });
+    const stops = stopsOf(container);
+    expect(stops.length).toBeGreaterThan(8);
+    stops.forEach((s) => {
+      expect(s.offset).not.toMatch(/NaN/);
+      expect(s.color).not.toMatch(/NaN/);
+    });
+  });
+
+  test('the gradient axis moves with linkOffset', () => {
+    const plain = withGradient();
+    const shifted = withGradient((wm) => {
+      wm.links[0].linkOffset = 20;
+    });
+    const axis = (c: HTMLElement) => {
+      const g = c.querySelector('linearGradient[id^="grad-a-"]')!;
+      return { y1: Number(g.getAttribute('y1')), y2: Number(g.getAttribute('y2')) };
+    };
+    const before = axis(plain.container);
+    const after = axis(shifted.container);
+    expect(after.y1).toBeCloseTo(before.y1 + 20, 5);
+    expect(after.y2).toBeCloseTo(before.y2 + 20, 5);
+  });
+
+  test('gradient rendering never writes panel options', () => {
+    const { onOptionsChange } = withGradient((wm) => {
+      wm.links[0].waypoints = [{ x: 300, y: 180 }];
+      wm.links[0].linkOffset = 12;
+    });
+    expect(onOptionsChange).not.toHaveBeenCalled();
   });
 });

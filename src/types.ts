@@ -166,6 +166,10 @@ export interface Link {
   arrows: ArrowOptions;
   stroke: number;
   showThroughputPercentage: boolean;
+  // Shifts the whole link sideways, perpendicular to its A->Z axis, so parallel
+  // links between the same node pair can be spread apart. Combines with
+  // `waypoints` (#336): the entire polyline is translated along that one axis,
+  // which preserves its shape and arc length exactly. Unset/0 = no shift.
   linkOffset?: number;
   // Percentage along the A->Z line where the two directional arrows meet.
   // Defaults to 50 (the midpoint) when unset. The renderer clamps the effective
@@ -187,9 +191,9 @@ export interface Link {
   // Polyline bend points (#332), in panel coordinates, ordered A -> Z. The
   // link is drawn through them as one logical polyline: arrows, value labels,
   // and animation follow the path by arc length. Unset/empty = straight line,
-  // so saved maps are unchanged (no migration needed). While waypoints are
-  // set, linkOffset is ignored (per-segment parallel offsetting is not
-  // supported).
+  // so saved maps are unchanged (no migration needed). Stored UNSHIFTED —
+  // linkOffset is applied at render time (see chordNormalOffset), so changing
+  // the offset never rewrites saved waypoint coordinates.
   waypoints?: Position[];
   // Rounded corner radius in px for waypoint bends (#336). Each bend is
   // replaced by a flattened quadratic curve of this radius (clamped to half
@@ -245,6 +249,12 @@ export interface DrawnLink extends Link {
   pathPoints?: Position[];
   pathPointsA?: Position[];
   pathPointsZ?: Position[];
+  // The linkOffset translation already baked into the geometry above (#336).
+  // Zero when the link has no offset. Editing code needs it to convert between
+  // STORED waypoint coordinates and the DRAWN path: handles render at
+  // `waypoint + pathOffset`, and a click on the drawn line stores
+  // `point - pathOffset`. Absent on legacy DrawnLink fixtures (treat as zero).
+  pathOffset?: Position;
 }
 
 export interface HoveredLink {

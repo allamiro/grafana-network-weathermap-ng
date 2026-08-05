@@ -44,9 +44,12 @@ wm["nodes"] = [n for n in wm["nodes"] if n["id"] != conn_id]
 # the two site links around the edge routers instead of under them, and to
 # bend the INET uplink around the map's top-right corner.
 WAYPOINTS = {
-    # EDGE-1 -> SITE-DFW crosses under SITE-ATL's label on the straight path;
-    # bow it out to the left instead.
-    "link-edge-1<->site-dfw": [{"x": 150, "y": 400}, {"x": 240, "y": 455}],
+    # EDGE-1 -> SITE-DFW. SITE-ATL sits down-LEFT of EDGE-1 and SITE-DFW
+    # down-RIGHT, so bowing this link left (as it used to) sent it out along
+    # the ATL link and the two ran on top of each other for the whole first
+    # stretch. Bow it RIGHT instead — away from its neighbour, the direction
+    # the link is already heading.
+    "link-edge-1<->site-dfw": [{"x": 300, "y": 385}, {"x": 342, "y": 434}],
     # The (merged, direct) NYC link arcs wide to the right through two bends —
     # a single logical link tracing a curved geographic-style path.
     "link-edge-2<->site-nyc": [{"x": 765, "y": 395}, {"x": 745, "y": 475}],
@@ -59,6 +62,49 @@ WAYPOINTS = {
 # corner so the demo shows clean arrowheads there.
 MEET = {
     "link-core-b<->inet": 35,
+}
+
+# The parallel core trunks inherit no Link Offset from the base map, so they
+# were drawn on top of each other with all four labels fighting for the same
+# strip of canvas. Spread them (#336: Link Offset now composes with everything
+# else on the map, waypoints included).
+CORE_OFFSETS = {
+    "link-core-a<->core-b/1": -11,
+    "link-core-a<->core-b/2": 11,
+}
+
+# Interface names as network engineers actually abbreviate them. The full
+# forms ("HundredGigE0/0/1", "GigabitEthernet0/1") are wider than the gap
+# between a node and its first value label at this map scale, so they used to
+# overprint both the value labels and each other.
+PORT_ABBREV = {
+    "HundredGigE": "Hu",
+    "GigabitEthernet": "Gi",
+}
+
+# Lift every port label clear of the line it names: `distance` pushes it
+# perpendicular to the link (clear of the value-label pill sitting on the
+# line), `offset` slides it along the axis toward the midpoint (clear of the
+# node icon, and of the other links leaving the same node). Both are the
+# per-side controls from #309 — the demo should show them in use.
+#
+# Per-link (offset%, distance px), because a single global pair cannot work:
+# port labels rotate to follow their line, so two links leaving one node at
+# similar steep angles put their labels in the same place. The fix is to slide
+# each one a different distance ALONG its own path. CORE-A/CORE-B's downlinks
+# also need a bigger offset than most — they leave almost vertically, straight
+# through the node icon.
+PORT_LABEL_DEFAULT = (7, 9)
+PORT_LABEL_TUNING = {
+    "link-core-a<->edge-1": (22, 11),
+    "link-core-b<->edge-2": (22, 11),
+    # The two links off EDGE-1 now diverge immediately, so their labels only
+    # need a nudge apart rather than the big separation the old overlapping
+    # routes required.
+    "link-edge-1<->site-atl": (8, 10),
+    "link-edge-1<->site-dfw": (16, 10),
+    "link-edge-2<->site-nyc": (12, 10),
+    "link-core-b<->inet": (10, 10),
 }
 
 # The EDGE-1 area stacks several value labels; let the collision solver spread
@@ -76,8 +122,22 @@ for link in wm["links"]:
         applied += 1
     if link["id"] in MEET:
         link["arrowMeetPercent"] = MEET[link["id"]]
+    if link["id"] in CORE_OFFSETS:
+        link["linkOffset"] = CORE_OFFSETS[link["id"]]
+    for side in ("A", "Z"):
+        port = link["sides"][side].get("portLabel")
+        if not port:
+            continue
+        for long, short in PORT_ABBREV.items():
+            port = port.replace(long, short)
+        offset, distance = PORT_LABEL_TUNING.get(link["id"], PORT_LABEL_DEFAULT)
+        link["sides"][side]["portLabel"] = port
+        link["sides"][side]["portLabelOffset"] = offset
+        link["sides"][side]["portLabelDistance"] = distance
 
 assert applied == len(WAYPOINTS), f"only matched {applied} of {len(WAYPOINTS)} links"
+assigned = {l["id"]: l.get("linkOffset") for l in wm["links"] if l["id"] in CORE_OFFSETS}
+assert assigned == CORE_OFFSETS, f"unexpected core offsets: {assigned}"
 
 out = "grafana/dashboards/wm-polyline-links.json"
 json.dump(d, open(out, "w"), indent=2)

@@ -71,6 +71,10 @@ import {
   sanitizeWaypoints,
   roundPathCorners,
   nearestSegmentIndex,
+  chordNormalOffset,
+  translatePoint,
+  translatePath,
+  pathGradientStops,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -567,24 +571,26 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     toReturn.lineStartA = getMultiLinkPosition(tempNodes[toReturn.source.index], toReturn.sides.A);
     toReturn.lineStartZ = getMultiLinkPosition(tempNodes[toReturn.target.index], toReturn.sides.Z);
 
-    // Polyline waypoints (#332) and linkOffset are mutually exclusive —
-    // per-segment parallel offsetting of a bent path needs join math this
-    // renderer doesn't do, so waypoints win and linkOffset is ignored.
     // Persisted waypoints are hostile-input territory (hand-edited JSON):
     // sanitize before any arc-length math so NaN never reaches the SVG.
     const waypoints = sanitizeWaypoints(d.waypoints);
     const hasWaypoints = waypoints.length > 0;
-    if (d.linkOffset && !hasWaypoints) {
-      const dx = toReturn.lineStartZ.x - toReturn.lineStartA.x;
-      const dy = toReturn.lineStartZ.y - toReturn.lineStartA.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 0) {
-        const nx = (-dy / dist) * d.linkOffset;
-        const ny = (dx / dist) * d.linkOffset;
-        toReturn.lineStartA = { x: toReturn.lineStartA.x + nx, y: toReturn.lineStartA.y + ny };
-        toReturn.lineStartZ = { x: toReturn.lineStartZ.x + nx, y: toReturn.lineStartZ.y + ny };
-      }
+
+    // linkOffset (#336): translate the WHOLE path — endpoints AND bend points —
+    // along the chord normal, rather than offsetting each segment with miter
+    // joins. See chordNormalOffset for why: a translation cannot self-intersect
+    // and preserves arc length, so a bundle of parallel links keeps its arrows,
+    // labels and animation in step. The chord is measured BEFORE shifting, so
+    // every link in the bundle moves along the same axis. With no waypoints
+    // this is exactly the previous two-endpoint behavior.
+    const pathOffset = chordNormalOffset(toReturn.lineStartA, toReturn.lineStartZ, d.linkOffset);
+    const isOffset = pathOffset.x !== 0 || pathOffset.y !== 0;
+    if (isOffset) {
+      toReturn.lineStartA = translatePoint(toReturn.lineStartA, pathOffset);
+      toReturn.lineStartZ = translatePoint(toReturn.lineStartZ, pathOffset);
     }
+    toReturn.pathOffset = pathOffset;
+    const drawnWaypoints = isOffset ? translatePath(waypoints, pathOffset) : waypoints;
 
     // The full drawn path (#332): straight links are the two-point path, for
     // which every arc-length computation below reduces to the old chord math.
@@ -592,7 +598,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // every arc-length consumer below works unchanged. Handles keep editing
     // the RAW waypoints — rounding is render-only derivation.
     const cornerRadius = Number.isFinite(d.cornerRadius) ? Math.max(0, d.cornerRadius!) : 0;
-    const rawPath: Position[] = [toReturn.lineStartA, ...waypoints, toReturn.lineStartZ];
+    const rawPath: Position[] = [toReturn.lineStartA, ...drawnWaypoints, toReturn.lineStartZ];
     const pathPoints: Position[] = hasWaypoints && cornerRadius > 0 ? roundPathCorners(rawPath, cornerRadius) : rawPath;
     const totalLen = pathTotalLength(pathPoints);
 
@@ -1027,11 +1033,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       clickPt = { x: Math.round(local.x), y: Math.round(local.y) };
     }
     const raw = sanitizeWaypoints(d.waypoints);
-    const pts: Position[] = [d.lineStartA, ...raw, d.lineStartZ];
+    // Hit math runs in DRAWN space (the click landed on the shifted line, and
+    // d.lineStartA/Z are already shifted), but waypoints are STORED unshifted —
+    // so the new point comes back through the offset before it is saved (#336).
+    const off = d.pathOffset ?? { x: 0, y: 0 };
+    const pts: Position[] = [d.lineStartA, ...translatePath(raw, off), d.lineStartZ];
     const point = clickPt ?? pointAtPathPercent(pts, 0.5);
     const insertAt = nearestSegmentIndex(pts, point);
     const nextWps = [...raw];
-    nextWps.splice(insertAt, 0, point);
+    nextWps.splice(insertAt, 0, { x: Math.round(point.x - off.x), y: Math.round(point.y - off.y) });
     const updated = structuredClone(wm);
     const li = updated.links.findIndex((l) => l.id === d.id);
     if (li < 0) {
@@ -1041,6 +1051,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     onOptionsChange({ ...options, weathermap: updated });
   };
 
+  // Bound to the link's polyline AND to both value-label groups: labels sit ON
+  // the line and swallow its pointer events, so a gesture aimed at the middle
+  // of a link — the spot users actually go for — would otherwise land on the
+  // label and do nothing. Right-click (add waypoint) was already wired to the
+  // labels; double-click was not, which left VIA creation silently dead there.
   const handleAddVia = (linkId: string, e: React.MouseEvent<SVGElement>) => {
     if (!isEditMode) {
       return;
@@ -1697,38 +1712,53 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               `}</style>
             )}
             {wm.settings.link.gradientColor &&
-              resolvedLinks.map((d) => (
-                <React.Fragment key={d.id}>
-                  {/*
-                    Both gradients span the full link (A node -> Z node) with the
-                    same A->Z stops so every element that samples them — the A and
-                    Z line halves and both arrow heads — sits on one continuous
-                    gradient. This removes the color break at the arrow tips (#283).
-                  */}
-                  <linearGradient
-                    id={`grad-a-${d.id}`}
-                    x1={d.lineStartA.x}
-                    y1={d.lineStartA.y}
-                    x2={d.lineStartZ.x}
-                    y2={d.lineStartZ.y}
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                  </linearGradient>
-                  <linearGradient
-                    id={`grad-z-${d.id}`}
-                    x1={d.lineStartA.x}
-                    y1={d.lineStartA.y}
-                    x2={d.lineStartZ.x}
-                    y2={d.lineStartZ.y}
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                  </linearGradient>
-                </React.Fragment>
-              ))}
+              resolvedLinks.map((d) => {
+                /*
+                  Both gradients span the full link (A node -> Z node) with the
+                  same A->Z stops so every element that samples them — the A and
+                  Z line halves and both arrow heads — sits on one continuous
+                  gradient. This removes the color break at the arrow tips (#283).
+
+                  The stops are placed by ARC LENGTH along the drawn path
+                  (#336), so a bent link's colors track the line the user sees
+                  instead of the straight A->Z axis. Computed once and rendered
+                  into both gradients; a straight link yields the same two stops
+                  as before.
+                */
+                const stops = pathGradientStops(
+                  d.pathPoints ?? [d.lineStartA, d.lineStartZ],
+                  getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth),
+                  getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)
+                );
+                const renderStops = (prefix: string) =>
+                  stops.map((s, si) => (
+                    <stop key={`${prefix}-${si}`} offset={`${s.offset * 100}%`} stopColor={s.color} />
+                  ));
+                return (
+                  <React.Fragment key={d.id}>
+                    <linearGradient
+                      id={`grad-a-${d.id}`}
+                      x1={d.lineStartA.x}
+                      y1={d.lineStartA.y}
+                      x2={d.lineStartZ.x}
+                      y2={d.lineStartZ.y}
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      {renderStops('a')}
+                    </linearGradient>
+                    <linearGradient
+                      id={`grad-z-${d.id}`}
+                      x1={d.lineStartA.x}
+                      y1={d.lineStartA.y}
+                      x2={d.lineStartZ.x}
+                      y2={d.lineStartZ.y}
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      {renderStops('z')}
+                    </linearGradient>
+                  </React.Fragment>
+                );
+              })}
           </defs>
           <g
             transform={`translate(${
@@ -2000,6 +2030,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       handleLinkHover(d, 'A', e);
                     }}
                     onMouseOut={handleLinkHoverLoss}
+                    onDoubleClick={(e) => handleAddVia(d.id, e)}
                     onContextMenu={(e) => handleAddWaypointAt(d, e)}
                     key={i}
                   >
@@ -2062,6 +2093,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       handleLinkHover(d, 'Z', e);
                     }}
                     onMouseOut={handleLinkHoverLoss}
+                    onDoubleClick={(e) => handleAddVia(d.id, e)}
                     onContextMenu={(e) => handleAddWaypointAt(d, e)}
                     key={i}
                   >
@@ -2467,7 +2499,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   const isDraggingThis = wpDrag && wpDrag.linkId === d.id;
                   const wps = isDraggingThis ? wpDrag!.wps : sanitizeWaypoints(d.waypoints);
                   const linkLabel = `${d.source?.label || 'A'} – ${d.target?.label || 'Z'}`;
+                  // Waypoints are STORED unshifted; the line is DRAWN shifted by
+                  // linkOffset (#336). Handles must sit on the drawn line, so the
+                  // circles render at wp + pathOffset while every value written
+                  // back — drag accumulator, keyboard nudge, commit — stays in
+                  // stored space. Mixing the two would creep the link by the
+                  // offset on every gesture.
+                  const off = d.pathOffset ?? { x: 0, y: 0 };
                   return wps.map((wp, wi) => {
+                    const handlePos = translatePoint(wp, off);
                     const snap = (v: number) =>
                       wm.settings.panel.grid.enabled ? nearestMultiple(v, wm.settings.panel.grid.size) : Math.round(v);
                     const commitWaypoints = (next: Position[] | null) => {
@@ -2580,16 +2620,16 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         {/* Fat invisible hit target so the 6px handle doesn't
                             demand pixel-perfect grabs. */}
                         <circle
-                          cx={wp.x}
-                          cy={wp.y}
+                          cx={handlePos.x}
+                          cy={handlePos.y}
                           r={14}
                           fill="transparent"
                           style={{ cursor: isDraggingThis ? 'grabbing' : 'grab' }}
                         />
                         <circle
                           data-testid="waypoint-handle"
-                          cx={wp.x}
-                          cy={wp.y}
+                          cx={handlePos.x}
+                          cy={handlePos.y}
                           r={6}
                           fill={theme.colors.background.primary}
                           stroke={theme.colors.primary.main}
