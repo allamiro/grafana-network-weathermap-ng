@@ -51,6 +51,7 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — BGP Neighbor Map** | BGP sessions as links: session state = link status (dashed + ✕ + DOWN + blink on drop), prefixes as labels, max-prefix fullness as color. iBGP core + eBGP transits (Cisco/Juniper/F5), a permanently-down eBGP peer (EDGE2↔PEER-Y), parallel IPv4/IPv6. Click a router for session detail. |
 | **WAN Demo — BGP Session Detail** | Per-router drill-down (state / prefixes / uptime / flaps), reached from the map; `node_name` variable. |
 | **WAN Demo — BGP Fleet Overview** | Established / down / total counters, a session status table, and a prefixes-received bar gauge. |
+| **WAN Demo — Drag & Arrange (editing playground)** | The WAN map with three nodes deliberately parked where they crowd their neighbours and drag their links across each other. Only the layout is wrong, so it is a safe place to practise node dragging and watch it commit; grid snapping and guides are on. |
 | **WAN Demo — Port Label Positioning** | The WAN map with per-side **Port Label Offset %** (along the link axis) and **Port Label Distance** (perpendicular) set on every interface label, lifting each one clear of its node icon. |
 
 The WAN dashboards are generated — do not hand-edit them. To change the topology
@@ -61,6 +62,7 @@ node testing/scripts/generate-scenario-dashboards.js       # core WAN demos
 python3 testing/scripts/generate-animated-dashboard.py     # animated traffic
 python3 testing/scripts/generate-bgp-dashboards.py         # BGP neighbor map + detail + overview
 python3 testing/scripts/generate-port-label-demo.py        # port label offset + distance
+python3 testing/scripts/generate-drag-demo.py             # drag & arrange playground
 ```
 
 The world-map background is `BlankMap-World-Equirectangular.svg` from Wikimedia
