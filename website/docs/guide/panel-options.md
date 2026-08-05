@@ -39,6 +39,14 @@ Panel-level options apply to the whole weathermap. Open the panel options sideba
 
 Enable **Grid** to snap node dragging to a fixed grid, set the **grid size**, and optionally show **guides**. Great for aligning large maps.
 
+| Option | What it does |
+|---|---|
+| **Enable Node Grid Snapping** | Node drags snap to the grid. Turning this off also clears the guides. |
+| **Grid Size (px)** | The spacing that drags snap to. |
+| **Grid Guides** | Draws the grid so you can see what you are snapping to. **Shown only while editing the panel** — it is an alignment aid, and a viewer cannot drag anything, so a saved dashboard is never covered in graph paper. |
+
+To remove the grid lines but keep snapping, turn off **Grid Guides**. To remove both at once, turn off **Enable Node Grid Snapping** — it clears the guides for you.
+
 ---
 
 ## Value Display Mode
