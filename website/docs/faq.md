@@ -47,6 +47,12 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
 - **Q: How do I add a bend/waypoint (VIA) to a link?**
     - In edit mode, **double-click** a link to insert a VIA, **drag** it to position, and **right-click** it to remove. See [Interactions](guide/interactions.md#editing-vias-on-the-canvas).
 
+- **Q: I can't drag my nodes around — is there a setting to turn that on?**
+    - No setting: **dragging works in the panel editor and nowhere else**, so viewers can't nudge the topology by accident on a saved dashboard. Hover the panel and press **`e`** (or panel menu **⋮ → Edit**), drag the nodes, then **Back to dashboard → Save dashboard** — positions live in the panel options, so nothing sticks until you save. Full gesture table: [Interactions](guide/interactions.md#moving-things-around-the-map).
+
+- **Q: Two links overlap and dragging the nodes doesn't help — what else can I do?**
+    - Moving a node often just moves the problem. For two links between the **same pair of nodes**, give each a different **Link Offset**; to route **one** link around something, add waypoints and drag their handles. See [Links](guide/links.md#parallel-links-link-offset).
+
 - **Q: There are grid lines all over my map — how do I turn them off?**
     - Those are **Grid Guides** (Panel Options → **Grid Options**). Turn off **Grid Guides** to remove the lines while keeping drag snapping, or turn off **Enable Node Grid Snapping** to remove both in one toggle — it clears the guides for you. Note the lines only ever appear **while editing the panel**; a saved dashboard never shows them. See [Panel Options → Grid](guide/panel-options.md#grid-snapping-and-guide-lines).
 

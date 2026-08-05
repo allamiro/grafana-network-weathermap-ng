@@ -4,27 +4,47 @@ How to navigate and edit the map with mouse, trackpad, and keyboard — on **Lin
 
 ---
 
+## Moving things around the map
+
+**Dragging nodes needs no setting — but it only works in the panel editor.** On a saved dashboard the map is deliberately inert, so a viewer can never nudge the topology by accident. There is no "enable dragging" option to look for; opening the editor *is* the switch.
+
+1. Open the dashboard and **hover the panel**.
+2. Press **`e`**, or open the panel menu (**⋮**) → **Edit**.
+3. Drag nodes (and VIAs, and any other handle) directly on the canvas.
+4. Click **Back to dashboard**, then **Save dashboard** — positions are stored in the panel options, so nothing is kept until you save.
+
+If dragging does nothing, you are almost certainly still in view mode — check for the panel-editor toolbar at the top of the screen.
+
+!!! tip "Untangling a crowded map"
+    Dragging a node is only one of the tools. When two links overlap, moving a node often just moves the problem; see [Links](links.md) for the two options aimed at it — **Link Offset** for links that share both endpoints, and **waypoints** for routing one link around an obstacle.
+
+---
+
 ## Edit mode vs. view mode
 
 - **Edit mode** — the panel edit screen. You can add/move/delete nodes and links, drag VIAs, and zoom freely.
-- **View mode** — a saved dashboard. Hover for tooltips; click nodes/links that have dashboard links.
+- **View mode** — a saved dashboard. Hover for tooltips; click nodes/links that have dashboard links. Nothing on the map can be moved.
 
-Some gestures (adding VIAs, free zoom) are **edit-mode only** to avoid interfering with normal dashboard use.
+Gestures that change the map are **edit-mode only**, so they cannot interfere with normal dashboard use.
 
 ---
 
 ## Gesture reference
 
-| Action | Linux / Windows | macOS |
-|---|---|---|
-| **Move a node** | Click-drag the node | Click-drag the node |
-| **Pan the map** | **Ctrl**+drag, **Shift**+drag, or middle-mouse drag | **⌘ Cmd**+drag or **Shift**+drag |
-| **Zoom** | Scroll (edit mode); **Shift**+scroll (view mode) | Scroll (edit mode); **Shift**+scroll (view mode) |
-| **Zoom & pan in view mode** | Plain scroll / plain drag, when **View Mode Zoom & Pan** is enabled (Panel Options → Interaction & Labels); double-click resets | Same |
-| **Multi-select nodes** | **Ctrl**+click each node | **⌘ Cmd**+click each node |
-| **Add a VIA** | **Double-click** a link (edit mode) | **Double-click** a link (edit mode) |
-| **Move a VIA** | Drag the VIA | Drag the VIA |
-| **Delete a VIA** | **Right-click** the VIA (edit mode) | **Right-click** (or Ctrl-click) the VIA |
+**Edit mode** below means the gesture works only in the panel editor.
+
+| Action | Linux / Windows | macOS | Mode |
+|---|---|---|---|
+| **Move a node** | Click-drag the node | Click-drag the node | Edit mode |
+| **Multi-select nodes** | **Ctrl**+click each node, then drag any of them | **⌘ Cmd**+click each node, then drag any of them | Edit mode |
+| **Add a VIA** | **Double-click** a link | **Double-click** a link | Edit mode |
+| **Move a VIA** | Drag the VIA | Drag the VIA | Edit mode |
+| **Delete a VIA** | **Right-click** the VIA | **Right-click** (or Ctrl-click) the VIA | Edit mode |
+| **Pan the map** | **Ctrl**+drag, **Shift**+drag, or middle-mouse drag | **⌘ Cmd**+drag or **Shift**+drag | Both |
+| **Zoom** | Scroll (edit mode); **Shift**+scroll (view mode) | Scroll (edit mode); **Shift**+scroll (view mode) | Both |
+| **Zoom & pan in view mode** | Plain scroll / plain drag, when **View Mode Zoom & Pan** is enabled (Panel Options → Interaction & Labels); double-click resets | Same | View mode |
+
+Dragging snaps to the grid when one is enabled (Panel Options → **Grid**), and a drag keeps tracking even if the cursor leaves the panel — release anywhere to commit it.
 
 !!! tip "macOS"
     **View Mode Zoom & Pan** is off by default because plain scrolling over the
