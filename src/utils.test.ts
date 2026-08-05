@@ -17,6 +17,7 @@ import {
   calculateRectangleAutoWidth,
   CURRENT_VERSION,
   finiteOrFallback,
+  finitePosition,
   getSolidFromAlphaColor,
   handleVersionedStateUpdates,
   isSafeUrl,
@@ -960,5 +961,64 @@ describe('legacy rebind alias target guards (#331 review)', () => {
     wm.links[0].sides.A.query = 'Throughput A';
     expect(buildLegacyNameAliases(frames).size).toBe(1);
     expect(rebindLegacyQueryNames(wm, frames)).toBeNull();
+  });
+});
+
+// Node positions are hostile input (#339): saved options are hand-editable and
+// can arrive truncated. Reading position[0] directly threw on a missing value
+// and seeded NaN through every derived coordinate.
+describe('finitePosition (#339)', () => {
+  test('passes through a well-formed position', () => {
+    expect(finitePosition([200, 300])).toEqual([200, 300]);
+    expect(finitePosition([0, 0])).toEqual([0, 0]);
+    expect(finitePosition([-40, -12.5])).toEqual([-40, -12.5]);
+  });
+
+  test('accepts numeric strings, which already rendered correctly', () => {
+    // Every consumer coerced these through arithmetic, so maps using them work
+    // today — rejecting them now would be a regression.
+    expect(finitePosition(['200', '300'])).toEqual([200, 300]);
+  });
+
+  test.each([
+    ['NaN coordinate', [NaN, 300]],
+    ['Infinity coordinate', [Infinity, 300]],
+    ['-Infinity coordinate', [300, -Infinity]],
+    ['short array', [200]],
+    ['empty array', []],
+    ['null', null],
+    ['undefined', undefined],
+    ['plain object', {}],
+    ['string', 'nope'],
+    ['number', 42],
+    ['array of objects', [{}, {}]],
+    ['nested arrays', [[1], [2]]],
+  ])('coerces %s to the fallback instead of throwing', (_name, input) => {
+    const [x, y] = finitePosition(input);
+    expect(Number.isFinite(x)).toBe(true);
+    expect(Number.isFinite(y)).toBe(true);
+  });
+
+  test('a partially valid position keeps the readable coordinate', () => {
+    expect(finitePosition([200, NaN])).toEqual([200, 0]);
+    expect(finitePosition([NaN, 300])).toEqual([0, 300]);
+  });
+
+  test('honours an explicit fallback', () => {
+    expect(finitePosition(null, 50)).toEqual([50, 50]);
+    expect(finitePosition([200, NaN], 50)).toEqual([200, 50]);
+  });
+
+  test('a non-finite fallback cannot reintroduce what this helper removes', () => {
+    expect(finitePosition([NaN, 0], NaN)).toEqual([0, 0]);
+    expect(finitePosition(null, Infinity)).toEqual([0, 0]);
+    expect(finitePosition([undefined, undefined], -Infinity)).toEqual([0, 0]);
+  });
+
+  test('never mutates or aliases its input', () => {
+    const input: [number, number] = [10, 20];
+    const out = finitePosition(input);
+    expect(out).not.toBe(input);
+    expect(input).toEqual([10, 20]);
   });
 });

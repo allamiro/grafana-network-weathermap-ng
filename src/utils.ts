@@ -282,6 +282,35 @@ export function finiteOrFallback(value: number, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/**
+ * A node's `[x, y]` as finite numbers (#339).
+ *
+ * `position` comes straight out of saved `options.weathermap`, which is
+ * hand-editable, copy-pasteable between dashboards, and can arrive truncated
+ * from a partial import. Reading `position[0]` directly meant a missing or
+ * `null` position threw and took down the WHOLE panel, while `[NaN, 300]`,
+ * `[Infinity, 300]`, a short array, `[]` or `{}` rendered `NaN` into every
+ * coordinate derived from it — link endpoints, polyline points, arrow
+ * polygons, gradient axes, label placement.
+ *
+ * This coerces at the RENDER boundary and never rewrites the saved value: a
+ * bad coordinate must not be silently persisted over (`options.weathermap` is
+ * user data). A node whose position cannot be read draws at `fallback`, so it
+ * stays visible and fixable instead of vanishing or killing the panel.
+ *
+ * Numeric strings are accepted because they already worked — every consumer
+ * put them through arithmetic that coerced them, so rejecting them now would
+ * break maps that render fine today.
+ */
+export function finitePosition(pos: unknown, fallback = 0): [number, number] {
+  const arr = Array.isArray(pos) ? pos : [];
+  // The fallback is normalized too. A caller passing a non-finite fallback
+  // would otherwise reintroduce exactly what this helper exists to remove —
+  // finitePosition([NaN, 0], NaN) would hand back [NaN, 0].
+  const safeFallback = Number.isFinite(fallback) ? fallback : 0;
+  return [finiteOrFallback(Number(arr[0]), safeFallback), finiteOrFallback(Number(arr[1]), safeFallback)];
+}
+
 /** Optional numeric fields: blank or unparsable input becomes undefined. */
 export function parseOptionalFiniteNumber(raw: string): number | undefined {
   if (raw.trim() === '') {
