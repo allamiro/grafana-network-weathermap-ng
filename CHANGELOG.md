@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.8](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.8) (2026-08-05)
+
+### Features
+
+* **background images can be embedded in the dashboard** ([#344](https://github.com/allamiro/grafana-network-weathermap-ng/issues/344)): the background image was a URL and nothing else, so every dashboard depended on an external host staying reachable at the same address — and when it moved, the map lost the floor plan or rack elevation the nodes are positioned against, with nothing on screen explaining why. An **Upload Image** control now embeds the file directly in the dashboard, which travels with exports and needs no image hosting at all. It reuses the existing source field, so nothing about linking by URL changes and no saved map is touched. PNG, JPEG, GIF, WebP and SVG are accepted; uploads warn past 1 MB and are refused past 4 MB, because an embedded image lives in the dashboard JSON that Grafana re-serializes on every save. SVG is worth preferring — the demo rack elevation embeds in 53 KB ([#345](https://github.com/allamiro/grafana-network-weathermap-ng/pull/345))
+
+### Fixed
+
+* **grid guides no longer appear on saved dashboards** ([#347](https://github.com/allamiro/grafana-network-weathermap-ng/issues/347)): with **Grid Guides** enabled the grid was painted in view mode as well as edit mode, so every viewer got graph paper behind the map. The guides show what node dragging snaps to and a viewer cannot drag anything, so they are now drawn only while the panel editor is open. Snapping and the saved setting are unchanged ([#348](https://github.com/allamiro/grafana-network-weathermap-ng/pull/348))
+* **a malformed node position no longer breaks the panel** ([#339](https://github.com/allamiro/grafana-network-weathermap-ng/issues/339)): a `position` that was missing or `null` in hand-edited, copy-pasted or truncated dashboard JSON threw and took down the *entire* panel, not just the offending node; non-finite, short, empty or non-array values instead seeded `NaN` through every derived coordinate, leaving the map blank or half-drawn with no error at all. Positions are now coerced at the render boundary — a node whose position cannot be read draws at the origin, visible and fixable — and the saved value is never rewritten ([#340](https://github.com/allamiro/grafana-network-weathermap-ng/pull/340))
+* **a background image that fails to load now says so** ([#344](https://github.com/allamiro/grafana-network-weathermap-ng/issues/344)): a 404, a refused connection or a source rejected by the URL sanitizer previously rendered as nothing, leaving nodes on an empty canvas with no indication the art was missing. While **editing**, the panel now names the cause. Edit mode only, so a wall display is never interrupted by a transient failure
+
+### Security
+
+* no new advisories in this release. The two high-severity findings that blocked the marketplace submission remain patched — **brace-expansion** 5.0.9 (GHSA-rgw5-rvv9-x895 / CVE-2026-69152) and **fast-uri** 3.1.5 (GHSA-7p8r-x3mc-p8w7 / CVE-2026-18446), both verified clean against OSV at release time. `npm audit` reports 0 high/critical findings
+
+### Documentation
+
+* **screenshots can be enlarged on the documentation site** ([#341](https://github.com/allamiro/grafana-network-weathermap-ng/issues/341)): clicking a screenshot opens it full width, and clicking again zooms to 1:1 with drag-to-pan — the map and link-editor captures carry per-link labels and small form fields that are unreadable at body-text width. The page keeps its exact scroll position, so enlarging an image never costs the reader their place. The light colour scheme was dropped at the same time, since every screenshot here is a dark Grafana capture ([#342](https://github.com/allamiro/grafana-network-weathermap-ng/pull/342))
+* **dragging nodes is documented as an edit-mode gesture** ([#346](https://github.com/allamiro/grafana-network-weathermap-ng/pull/346)): the gesture table listed "Move a node — click-drag the node" with no mode column, reading as something possible on any dashboard. It is not: a saved dashboard is deliberately inert. Adds a step-by-step with screenshots of the panel menu and the editor canvas, a Mode column on every gesture, and a `WAN Demo — Drag & Arrange` playground dashboard to practise on
+* **turning the grid on and off is documented with screenshots** ([#347](https://github.com/allamiro/grafana-network-weathermap-ng/issues/347)): where the Grid Options live, and which toggle to use — **Grid Guides** removes the lines and keeps snapping, **Enable Node Grid Snapping** removes both at once
+* the background image section now covers linked versus embedded images as a trade-off, with the size thresholds and why SVG is worth preferring
+
+### Testing
+
+* **the demo exporter URL is configurable** ([#343](https://github.com/allamiro/grafana-network-weathermap-ng/pull/343)): five demo dashboards hardcoded `http://localhost:8080` for their background art, and 8080 is commonly occupied — when it is, the art silently never loads and those maps look broken for a reason nothing on screen explains. `WM_EXPORTER_URL` now overrides it, defaulting to the same address so committed dashboards are unchanged
+
 ## [1.6.7](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.7) (2026-08-02)
 
 ### Security
