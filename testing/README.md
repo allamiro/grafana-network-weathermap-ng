@@ -84,6 +84,30 @@ The exporter (`testing/exporter/main.go`) produces:
 The exporter also serves the demo background images over HTTP (port 8080,
 published by the compose file): `/floorplan.svg`, `/worldmap.svg`, `/rack.svg`, `/rack2.svg`.
 
+### If port 8080 is already taken
+
+Those URLs are absolute (`http://localhost:8080/...`) because the **browser**
+resolves them, not Grafana — a compose service name would not work. 8080 is a
+commonly occupied port, and when it is, the background art simply never loads:
+the rack/floor-plan/world-map maps render their nodes on an empty canvas with
+no error to explain it.
+
+Publish the exporter somewhere else and regenerate the dashboards to match:
+
+```bash
+# docker-compose.override.yml (untracked, local only)
+#   exporter:
+#     ports: !override ["8082:8080"]
+
+WM_EXPORTER_URL=http://localhost:8082 node testing/scripts/generate-scenario-dashboards.js
+# Recreate the exporter (it is what binds the new port) as well as Grafana:
+docker compose --project-directory testing up -d --build exporter grafana
+```
+
+`WM_EXPORTER_URL` defaults to `http://localhost:8080`, so the committed
+dashboards are unchanged unless you set it — don't commit dashboards
+regenerated with a custom URL.
+
 ## E2E tests
 
 Playwright E2E tests (`tests/panel.spec.ts`, via `@grafana/plugin-e2e`) run in CI

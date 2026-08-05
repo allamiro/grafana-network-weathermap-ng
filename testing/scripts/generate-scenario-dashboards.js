@@ -29,6 +29,26 @@ const path = require('path');
 const OUT_DIR = path.join(__dirname, '..', 'grafana', 'dashboards');
 const VERSION = 14; // CURRENT_VERSION in src/utils.ts
 
+// Background art (rack elevations, floor plan, world map) is served by the
+// exporter container, and the URL is resolved by the VIEWER'S BROWSER — so it
+// has to be an absolute host:port, not a compose service name.
+//
+// 8080 is one of the most commonly occupied ports on a developer machine. When
+// it is taken, docker compose cannot publish it, the demo maps request an
+// origin that answers with something else or nothing at all, and the panels
+// render their nodes floating on an empty canvas with no error — the map looks
+// broken for a reason nothing on screen explains.
+//
+// Override the whole base URL to match a remapped exporter port, then
+// regenerate:  WM_EXPORTER_URL=http://localhost:8082 node testing/scripts/generate-scenario-dashboards.js
+const EXPORTER_URL = (process.env.WM_EXPORTER_URL || 'http://localhost:8080').replace(/\/+$/, '');
+const bgImage = (file, extra = {}) => ({
+  url: `${EXPORTER_URL}/${file}`,
+  fit: 'contain',
+  attachToCanvas: true,
+  ...extra,
+});
+
 // Anchor enum from src/types.ts
 const A = { Center: 0, Top: 1, Bottom: 2, Left: 3, Right: 4 };
 
@@ -745,7 +765,7 @@ const dashboards = [
       ),
       {
         panel: {
-          backgroundImage: { url: 'http://localhost:8080/worldmap.svg', fit: 'contain', attachToCanvas: true },
+          backgroundImage: bgImage('worldmap.svg'),
         },
         scale: { title: 'Backbone Load' },
       }
@@ -775,7 +795,7 @@ const dashboards = [
       ),
       {
         panel: {
-          backgroundImage: { url: 'http://localhost:8080/floorplan.svg', fit: 'contain', attachToCanvas: true },
+          backgroundImage: bgImage('floorplan.svg'),
         },
         scale: { title: 'Link Load' },
       }
@@ -789,7 +809,7 @@ const dashboards = [
       'A switch faceplate drawn as the background with each port as a status-colored node: green = up, red = down (ports 7 and 19 are unpatched; port 13 flaps every ~5 minutes), gray = admin-disabled (23/24). T1/T2 are the 10G uplinks.',
     weathermap: makeWeathermap('wm-rack-ports', buildRackPorts(), {
       panel: {
-        backgroundImage: { url: 'http://localhost:8080/rack.svg', fit: 'contain', attachToCanvas: true },
+        backgroundImage: bgImage('rack.svg'),
       },
       fontSizing: { node: 9, link: 8 },
       scale: { title: 'Load', size: { width: 0, height: 0 } },
@@ -855,7 +875,7 @@ const dashboards = [
       'Rear elevation of one rack: router, firewall, two switches, three servers, and redundant PDU-A/PDU-B strips. Every port/NIC/PSU inlet/outlet is a status-colored node; network cables run through the left channel with live traffic, power cables carry each feed\u2019s live wattage. SW1 port 5 is down, SRV-2 lost its standby NIC, and SRV-3\u2019s A feed sits in PDU-A\u2019s dead outlet 6 \u2014 its full draw shifts to the B feed.',
     weathermap: makeWeathermap('wm-rack-cabling', buildRackCabling(), {
       panel: {
-        backgroundImage: { url: 'http://localhost:8080/rack2.svg', fit: 'contain', attachToCanvas: true },
+        backgroundImage: bgImage('rack2.svg'),
         panelSize: { width: 1000, height: 760 },
       },
       fontSizing: { node: 8, link: 7 },
@@ -871,7 +891,7 @@ const dashboards = [
       'The rack-cabling topology with the dense-map readability features enabled (plugin >= 1.5.12): hover a cable to highlight its whole path and fade the rest; power cables render as true one-way flows into the PSU inlets; value labels de-overlap automatically and hide when zoomed out two steps; a built-in status legend explains the colors; the PSU inlet labels are bold for emphasis.',
     weathermap: makeWeathermap('wm-rack-interactive', buildInteractiveRack(), {
       panel: {
-        backgroundImage: { url: 'http://localhost:8080/rack2.svg', fit: 'contain', attachToCanvas: true },
+        backgroundImage: bgImage('rack2.svg'),
         panelSize: { width: 1000, height: 760 },
       },
       link: { hoverHighlight: true, labelCollision: true, labelHideZoom: 2 },
