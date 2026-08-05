@@ -1589,7 +1589,7 @@
                   "dashboardLink": "",
                   "portLabel": "Gi0/1",
                   "directionLabel": "Out",
-                  "portLabelOffset": 10,
+                  "portLabelOffset": 8,
                   "portLabelDistance": 10
                 },
                 "Z": {
@@ -1779,7 +1779,7 @@
                   "dashboardLink": "",
                   "portLabel": "Gi0/2",
                   "directionLabel": "Out",
-                  "portLabelOffset": 34,
+                  "portLabelOffset": 16,
                   "portLabelDistance": 10
                 },
                 "Z": {
@@ -1813,12 +1813,12 @@
               ],
               "waypoints": [
                 {
-                  "x": 150,
-                  "y": 400
+                  "x": 300,
+                  "y": 385
                 },
                 {
-                  "x": 240,
-                  "y": 455
+                  "x": 342,
+                  "y": 434
                 }
               ],
               "cornerRadius": 18

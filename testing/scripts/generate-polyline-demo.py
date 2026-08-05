@@ -44,9 +44,12 @@ wm["nodes"] = [n for n in wm["nodes"] if n["id"] != conn_id]
 # the two site links around the edge routers instead of under them, and to
 # bend the INET uplink around the map's top-right corner.
 WAYPOINTS = {
-    # EDGE-1 -> SITE-DFW crosses under SITE-ATL's label on the straight path;
-    # bow it out to the left instead.
-    "link-edge-1<->site-dfw": [{"x": 150, "y": 400}, {"x": 240, "y": 455}],
+    # EDGE-1 -> SITE-DFW. SITE-ATL sits down-LEFT of EDGE-1 and SITE-DFW
+    # down-RIGHT, so bowing this link left (as it used to) sent it out along
+    # the ATL link and the two ran on top of each other for the whole first
+    # stretch. Bow it RIGHT instead — away from its neighbour, the direction
+    # the link is already heading.
+    "link-edge-1<->site-dfw": [{"x": 300, "y": 385}, {"x": 342, "y": 434}],
     # The (merged, direct) NYC link arcs wide to the right through two bends —
     # a single logical link tracing a curved geographic-style path.
     "link-edge-2<->site-nyc": [{"x": 765, "y": 395}, {"x": 745, "y": 475}],
@@ -95,10 +98,11 @@ PORT_LABEL_DEFAULT = (7, 9)
 PORT_LABEL_TUNING = {
     "link-core-a<->edge-1": (22, 11),
     "link-core-b<->edge-2": (22, 11),
-    # The two links off EDGE-1 leave at similar angles — separate their labels
-    # by pushing one much further along its own path than the other.
-    "link-edge-1<->site-atl": (10, 10),
-    "link-edge-1<->site-dfw": (34, 10),
+    # The two links off EDGE-1 now diverge immediately, so their labels only
+    # need a nudge apart rather than the big separation the old overlapping
+    # routes required.
+    "link-edge-1<->site-atl": (8, 10),
+    "link-edge-1<->site-dfw": (16, 10),
     "link-edge-2<->site-nyc": (12, 10),
     "link-core-b<->inet": (10, 10),
 }
