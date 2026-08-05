@@ -74,7 +74,6 @@ const setLinkOffset = async (page: Page, value: string) => {
   await input.scrollIntoViewIfNeeded();
   await input.fill(value);
   await input.blur();
-  await page.waitForTimeout(400);
 };
 
 // Right-click the default (straight, horizontal) link at its midpoint to
@@ -218,6 +217,13 @@ test.describe('Polyline waypoints', () => {
 
     const OFFSET = 40;
     await setLinkOffset(page, String(OFFSET));
+    // Poll for the offset to actually reach the geometry rather than sleeping:
+    // a fixed wait can elapse before the recompute lands on a slow runner, and
+    // the assertions below would then read pre-offset coordinates.
+    await expect(async () => {
+      const h = await handleCoords(handle);
+      expect(Math.abs(Math.abs(h.y - handleBefore.y) - OFFSET)).toBeLessThan(0.5);
+    }).toPass({ timeout: 10000 });
 
     const after = await drawnPoints(panel);
     const handleAfter = await handleCoords(handle);
@@ -247,7 +253,12 @@ test.describe('Polyline waypoints', () => {
     const handle = await addWaypointOnCanvas(page, panel);
     const seed = await center(handle);
     await drag(page, seed, { x: seed.x - 70, y: seed.y - 60 });
+    const preOffset = await handleCoords(handle);
     await setLinkOffset(page, '40');
+    await expect(async () => {
+      const h = await handleCoords(handle);
+      expect(Math.abs(Math.abs(h.y - preOffset.y) - 40)).toBeLessThan(0.5);
+    }).toPass({ timeout: 10000 });
 
     // The handle now draws 40px off its stored coordinate. Grabbing it at that
     // DRAWN position must work — hit testing follows the visual, not the store.
@@ -264,10 +275,13 @@ test.describe('Polyline waypoints', () => {
     for (let i = 0; i < 3; i++) {
       const c = await center(handle);
       await drag(page, c, c, 2);
-      await page.waitForTimeout(150);
-      const now = await handleCoords(handle);
-      expect(Math.abs(now.x - settled.x)).toBeLessThan(1);
-      expect(Math.abs(now.y - settled.y)).toBeLessThan(1);
+      // Poll rather than sleep: the assertion is that the coordinate STAYS
+      // put, so it must hold once the commit has settled, not after a guess.
+      await expect(async () => {
+        const now = await handleCoords(handle);
+        expect(Math.abs(now.x - settled.x)).toBeLessThan(1);
+        expect(Math.abs(now.y - settled.y)).toBeLessThan(1);
+      }).toPass({ timeout: 5000 });
     }
   });
 

@@ -1434,10 +1434,20 @@ function tryParseColor(input: string): number[] | null {
  * option — but a point at arc length s along the path lands at chord fraction
  * `project(s)`, which on a bent path is not s/L. Emitting one stop per vertex,
  * positioned at that vertex's chord projection and colored by its arc-length
- * fraction, makes the two agree: the color seen at s becomes exactly
- * ramp(s / L). Between two vertices, projection and arc length are both linear
- * in the segment parameter, so the gradient's own linear interpolation is
- * exact, not an approximation.
+ * fraction, makes the two agree: the color seen at s becomes ramp(s / L).
+ * Wherever a segment has extent along the chord, projection and arc length are
+ * both linear in the segment parameter, so the gradient's own linear
+ * interpolation is exact there.
+ *
+ * The one case it cannot be exact is a segment running PERPENDICULAR to the
+ * chord: it has zero extent along the gradient axis, so both of its endpoints
+ * land on the same stop offset and it renders as a single flat color rather
+ * than a ramp. No single-axis gradient can do better — an SVG linearGradient
+ * has exactly one axis, and a perpendicular run has no room on it. This is a
+ * limitation, not a corruption: that stretch simply does not change color,
+ * and every other part of the path still tracks arc length. Per-segment
+ * gradients would fix it, at the cost of rendering each segment as its own
+ * element — see the note below on why that trade is not worth making.
  *
  * This keeps ONE gradient element per link. The alternative — a gradient per
  * segment — would also require rendering every segment as its own element,

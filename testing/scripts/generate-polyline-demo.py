@@ -136,7 +136,8 @@ for link in wm["links"]:
         link["sides"][side]["portLabelDistance"] = distance
 
 assert applied == len(WAYPOINTS), f"only matched {applied} of {len(WAYPOINTS)} links"
-assert sum(1 for l in wm["links"] if l.get("linkOffset")) == len(CORE_OFFSETS)
+assigned = {l["id"]: l.get("linkOffset") for l in wm["links"] if l["id"] in CORE_OFFSETS}
+assert assigned == CORE_OFFSETS, f"unexpected core offsets: {assigned}"
 
 out = "grafana/dashboards/wm-polyline-links.json"
 json.dump(d, open(out, "w"), indent=2)

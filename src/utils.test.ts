@@ -1599,6 +1599,32 @@ describe('pathGradientStops (#336)', () => {
     expect(midChannel).toBeGreaterThan(255 * 0.2);
   });
 
+  test('a segment perpendicular to the chord renders flat, and says so', () => {
+    // Known limitation, pinned so it cannot regress silently: a run at right
+    // angles to the A->Z chord has zero extent on the gradient axis, so both
+    // its endpoints land on the same stop offset and the stretch shows one
+    // colour instead of a ramp. Every other segment still tracks arc length.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 50, y: 80 }, // straight up: perpendicular to the horizontal chord
+        { x: 100, y: 80 },
+        { x: 150, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    // The perpendicular segment's two endpoints share an offset...
+    expect(stops[1].offset).toBeCloseTo(stops[2].offset, 9);
+    // ...while their arc-length colours differ, which is what makes it flat.
+    expect(stops[1].color).not.toBe(stops[2].color);
+    // The rest of the path still advances along the axis.
+    expect(stops[3].offset).toBeGreaterThan(stops[2].offset);
+    expect(stops[0].offset).toBe(0);
+    expect(stops[stops.length - 1].offset).toBe(1);
+  });
+
   test('offsets are non-decreasing even when the path doubles back', () => {
     // A hairpin projects non-monotonically; SVG requires sorted offsets.
     const stops = pathGradientStops(

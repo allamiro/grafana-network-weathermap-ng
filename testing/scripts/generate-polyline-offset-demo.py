@@ -8,8 +8,12 @@ the bundle apart, the waypoints bend it around the firewall pair, and the two
 compose without distorting the shape — every member stays evenly spaced through
 the corners, and its arrows, labels, and animation stay in step with the others.
 
-Only the routing (waypoints + corner radius), the obstacle node, and the flow
-animation differ from wm-parallel-lag.
+Differences from wm-parallel-lag, all deliberate: the routing (shared waypoints
++ corner radius), the added obstacle node, the flow animation, and a set of
+presentation changes needed to make the result legible at documentation scale —
+a wider, shallower canvas with the endpoints moved apart, abbreviated port
+labels, value labels pushed onto the straight middle run, and the dashboard's
+own uid/title/description.
 
 Run from testing/:  python3 scripts/generate-polyline-offset-demo.py
 """
