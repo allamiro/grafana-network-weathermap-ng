@@ -1,0 +1,121 @@
+/* Click-to-enlarge overlay for documentation screenshots (see
+ * javascripts/lightbox.js). Dracula surfaces to match the rest of the site. */
+
+/* Content images advertise that they are clickable. */
+.md-content img[data-nwm-zoomable] {
+  cursor: zoom-in;
+  border-radius: 4px;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.md-content img[data-nwm-zoomable]:hover,
+.md-content img[data-nwm-zoomable]:focus-visible {
+  box-shadow: 0 0 0 2px var(--md-accent-fg-color, #ff79c6);
+  outline: none;
+}
+
+/* The page keeps its scroll position while the overlay is open. */
+body.nwm-lightbox-open {
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+}
+
+.nwm-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  /* Near-opaque on purpose: at lower alpha the page's own header controls read
+     through the backdrop and compete with the overlay's close button. */
+  background: rgba(20, 21, 27, 0.985);
+  backdrop-filter: blur(3px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.nwm-lightbox.is-open {
+  display: block;
+}
+
+.nwm-lightbox__figure {
+  margin: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.nwm-lightbox__img {
+  display: block;
+  max-width: 95vw;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  cursor: zoom-in;
+  border-radius: 4px;
+  background: #14151b;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Zoomed: render at natural pixel size and let the overlay scroll/pan. */
+.nwm-lightbox.is-zoomed .nwm-lightbox__figure {
+  display: block;
+  min-height: 0;
+  width: max-content;
+}
+
+.nwm-lightbox.is-zoomed .nwm-lightbox__img {
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+}
+
+.nwm-lightbox.is-zoomed .nwm-lightbox__img.is-grabbing {
+  cursor: grabbing;
+}
+
+.nwm-lightbox__caption {
+  margin-top: 0.9rem;
+  max-width: 60rem;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: rgba(248, 248, 242, 0.72);
+}
+
+.nwm-lightbox.is-zoomed .nwm-lightbox__caption {
+  display: none;
+}
+
+.nwm-lightbox__close {
+  position: fixed;
+  top: 0.6rem;
+  right: 0.9rem;
+  z-index: 1;
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: rgba(248, 248, 242, 0.85);
+  background: rgba(40, 42, 54, 0.9);
+  border: 1px solid rgba(248, 248, 242, 0.18);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.nwm-lightbox__close:hover,
+.nwm-lightbox__close:focus-visible {
+  color: #ff79c6;
+  border-color: #ff79c6;
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-content img[data-nwm-zoomable] {
+    transition: none;
+  }
+}
