@@ -5,7 +5,7 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
 ## Installation & versions
 
 - **Q: Is this the same plugin as `knightss27-weathermap-panel`?**
-    - This is a continuation fork. The original plugin was archived in 2023. This fork (`tamirsuliman-weathermap-panel`, display name **Network Weathermap NG**) is modernized and actively maintained. Config exported from the original plugin is compatible.
+    - This is a continuation fork. The original plugin was archived in 2023. This fork (`tamirsuliman-weathermap-panel`, display name **Network Weathermap NG**) is modernized and actively maintained. Config exported from the original plugin is read directly — see the [migration guide](guide/migrating.md) for the step-by-step, including the panel-type change that must be made in the JSON rather than the UI.
 
 - **Q: What is the minimum Grafana version?**
     - Grafana **11.0.0**. The plugin uses `@grafana/*` SDK v11 APIs. API compatibility is verified against Grafana 11.x and 12.x in CI.
@@ -112,7 +112,7 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
 
 - **Q: I exported my config from the original `knightss27-weathermap-panel`. Will it import here?**
     - Yes — the JSON config format is backward-compatible. Use **Export / Import** in the panel editor, or change the panel's `"type"` to `tamirsuliman-weathermap-panel` in the dashboard JSON before importing. Don't switch plugins through the panel-type picker in the UI — Grafana resets the panel options on a UI type switch and the whole map is lost.
-    - Link query bindings (A/Z side and bandwidth queries) are stored by their query display name, which this plugin computes slightly differently than the original in some setups (multiple queries returning a same-named column, table-style results). Since v1.6.7 unambiguous old-style names are re-bound automatically as soon as the panel receives data; if a binding stays empty after import (it can be ambiguous — e.g. two queries whose results are indistinguishable by name), re-select it once in the link editor and re-save.
+    - Link query bindings (A/Z side and bandwidth queries, link and node status queries, and tooltip metrics) are stored by their query display name, which this plugin computes slightly differently than the original in some setups (multiple queries returning a same-named column, table-style results). Since v1.6.7 unambiguous old-style names are re-bound automatically as soon as the panel receives data; if a binding stays empty after import (it can be ambiguous — e.g. two queries whose results are indistinguishable by name), re-select it once in the link editor and re-save. Full walkthrough: [migration guide](guide/migrating.md).
 
 ---
 

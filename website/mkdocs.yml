@@ -33,6 +33,7 @@ nav:
   - Home: index.md
   - Tutorial:
       - Getting Started: guide/getting-started.md
+      - Migrating from knightss27: guide/migrating.md
       - Nodes (Devices): guide/nodes.md
       - Links: guide/links.md
       - Panel Options: guide/panel-options.md
