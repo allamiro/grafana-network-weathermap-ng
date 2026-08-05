@@ -1618,7 +1618,13 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             ) : (
               ''
             )}
-            {wm.settings.panel.grid.guidesEnabled ? (
+            {/* Grid guides are an ALIGNMENT AID, so they are drawn only while
+                editing. They visualize the grid that node dragging snaps to —
+                and a viewer cannot drag anything, so on a saved dashboard they
+                were just graph paper over the map. The option is already
+                coupled to snapping (turning snapping off clears it), which is
+                the same reasoning. Snapping itself is unchanged. */}
+            {isEditMode && wm.settings.panel.grid.guidesEnabled ? (
               <>
                 <rect
                   x={
