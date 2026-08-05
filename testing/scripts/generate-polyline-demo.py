@@ -61,6 +61,48 @@ MEET = {
     "link-core-b<->inet": 35,
 }
 
+# The parallel core trunks inherit no Link Offset from the base map, so they
+# were drawn on top of each other with all four labels fighting for the same
+# strip of canvas. Spread them (#336: Link Offset now composes with everything
+# else on the map, waypoints included).
+CORE_OFFSETS = {
+    "link-core-a<->core-b/1": -11,
+    "link-core-a<->core-b/2": 11,
+}
+
+# Interface names as network engineers actually abbreviate them. The full
+# forms ("HundredGigE0/0/1", "GigabitEthernet0/1") are wider than the gap
+# between a node and its first value label at this map scale, so they used to
+# overprint both the value labels and each other.
+PORT_ABBREV = {
+    "HundredGigE": "Hu",
+    "GigabitEthernet": "Gi",
+}
+
+# Lift every port label clear of the line it names: `distance` pushes it
+# perpendicular to the link (clear of the value-label pill sitting on the
+# line), `offset` slides it along the axis toward the midpoint (clear of the
+# node icon, and of the other links leaving the same node). Both are the
+# per-side controls from #309 — the demo should show them in use.
+#
+# Per-link (offset%, distance px), because a single global pair cannot work:
+# port labels rotate to follow their line, so two links leaving one node at
+# similar steep angles put their labels in the same place. The fix is to slide
+# each one a different distance ALONG its own path. CORE-A/CORE-B's downlinks
+# also need a bigger offset than most — they leave almost vertically, straight
+# through the node icon.
+PORT_LABEL_DEFAULT = (7, 9)
+PORT_LABEL_TUNING = {
+    "link-core-a<->edge-1": (22, 11),
+    "link-core-b<->edge-2": (22, 11),
+    # The two links off EDGE-1 leave at similar angles — separate their labels
+    # by pushing one much further along its own path than the other.
+    "link-edge-1<->site-atl": (10, 10),
+    "link-edge-1<->site-dfw": (34, 10),
+    "link-edge-2<->site-nyc": (12, 10),
+    "link-core-b<->inet": (10, 10),
+}
+
 # The EDGE-1 area stacks several value labels; let the collision solver spread
 # them along their (now path-aware) links so the demo reads cleanly.
 wm["settings"]["link"]["labelCollision"] = True
@@ -76,8 +118,21 @@ for link in wm["links"]:
         applied += 1
     if link["id"] in MEET:
         link["arrowMeetPercent"] = MEET[link["id"]]
+    if link["id"] in CORE_OFFSETS:
+        link["linkOffset"] = CORE_OFFSETS[link["id"]]
+    for side in ("A", "Z"):
+        port = link["sides"][side].get("portLabel")
+        if not port:
+            continue
+        for long, short in PORT_ABBREV.items():
+            port = port.replace(long, short)
+        offset, distance = PORT_LABEL_TUNING.get(link["id"], PORT_LABEL_DEFAULT)
+        link["sides"][side]["portLabel"] = port
+        link["sides"][side]["portLabelOffset"] = offset
+        link["sides"][side]["portLabelDistance"] = distance
 
 assert applied == len(WAYPOINTS), f"only matched {applied} of {len(WAYPOINTS)} links"
+assert sum(1 for l in wm["links"] if l.get("linkOffset")) == len(CORE_OFFSETS)
 
 out = "grafana/dashboards/wm-polyline-links.json"
 json.dump(d, open(out, "w"), indent=2)

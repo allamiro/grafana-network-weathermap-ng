@@ -832,7 +832,9 @@
                   "anchor": 4,
                   "dashboardLink": "",
                   "portLabel": "Eth-Trunk1",
-                  "directionLabel": "Out"
+                  "directionLabel": "Out",
+                  "portLabelOffset": 7,
+                  "portLabelDistance": 9
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -862,7 +864,8 @@
                   "queryA": "DISC core-a<->core-b/1",
                   "units": "pps"
                 }
-              ]
+              ],
+              "linkOffset": -11
             },
             {
               "id": "link-core-a<->core-b/2",
@@ -1018,7 +1021,9 @@
                   "anchor": 4,
                   "dashboardLink": "",
                   "portLabel": "Eth-Trunk2",
-                  "directionLabel": "Out"
+                  "directionLabel": "Out",
+                  "portLabelOffset": 7,
+                  "portLabelDistance": 9
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1048,7 +1053,8 @@
                   "queryA": "DISC core-a<->core-b/2",
                   "units": "pps"
                 }
-              ]
+              ],
+              "linkOffset": 11
             },
             {
               "id": "link-core-a<->edge-1",
@@ -1203,8 +1209,10 @@
                   "labelOffset": 55,
                   "anchor": 2,
                   "dashboardLink": "",
-                  "portLabel": "HundredGigE0/0/1",
-                  "directionLabel": "Out"
+                  "portLabel": "Hu0/0/1",
+                  "directionLabel": "Out",
+                  "portLabelOffset": 22,
+                  "portLabelDistance": 11
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1389,8 +1397,10 @@
                   "labelOffset": 55,
                   "anchor": 2,
                   "dashboardLink": "",
-                  "portLabel": "HundredGigE0/0/2",
-                  "directionLabel": "Out"
+                  "portLabel": "Hu0/0/2",
+                  "directionLabel": "Out",
+                  "portLabelOffset": 22,
+                  "portLabelDistance": 11
                 },
                 "Z": {
                   "bandwidth": 10000000000,
@@ -1577,8 +1587,10 @@
                   "labelOffset": 55,
                   "anchor": 2,
                   "dashboardLink": "",
-                  "portLabel": "GigabitEthernet0/1",
-                  "directionLabel": "Out"
+                  "portLabel": "Gi0/1",
+                  "directionLabel": "Out",
+                  "portLabelOffset": 10,
+                  "portLabelDistance": 10
                 },
                 "Z": {
                   "bandwidth": 1000000000,
@@ -1765,8 +1777,10 @@
                   "labelOffset": 55,
                   "anchor": 2,
                   "dashboardLink": "",
-                  "portLabel": "GigabitEthernet0/2",
-                  "directionLabel": "Out"
+                  "portLabel": "Gi0/2",
+                  "directionLabel": "Out",
+                  "portLabelOffset": 34,
+                  "portLabelDistance": 10
                 },
                 "Z": {
                   "bandwidth": 1000000000,
@@ -1964,8 +1978,10 @@
                   "labelOffset": 55,
                   "anchor": 2,
                   "dashboardLink": "",
-                  "portLabel": "GigabitEthernet0/3",
-                  "directionLabel": "Out"
+                  "portLabel": "Gi0/3",
+                  "directionLabel": "Out",
+                  "portLabelOffset": 12,
+                  "portLabelDistance": 10
                 },
                 "Z": {
                   "bandwidth": 1000000000,
@@ -2161,8 +2177,10 @@
                   "labelOffset": 55,
                   "anchor": 1,
                   "dashboardLink": "",
-                  "portLabel": "HundredGigE0/0/9",
-                  "directionLabel": "Out"
+                  "portLabel": "Hu0/0/9",
+                  "directionLabel": "Out",
+                  "portLabelOffset": 10,
+                  "portLabelDistance": 10
                 },
                 "Z": {
                   "bandwidth": 10000000000,

@@ -40,6 +40,43 @@ const drag = async (page: Page, from: { x: number; y: number }, to: { x: number;
   return to;
 };
 
+// Every rendered vertex of the link, in SVG user units (= panel coordinates),
+// so geometry can be compared without any screen-space conversion.
+const drawnPoints = async (panel: Locator) => {
+  const polys = panel.locator('g[data-testid="link"] polyline');
+  const count = await polys.count();
+  const out: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i < count; i++) {
+    const attr = (await polys.nth(i).getAttribute('points')) ?? '';
+    for (const pt of attr.trim().split(/\s+/).filter(Boolean)) {
+      const [x, y] = pt.split(',').map(Number);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        out.push({ x, y });
+      }
+    }
+  }
+  return out;
+};
+
+// The handle's own centre, also in SVG user units.
+const handleCoords = async (handle: Locator) => ({
+  x: Number(await handle.getAttribute('cx')),
+  y: Number(await handle.getAttribute('cy')),
+});
+
+// Set Link Offset through the link form (the precision channel).
+const setLinkOffset = async (page: Page, value: string) => {
+  const picker = page.locator('#nwm-link-picker');
+  await picker.click({ force: true });
+  await picker.press('ArrowDown');
+  await picker.press('Enter');
+  const input = page.locator('input[name="linkOffset"]');
+  await input.scrollIntoViewIfNeeded();
+  await input.fill(value);
+  await input.blur();
+  await page.waitForTimeout(400);
+};
+
 // Right-click the default (straight, horizontal) link at its midpoint to
 // insert a waypoint there — the canvas creation gesture.
 const addWaypointOnCanvas = async (page: Page, panel: Locator) => {
@@ -155,6 +192,83 @@ test.describe('Polyline waypoints', () => {
     const c = await center(handle);
     await page.mouse.click(c.x, c.y, { button: 'right' });
     await expect(panel.getByTestId('waypoint-handle')).toHaveCount(0);
+  });
+
+  // #336: Link Offset combines with waypoints by TRANSLATING the whole drawn
+  // path. Waypoints stay stored unshifted and only the drawing moves, so the
+  // handles have to be rendered at `waypoint + offset` while every value
+  // written back stays in stored space. jsdom cannot prove the shifted handle
+  // is actually grabbable, or that repeated real drags do not walk the link
+  // sideways by the offset each time — that needs a browser.
+  test('Link Offset translates the drawn path rigidly and the handle moves with it', async ({
+    panelEditPage,
+    page,
+  }) => {
+    await setupPanel(panelEditPage, page);
+    const panel = panelEditPage.panel.locator;
+    const handle = await addWaypointOnCanvas(page, panel);
+
+    // Move the bend clear of the arrow-junction gap so it is a rendered vertex.
+    const start = await center(handle);
+    await drag(page, start, { x: start.x - 70, y: start.y - 60 });
+
+    const before = await drawnPoints(panel);
+    const handleBefore = await handleCoords(handle);
+    expect(before.length).toBeGreaterThan(2);
+
+    const OFFSET = 40;
+    await setLinkOffset(page, String(OFFSET));
+
+    const after = await drawnPoints(panel);
+    const handleAfter = await handleCoords(handle);
+
+    // The default link is horizontal, so the chord normal is the y axis: the
+    // whole path shifts by exactly the offset, and by nothing in x.
+    expect(after).toHaveLength(before.length);
+    expect(Math.abs(handleAfter.x - handleBefore.x)).toBeLessThan(0.5);
+    expect(Math.abs(Math.abs(handleAfter.y - handleBefore.y) - OFFSET)).toBeLessThan(0.5);
+
+    // Rigid translation: every rendered vertex moved by the SAME delta, and
+    // that delta is the one the handle moved by. This is the isometry
+    // guarantee — no vertex was distorted, stretched, or folded.
+    const dy = handleAfter.y - handleBefore.y;
+    after.forEach((p, i) => {
+      expect(Math.abs(p.x - before[i].x)).toBeLessThan(0.5);
+      expect(Math.abs(p.y - before[i].y - dy)).toBeLessThan(0.5);
+    });
+  });
+
+  test('dragging an offset link is cursor-locked and never creeps by the offset', async ({
+    panelEditPage,
+    page,
+  }) => {
+    await setupPanel(panelEditPage, page);
+    const panel = panelEditPage.panel.locator;
+    const handle = await addWaypointOnCanvas(page, panel);
+    const seed = await center(handle);
+    await drag(page, seed, { x: seed.x - 70, y: seed.y - 60 });
+    await setLinkOffset(page, '40');
+
+    // The handle now draws 40px off its stored coordinate. Grabbing it at that
+    // DRAWN position must work — hit testing follows the visual, not the store.
+    const target = { x: seed.x + 40, y: seed.y - 90 };
+    await drag(page, await center(handle), target);
+    const landed = await center(handle);
+    expect(Math.abs(landed.x - target.x)).toBeLessThan(5);
+    expect(Math.abs(landed.y - target.y)).toBeLessThan(5);
+
+    // Zero-distance grab/release cycles. If a commit ever wrote back a DRAWN
+    // coordinate, each cycle would add the offset again and walk the link
+    // 40px sideways; the position must be bit-stable instead.
+    const settled = await handleCoords(handle);
+    for (let i = 0; i < 3; i++) {
+      const c = await center(handle);
+      await drag(page, c, c, 2);
+      await page.waitForTimeout(150);
+      const now = await handleCoords(handle);
+      expect(Math.abs(now.x - settled.x)).toBeLessThan(1);
+      expect(Math.abs(now.y - settled.y)).toBeLessThan(1);
+    }
   });
 
   test('waypoints persist across dashboard save and reload', async ({ panelEditPage, page }) => {
