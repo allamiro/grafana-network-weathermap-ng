@@ -1,6 +1,6 @@
 import { DataFrame, Field, FieldType, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
 import merge from 'lodash.merge';
-import { Anchor, DrawnNode, Link, Node, ValueMappingMode, Weathermap } from 'types';
+import { Anchor, DrawnNode, Link, Node, Position, ValueMappingMode, Weathermap } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 
 export const CURRENT_VERSION = 14;
@@ -986,7 +986,11 @@ export function addViaToLink(wm: Weathermap, linkId: string, theme: GrafanaTheme
   });
 
   // New link C <-> B keeps all link-level properties (units, arrows, stroke,
-  // status, tooltip metrics, etc.) and the original B-side data.
+  // status, tooltip metrics, etc.) and the original B-side data. Waypoints
+  // (#332) are dropped from BOTH segments: `{...link}` would otherwise copy
+  // the full A->Z bend list onto each half, making both retrace every bend.
+  // Splitting the list at the VIA is ambiguous (the VIA sits on the straight
+  // chord, not the bent path), so inserting a VIA resets polyline routing.
   const newLink: Link = {
     ...link,
     id: uuidv4(),
@@ -995,6 +999,7 @@ export function addViaToLink(wm: Weathermap, linkId: string, theme: GrafanaTheme
       A: connectionSide(zSide.labelOffset),
       Z: zSide,
     },
+    waypoints: undefined,
   };
 
   // Original link becomes A <-> C; its A-side data is untouched.
@@ -1003,6 +1008,7 @@ export function addViaToLink(wm: Weathermap, linkId: string, theme: GrafanaTheme
     A: link.sides.A,
     Z: connectionSide(zSide.labelOffset),
   };
+  delete link.waypoints;
 
   wm.nodes.push(conn);
   const idx = wm.links.findIndex((l) => l.id === linkId);
@@ -1037,6 +1043,13 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
   // inLink (A<->C) now reaches outLink's target (B), keeping B-side data.
   inLink.nodes = [inLink.nodes[0], outLink.nodes[1]];
   inLink.sides = { A: inLink.sides.A, Z: outLink.sides.Z };
+  // Preserve the merged shape (#332): each segment's waypoints concatenate in
+  // path order (A->C bends, then C->B bends). Segments without waypoints
+  // contribute nothing, so plain VIA removal still straightens as before.
+  const mergedWaypoints = [...(inLink.waypoints ?? []), ...(outLink.waypoints ?? [])];
+  if (mergedWaypoints.length > 0) {
+    inLink.waypoints = mergedWaypoints;
+  }
 
   wm.links = wm.links.filter((l) => l.id !== outLink.id);
   wm.nodes = wm.nodes.filter((n) => n.id !== conn.id);
@@ -1176,18 +1189,219 @@ export function resolveLinkChain(links: Link[], linkId: string): Set<string> {
   return chain;
 }
 
+/*
+ * Polyline path math (#332). A "path" is an ordered list of >= 2 points: the
+ * link's A endpoint, its optional waypoints, and its Z endpoint. All distances
+ * are arc lengths along the polyline, so every consumer that used to lerp on
+ * the straight A->Z chord (meet point, labels, markers, animation) lands ON
+ * the drawn line regardless of bends. For a two-point path these degrade to
+ * exactly the old straight-line math.
+ */
+
+/**
+ * Boundary guard for persisted waypoints (#332): dashboard JSON can be
+ * hand-edited, partial, or hostile. Returns only well-formed points with
+ * finite numeric x/y; anything else (non-array, junk entries, NaN/Infinity
+ * coordinates) is dropped so downstream arc-length math never sees it.
+ */
+export function sanitizeWaypoints(input: unknown): Position[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  const result: Position[] = [];
+  for (const p of input) {
+    if (
+      p !== null &&
+      typeof p === 'object' &&
+      Number.isFinite((p as Position).x) &&
+      Number.isFinite((p as Position).y)
+    ) {
+      result.push({ x: (p as Position).x, y: (p as Position).y });
+    }
+  }
+  return result;
+}
+
+/** Total arc length of a polyline. 0 for fewer than two points. */
+export function pathTotalLength(pts: Position[]): number {
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) {
+    total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+  }
+  return total;
+}
+
+/** Point at arc distance `dist` along the polyline, clamped to [0, length]. */
+export function pointAtPathLength(pts: Position[], dist: number): Position {
+  if (pts.length === 0) {
+    return { x: 0, y: 0 };
+  }
+  let remaining = Math.max(0, dist);
+  for (let i = 1; i < pts.length; i++) {
+    const segLen = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    if (remaining <= segLen) {
+      const t = segLen === 0 ? 0 : remaining / segLen;
+      return {
+        x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t,
+        y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t,
+      };
+    }
+    remaining -= segLen;
+  }
+  return { ...pts[pts.length - 1] };
+}
+
+/** Point at `pct` (0..1) of the total arc length. */
+export function pointAtPathPercent(pts: Position[], pct: number): Position {
+  return pointAtPathLength(pts, pathTotalLength(pts) * Math.min(1, Math.max(0, pct)));
+}
+
+/**
+ * Unit direction vector of the segment containing arc distance `dist`.
+ * Zero-length segments are skipped; a degenerate path falls back to +x so
+ * arrow math never receives NaN (mirrors getArrowPolygon's guard).
+ */
+export function directionAtPathLength(pts: Position[], dist: number): Position {
+  let remaining = Math.max(0, dist);
+  let lastDir: Position | null = null;
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i - 1].x;
+    const dy = pts[i].y - pts[i - 1].y;
+    const segLen = Math.hypot(dx, dy);
+    if (segLen > 0) {
+      lastDir = { x: dx / segLen, y: dy / segLen };
+      if (remaining <= segLen) {
+        return lastDir;
+      }
+    }
+    remaining -= segLen;
+  }
+  return lastDir ?? { x: 1, y: 0 };
+}
+
+/**
+ * The sub-polyline between arc distances `fromDist` and `toDist` (clamped,
+ * fromDist <= toDist), with interpolated points at both cuts. Interior
+ * points falling inside the range are preserved, so rendering the result
+ * keeps every bend.
+ */
+export function subPath(pts: Position[], fromDist: number, toDist: number): Position[] {
+  const total = pathTotalLength(pts);
+  const from = Math.min(Math.max(0, fromDist), total);
+  const to = Math.min(Math.max(from, toDist), total);
+  const result: Position[] = [pointAtPathLength(pts, from)];
+  let walked = 0;
+  for (let i = 1; i < pts.length; i++) {
+    walked += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    if (walked > from && walked < to) {
+      result.push({ ...pts[i] });
+    }
+  }
+  result.push(pointAtPathLength(pts, to));
+  return result;
+}
+
+/**
+ * Rounded polyline corners (#336): replace each interior bend with a
+ * flattened quadratic Bézier (entry/exit points `radius` px along the
+ * adjacent segments, control point at the bend). Returns a plain point list,
+ * so every arc-length consumer (arrows, labels, animation, collision) works
+ * unchanged — this is the "flatten curves to a dense polyline" extension
+ * contract. radius <= 0 or a path without bends returns the input untouched.
+ * The radius is clamped to half of each adjacent segment so neighboring
+ * corners never overlap.
+ */
+export function roundPathCorners(pts: Position[], radius: number): Position[] {
+  if (radius <= 0 || pts.length < 3) {
+    return pts;
+  }
+  const STEPS = 6;
+  const out: Position[] = [{ ...pts[0] }];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i - 1];
+    const cur = pts[i];
+    const next = pts[i + 1];
+    const inLen = Math.hypot(cur.x - prev.x, cur.y - prev.y);
+    const outLen = Math.hypot(next.x - cur.x, next.y - cur.y);
+    if (inLen === 0 || outLen === 0) {
+      out.push({ ...cur });
+      continue;
+    }
+    const r = Math.min(radius, inLen / 2, outLen / 2);
+    const pIn = { x: cur.x - ((cur.x - prev.x) / inLen) * r, y: cur.y - ((cur.y - prev.y) / inLen) * r };
+    const pOut = { x: cur.x + ((next.x - cur.x) / outLen) * r, y: cur.y + ((next.y - cur.y) / outLen) * r };
+    for (let s = 0; s <= STEPS; s++) {
+      const t = s / STEPS;
+      const a = (1 - t) * (1 - t);
+      const b = 2 * (1 - t) * t;
+      const c = t * t;
+      out.push({ x: a * pIn.x + b * cur.x + c * pOut.x, y: a * pIn.y + b * cur.y + c * pOut.y });
+    }
+  }
+  out.push({ ...pts[pts.length - 1] });
+  return out;
+}
+
+/**
+ * Index of the polyline segment nearest to a point (#336): used to decide
+ * where along a link a right-click-inserted waypoint belongs. Returns i such
+ * that the segment pts[i] -> pts[i+1] minimizes point-to-segment distance;
+ * for a path [startA, ...waypoints, startZ] this i is exactly the insertion
+ * index into the waypoint list. 0 for degenerate inputs.
+ */
+export function nearestSegmentIndex(pts: Position[], p: Position): number {
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const ax = pts[i].x;
+    const ay = pts[i].y;
+    const dx = pts[i + 1].x - ax;
+    const dy = pts[i + 1].y - ay;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len2));
+    const dist = Math.hypot(p.x - (ax + t * dx), p.y - (ay + t * dy));
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = i;
+    }
+  }
+  return best;
+}
+
+/** SVG path data ("M x y L x y ...") for a polyline — animateMotion input. */
+export function pathToSvg(pts: Position[]): string {
+  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+}
+
+/** SVG <polyline> points attribute for a polyline. */
+export function pathToPoints(pts: Position[]): string {
+  return pts.map((p) => `${p.x},${p.y}`).join(' ');
+}
+
 export interface LabelPlacement {
   key: string;
   // The segment the label slides along, and its preferred position (percent).
   segment: { x1: number; y1: number; x2: number; y2: number };
+  // When the link is a polyline (#332), the full point list the label slides
+  // along instead — ordered the same way as `segment` (segment.x1/y1 is the
+  // path's first point). Absent for straight links.
+  path?: Position[];
   offsetPercent: number;
   width: number;
   height: number;
 }
 
 const labelBoxAt = (l: LabelPlacement, pct: number) => {
-  const x = l.segment.x1 + ((l.segment.x2 - l.segment.x1) * pct) / 100;
-  const y = l.segment.y1 + ((l.segment.y2 - l.segment.y1) * pct) / 100;
+  let x: number;
+  let y: number;
+  if (l.path && l.path.length > 2) {
+    const p = pointAtPathPercent(l.path, pct / 100);
+    x = p.x;
+    y = p.y;
+  } else {
+    x = l.segment.x1 + ((l.segment.x2 - l.segment.x1) * pct) / 100;
+    y = l.segment.y1 + ((l.segment.y2 - l.segment.y1) * pct) / 100;
+  }
   return { x0: x - l.width / 2, y0: y - l.height / 2, x1: x + l.width / 2, y1: y + l.height / 2 };
 };
 

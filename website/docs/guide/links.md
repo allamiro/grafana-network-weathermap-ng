@@ -81,9 +81,27 @@ The two directional arrows meet at the midpoint of a link by default. Use the **
 
 ---
 
+## Waypoints (polyline links)
+
+By default a link is a straight line. Add **waypoints** (Link Options → **Waypoints (Polyline)**) to draw it as a **polyline** — one logical link bent through any number of intermediate points, without splitting it into segments the way [VIAs](#vias-waypoints) do. Ideal for routing many links around each other or tracing a real geographic path on a map background.
+
+![Three links routed through waypoints around the WAN map](../img/getting-started/polyline-waypoints.png)
+
+*The WAN demo with three polyline links: the DFW site link bowed out to the left, the NYC link arced through two bends tracing a geographic-style path, and the INET uplink routed around the top-right corner — each still one logical link with its own queries, labels, and arrows. Try it locally with the `WAN Demo — Polyline Links` dashboard in the [testing environment](https://github.com/allamiro/grafana-network-weathermap-ng/tree/main/testing).*
+
+- **Create on the canvas** (edit mode): **right-click anywhere on a link** to insert a waypoint at that exact spot. (Double-click still inserts a [VIA](#vias-waypoints) — the two gestures coexist.) Or use **Add Waypoint** in the link form, which seeds one halfway toward the Z node; each waypoint is an X/Y coordinate in panel space, ordered A → Z, editable numerically for precision.
+- **Edit directly on the canvas** (edit mode): every waypoint shows a circular **drag handle** — drag it to reshape the link live (grid snapping applies; the drag keeps tracking even if your cursor leaves the panel), release to save. **Right-click** a handle to remove that waypoint. Keyboard: focus a handle with Tab, nudge with **arrow keys** (Shift = 10 px), remove with **Delete**.
+- **Corner Radius** (shown once waypoints exist) rounds each bend with a smooth curve — `0` keeps sharp corners; the radius clamps automatically so neighboring bends never overlap.
+- Everything follows the drawn path by **arc length**: both directional halves, the arrowheads (which rotate with the segment they sit on), the value labels, the [arrow meeting point](#arrow-meeting-point) percentage, port labels, and [traffic animation](animation.md) dots — which travel around the bends.
+- An empty waypoint list is exactly the old straight link, so existing maps are unchanged.
+
+Two current limitations: while waypoints are set, **Link Offset (parallel links)** is ignored (bend the links apart with their waypoints instead), and **gradient link coloring** still shades along the straight A→Z axis, which can look odd on sharp bends.
+
+---
+
 ## Parallel links (link offset)
 
-To draw **multiple links between the same two nodes** without overlap, set a different **Link Offset (parallel links)** on each. The offset shifts the line perpendicular to its A→Z direction; arrows, labels, and coloring all follow the offset line. Zero (default) keeps the straight line.
+To draw **multiple links between the same two nodes** without overlap, set a different **Link Offset (parallel links)** on each. The offset shifts the line perpendicular to its A→Z direction; arrows, labels, and coloring all follow the offset line. Zero (default) keeps the straight line. On a link with [waypoints](#waypoints-polyline-links), the offset is ignored.
 
 ![Three parallel LAG member links between the same two nodes](../img/use-cases/wm-parallel-lag.png)
 
@@ -134,7 +152,7 @@ Under **Stroke and Arrow**:
 
 ## VIAs (waypoints)
 
-A **VIA** is an intermediate bend point on a link — useful to route a link around obstacles or to represent a multi-hop path. VIAs use lightweight *connection nodes* under the hood.
+A **VIA** is an intermediate bend point on a link — useful to route a link around obstacles or to represent a multi-hop path. VIAs use lightweight *connection nodes* under the hood: the link **splits into real segments** at each VIA, which is what you want when the bend represents an actual intermediate hop. If you only want to bend the drawn line, prefer [waypoints](#waypoints-polyline-links) — they keep the link as one logical unit.
 
 ![A link routed through three VIA waypoints](../img/use-cases/wm-multihop.png)
 

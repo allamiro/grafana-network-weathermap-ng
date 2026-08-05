@@ -44,8 +44,11 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
 - **Q: Can I replay how the network looked in the past?**
     - Enable **Panel Options → Timeline Slider**, then drag the scrubber at the bottom of the panel to move through the time range. Link values update to that moment; press **Live** to return. See [Timeline Slider](guide/panel-options.md#timeline-slider).
 
+- **Q: How do I draw a link with bends (polyline) instead of a straight line?**
+    - Add **waypoints** in the link's editor (Link Options → **Waypoints (Polyline)**): the link bends through each X/Y point as one logical polyline — arrows, labels, and traffic animation follow the path. See [Links → Waypoints](guide/links.md#waypoints-polyline-links).
+
 - **Q: How do I add a bend/waypoint (VIA) to a link?**
-    - In edit mode, **double-click** a link to insert a VIA, **drag** it to position, and **right-click** it to remove. See [Interactions](guide/interactions.md#editing-vias-on-the-canvas).
+    - In edit mode, **double-click** a link to insert a VIA, **drag** it to position, and **right-click** it to remove. A VIA splits the link into real segments (useful for actual intermediate hops); for a pure visual bend, prefer waypoints (above). See [Interactions](guide/interactions.md#editing-vias-on-the-canvas).
 
 - **Q: I can't drag my nodes around — is there a setting to turn that on?**
     - No setting: **dragging works in the panel editor and nowhere else**, so viewers can't nudge the topology by accident on a saved dashboard. Hover the panel and press **`e`** (or panel menu **⋮ → Edit**), drag the nodes, then **Back to dashboard → Save dashboard** — positions live in the panel options, so nothing sticks until you save. Step-by-step with screenshots: [Moving things around the map](guide/interactions.md#moving-things-around-the-map); every gesture in one table: [Gesture reference](guide/interactions.md#gesture-reference).

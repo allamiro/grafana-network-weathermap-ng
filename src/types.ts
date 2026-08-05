@@ -184,6 +184,18 @@ export interface Link {
   // panel-level switch; 'enabled' animates this link even when the panel
   // switch is off; 'disabled' never animates it.
   animation?: 'inherit' | 'enabled' | 'disabled';
+  // Polyline bend points (#332), in panel coordinates, ordered A -> Z. The
+  // link is drawn through them as one logical polyline: arrows, value labels,
+  // and animation follow the path by arc length. Unset/empty = straight line,
+  // so saved maps are unchanged (no migration needed). While waypoints are
+  // set, linkOffset is ignored (per-segment parallel offsetting is not
+  // supported).
+  waypoints?: Position[];
+  // Rounded corner radius in px for waypoint bends (#336). Each bend is
+  // replaced by a flattened quadratic curve of this radius (clamped to half
+  // of each adjacent segment). Unset/0 = sharp corners, exactly as before —
+  // no migration needed. Only meaningful while waypoints are set.
+  cornerRadius?: number;
 }
 
 export interface DrawnNode extends Node {
@@ -225,6 +237,14 @@ export interface DrawnLink extends Link {
   arrowCenterZ: Position;
   arrowPolygonZ: any;
   isDown: boolean;
+  // Polyline geometry (#332). pathPoints is the full drawn path
+  // [lineStartA, ...waypoints, lineStartZ]; the halves are the sub-paths each
+  // direction renders (A: node -> its arrow end; Z: node -> its arrow end).
+  // Absent on legacy DrawnLink fixtures — consumers fall back to the straight
+  // lineStart/lineEnd pairs.
+  pathPoints?: Position[];
+  pathPointsA?: Position[];
+  pathPointsZ?: Position[];
 }
 
 export interface HoveredLink {
