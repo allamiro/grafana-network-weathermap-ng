@@ -48,7 +48,7 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
     - In edit mode, **double-click** a link to insert a VIA, **drag** it to position, and **right-click** it to remove. See [Interactions](guide/interactions.md#editing-vias-on-the-canvas).
 
 - **Q: I can't drag my nodes around — is there a setting to turn that on?**
-    - No setting: **dragging works in the panel editor and nowhere else**, so viewers can't nudge the topology by accident on a saved dashboard. Hover the panel and press **`e`** (or panel menu **⋮ → Edit**), drag the nodes, then **Back to dashboard → Save dashboard** — positions live in the panel options, so nothing sticks until you save. Full gesture table: [Interactions](guide/interactions.md#moving-things-around-the-map).
+    - No setting: **dragging works in the panel editor and nowhere else**, so viewers can't nudge the topology by accident on a saved dashboard. Hover the panel and press **`e`** (or panel menu **⋮ → Edit**), drag the nodes, then **Back to dashboard → Save dashboard** — positions live in the panel options, so nothing sticks until you save. Step-by-step with screenshots: [Moving things around the map](guide/interactions.md#moving-things-around-the-map); every gesture in one table: [Gesture reference](guide/interactions.md#gesture-reference).
 
 - **Q: Two links overlap and dragging the nodes doesn't help — what else can I do?**
     - Moving a node often just moves the problem. For two links between the **same pair of nodes**, give each a different **Link Offset**; to route **one** link around something, add waypoints and drag their handles. See [Links](guide/links.md#parallel-links-link-offset).

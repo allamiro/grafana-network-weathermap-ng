@@ -10,10 +10,23 @@ How to navigate and edit the map with mouse, trackpad, and keyboard — on **Lin
 
 1. Open the dashboard and **hover the panel**.
 2. Press **`e`**, or open the panel menu (**⋮**) → **Edit**.
+
+    ![The panel menu open, showing Edit and its keyboard shortcut e](../img/getting-started/edit-mode-panel-menu.png)
+
+    *The panel menu lists **Edit** with its shortcut. This is the only "switch" there is — there is no drag setting in Panel Options.*
+
 3. Drag nodes (and VIAs, and any other handle) directly on the canvas.
+
+    ![The map in edit mode with grid guides visible behind the nodes](../img/getting-started/drag-arrange-canvas.png)
+
+    *The same map in the editor. Grid guides are drawn behind the nodes here because **Grid → Show Guides** is on, so you can see what a drag is snapping to.*
+
 4. Click **Back to dashboard**, then **Save dashboard** — positions are stored in the panel options, so nothing is kept until you save.
 
 If dragging does nothing, you are almost certainly still in view mode — check for the panel-editor toolbar at the top of the screen.
+
+!!! tip "Somewhere to practise"
+    The [testing environment](https://github.com/allamiro/grafana-network-weathermap-ng/tree/main/testing) ships **`WAN Demo — Drag & Arrange (editing playground)`**: a deliberately badly-arranged copy of the WAN map, with three nodes parked where they crowd their neighbours and drag their links across each other. Nothing is wrong with its data — only the layout — so it is a safe place to try the gesture and watch it commit. Grid snapping and guides are already on.
 
 !!! tip "Untangling a crowded map"
     Dragging a node is only one of the tools. When two links overlap, moving a node often just moves the problem; see [Links](links.md) for the two options aimed at it — **Link Offset** for links that share both endpoints, and **waypoints** for routing one link around an obstacle.
