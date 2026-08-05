@@ -912,9 +912,14 @@ export function sanitizeImageSource(raw: string | undefined | null): string {
   const trimmed = raw.trim();
   // Match a base64 image data URI and nothing else — no `data:text/html`, no
   // percent-encoded payloads, no missing base64 marker.
-  const dataMatch = /^data:image\/([a-z0-9+.-]+);base64,([a-z0-9+/]+={0,2})$/i.exec(trimmed.replace(/\s+/g, ''));
+  const normalized = trimmed.replace(/\s+/g, '');
+  const dataMatch = /^data:image\/([a-z0-9+.-]+);base64,([a-z0-9+/]+={0,2})$/i.exec(normalized);
   if (dataMatch) {
-    return ALLOWED_IMAGE_DATA_TYPES.includes(dataMatch[1].toLowerCase()) ? trimmed.replace(/\s+/g, '') : '';
+    // Canonical base64 is a whole number of 4-char groups. Without this a
+    // truncated payload passes the sanitizer and only fails later as a broken
+    // image, which contradicts what this helper promises its callers.
+    const validLength = dataMatch[2].length % 4 === 0;
+    return validLength && ALLOWED_IMAGE_DATA_TYPES.includes(dataMatch[1].toLowerCase()) ? normalized : '';
   }
   return sanitizeUrl(trimmed);
 }

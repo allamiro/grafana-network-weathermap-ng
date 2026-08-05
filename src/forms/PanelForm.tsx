@@ -31,11 +31,17 @@ interface Settings {}
 
 interface Props extends StandardEditorProps<Weathermap, Settings> {}
 
-/** An embedded background is a data: URI; a linked one is a URL. */
-const isEmbeddedImage = (src: string | undefined) => Boolean(src && src.startsWith('data:'));
+/**
+ * An embedded background is a data: URI; a linked one is a URL. Classify the
+ * SANITIZED form so an imported dashboard whose source carries whitespace or an
+ * uppercase scheme is recognized the same as a freshly uploaded one — otherwise
+ * the editor shows it as a wall of raw base64 in an editable field.
+ */
+const isEmbeddedImage = (src: string | undefined) => sanitizeImageSource(src ?? '').startsWith('data:');
 
 /** "SVG, 53 KB" for the read-only source field of an embedded image. */
-const embeddedImageLabel = (src: string) => {
+const embeddedImageLabel = (raw: string) => {
+  const src = sanitizeImageSource(raw);
   const type = /^data:image\/([a-z0-9+.-]+);/i.exec(src)?.[1] ?? 'image';
   // 4 base64 chars per 3 bytes, minus padding.
   const b64 = src.slice(src.indexOf(',') + 1);
@@ -49,6 +55,21 @@ export const PanelForm = ({ value, onChange }: Props) => {
   const [bgUploadNote, setBgUploadNote] = React.useState<{ level: 'info' | 'warn' | 'error'; text: string } | null>(
     null
   );
+  // A FileReader read is async, so its onload must NOT close over the `value`
+  // of the render that started it: by the time it fires the user may have
+  // removed the background, edited the URL, or picked another file, and cloning
+  // that stale snapshot would silently undo those changes (or resurrect a
+  // deleted background). Read the latest value through a ref, and stamp each
+  // read so a superseded one discards itself.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+  const uploadSeq = React.useRef(0);
+  // Invalidate any in-flight read and drop its note — used when the background
+  // is added or removed, so a stale result can neither land nor be reported.
+  const resetUploads = () => {
+    uploadSeq.current += 1;
+    setBgUploadNote(null);
+  };
 
   // Immutable panel-settings update (#225): clone the settings path so
   // onChange delivers new references instead of mutating props.value.
@@ -94,12 +115,14 @@ export const PanelForm = ({ value, onChange }: Props) => {
               variant="destructive"
               size="md"
               icon="trash-alt"
+              data-testid="bg-image-remove"
               onClick={() => {
                 if (!confirm('Are you sure you want remove the background image?')) {
                   return;
                 }
                 let options = structuredClone(value);
                 options.settings.panel.backgroundImage = undefined;
+                resetUploads();
                 onChange(options);
               }}
               style={{ justifyContent: 'center' }}
@@ -112,9 +135,11 @@ export const PanelForm = ({ value, onChange }: Props) => {
                   url: '',
                   fit: 'contain',
                 };
+                resetUploads();
                 onChange(options);
               }}
               icon="plus"
+              data-testid="bg-image-add"
               style={{ justifyContent: 'center' }}
             ></Button>
           )}
@@ -172,10 +197,18 @@ export const PanelForm = ({ value, onChange }: Props) => {
                       });
                       return;
                     }
+                    const seq = ++uploadSeq.current;
+                    const superseded = () => seq !== uploadSeq.current;
                     const reader = new FileReader();
-                    reader.onerror = () =>
-                      setBgUploadNote({ level: 'error', text: `Could not read ${file.name}.` });
+                    reader.onerror = () => {
+                      if (!superseded()) {
+                        setBgUploadNote({ level: 'error', text: `Could not read ${file.name}.` });
+                      }
+                    };
                     reader.onload = () => {
+                      if (superseded()) {
+                        return;
+                      }
                       const dataUri = sanitizeImageSource(String(reader.result ?? ''));
                       if (!dataUri) {
                         setBgUploadNote({
@@ -184,7 +217,18 @@ export const PanelForm = ({ value, onChange }: Props) => {
                         });
                         return;
                       }
-                      let options = structuredClone(value);
+                      // Latest value, not the one captured when the read began.
+                      const latest = valueRef.current;
+                      if (!latest.settings.panel.backgroundImage) {
+                        // The background was removed while the file was being
+                        // read — do not resurrect it.
+                        setBgUploadNote({
+                          level: 'error',
+                          text: 'The background image was removed while the file was loading — add it again to upload.',
+                        });
+                        return;
+                      }
+                      let options = structuredClone(latest);
                       if (options.settings.panel.backgroundImage) {
                         options.settings.panel.backgroundImage.url = dataUri;
                       }

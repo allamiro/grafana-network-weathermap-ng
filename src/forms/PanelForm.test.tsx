@@ -222,6 +222,28 @@ describe('background image upload (#344)', () => {
     expect(field.readOnly).toBe(true);
   });
 
+  test('an embedded source with stray whitespace is still shown as a summary', () => {
+    // Imported dashboards can carry wrapped base64; classify the sanitized
+    // form so they read the same as a freshly uploaded image.
+    const initial = withBackground();
+    initial.settings.panel.backgroundImage!.url = 'data:image/svg+xml;base64,PHN2\n Zy8+';
+    render(<Harness initial={initial} onChangeSpy={jest.fn()} />);
+    const field = document.querySelector('input[name="bgImageURL"]') as HTMLInputElement;
+    expect(field.value).toMatch(/^Embedded image \(SVG, /);
+    expect(field.readOnly).toBe(true);
+  });
+
+  test('removing the background clears a previous upload note', async () => {
+    const spy = jest.fn();
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<Harness initial={withBackground()} onChangeSpy={spy} />);
+    fireEvent.change(screen.getByTestId('bg-image-upload'), { target: { files: [svgFile()] } });
+    await screen.findByTestId('bg-image-upload-note');
+    fireEvent.click(screen.getByTestId('bg-image-remove'));
+    expect(screen.queryByTestId('bg-image-upload-note')).toBeNull();
+    confirmSpy.mockRestore();
+  });
+
   test('a linked URL stays editable and is shown verbatim', () => {
     const initial = withBackground();
     initial.settings.panel.backgroundImage!.url = 'https://example.com/bg.png';

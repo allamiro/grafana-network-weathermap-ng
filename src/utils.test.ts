@@ -1072,6 +1072,14 @@ describe('sanitizeImageSource (#344)', () => {
     expect(sanitizeImageSource(SVG)).toBe(SVG);
   });
 
+  test('rejects a truncated base64 payload at the sanitizer, not at load time', () => {
+    // Canonical base64 is whole 4-char groups; without a length check a
+    // truncated payload passed here and only surfaced later as a broken image.
+    expect(sanitizeImageSource('data:image/png;base64,iVBORw0KGg')).toBe(''); // 10 chars
+    expect(sanitizeImageSource('data:image/png;base64,iVBORw0KGgo')).toBe(''); // 11 chars
+    expect(sanitizeImageSource('data:image/png;base64,iVBORw0KGgo=')).toBe('data:image/png;base64,iVBORw0KGgo='); // 12
+  });
+
   test('strips whitespace inside a data URI rather than rejecting it', () => {
     // Base64 wrapped across lines (some encoders do this) still resolves.
     expect(sanitizeImageSource('data:image/png;base64,iVBO\n Rw0K Ggo=')).toBe('data:image/png;base64,iVBORw0KGgo=');

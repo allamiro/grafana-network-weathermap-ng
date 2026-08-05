@@ -3,7 +3,7 @@
 import React from 'react';
 import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
 import { SimpleOptions, Weathermap } from 'types';
 import { getData, theme } from 'testData';
@@ -95,23 +95,49 @@ describe('background image failure notice (#344)', () => {
     expect(screen.getByTestId('weathermap-data-notice').textContent).toMatch(/rejected/i);
   });
 
+  // Absence is asserted after the effects have actually been flushed, not
+  // after an arbitrary sleep: a fixed delay neither proves the effect ran nor
+  // catches a notice that appears later, and goes flaky on a slow machine.
+  const settle = async () => {
+    await act(async () => {
+      await Promise.resolve();
+    });
+  };
+
   test('the same bad source is silent in VIEW mode', async () => {
     renderPanel(withBackground('data:text/html;base64,PHNjcmlwdD4=', true));
-    await new Promise((r) => setTimeout(r, 50));
+    await settle();
     expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
   });
 
   test('a valid source produces no notice', async () => {
     enterEditMode();
     renderPanel(withBackground(SVG_URI, true));
-    await new Promise((r) => setTimeout(r, 50));
+    await settle();
     expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
   });
 
   test('no background configured produces no notice', async () => {
     enterEditMode();
     renderPanel();
-    await new Promise((r) => setTimeout(r, 50));
+    await settle();
+    expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
+  });
+
+  test('a failure found in edit mode does not leak into view mode', async () => {
+    // The probe state survives a mode switch until its effect re-runs, so the
+    // notice is gated on isEditMode at render too.
+    enterEditMode();
+    const bad = 'data:text/html;base64,PHNjcmlwdD4=';
+    const first = renderPanel(withBackground(bad, true));
+    await waitFor(() => expect(screen.getByTestId('weathermap-data-notice')).toBeTruthy());
+    // Unmount before re-rendering: RTL keeps every render in the document, so
+    // without this the assertion below would find the FIRST render's banner.
+    first.unmount();
+    spy?.mockRestore();
+    spy = undefined;
+    renderPanel(withBackground(bad, true));
+    await settle();
     expect(screen.queryByTestId('weathermap-data-notice')).toBeNull();
   });
 });
