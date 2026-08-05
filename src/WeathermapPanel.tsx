@@ -51,6 +51,7 @@ import {
   spreadLabels,
   LabelPlacement,
   sanitizeUrl,
+  sanitizeImageSource,
   aggregateFieldValues,
   getTimeField,
   valueAtTime,
@@ -191,6 +192,52 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
   const [draggedNode, setDraggedNode] = useState(null as unknown as DrawnNode);
   const [selectedNodes, setSelectedNodes] = useState([] as DrawnNode[]);
+
+  // Background image health (#344). A background that 404s, is refused, or is
+  // rejected by the sanitizer renders as nothing at all — the map draws its
+  // nodes on an empty canvas with no hint that the art is missing, which is a
+  // genuinely baffling failure when the background IS the frame (a rack
+  // elevation, a floor plan). Probe it and report in EDIT MODE only, so a
+  // transient failure never puts a banner on a wall display.
+  const bgConfiguredSrc = wm?.settings?.panel?.backgroundImage?.url ?? '';
+  // Memoized because an embedded background can be megabytes: sanitizing strips
+  // whitespace and regex-matches the whole string, and this renders on every
+  // live data refresh. Keyed on the raw source, so it runs once per change
+  // rather than once (previously five times) per render.
+  const bgSafeSrc = useMemo(() => sanitizeImageSource(bgConfiguredSrc), [bgConfiguredSrc]);
+  const [bgImageStatus, setBgImageStatus] = useState<'ok' | 'failed' | 'rejected'>('ok');
+  useEffect(() => {
+    if (!isEditMode || !bgConfiguredSrc) {
+      setBgImageStatus('ok');
+      return;
+    }
+    if (!bgSafeSrc) {
+      // Non-empty source that the sanitizer refused (bad scheme, or a data URI
+      // of a type we do not accept) — never even attempted.
+      setBgImageStatus('rejected');
+      return;
+    }
+    // Clear any previous verdict before probing: otherwise the render between
+    // "source changed" and "new probe answered" reports the OLD failure against
+    // the NEW source, which is worst for a valid-but-slow image.
+    setBgImageStatus('ok');
+    let cancelled = false;
+    const probe = new Image();
+    probe.onload = () => {
+      if (!cancelled) {
+        setBgImageStatus('ok');
+      }
+    };
+    probe.onerror = () => {
+      if (!cancelled) {
+        setBgImageStatus('failed');
+      }
+    };
+    probe.src = bgSafeSrc;
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode, bgConfiguredSrc, bgSafeSrc]);
 
   // Timeline slider (#158): when scrubbing, holds the selected timestamp (ms).
   // null means "live" — resolve values with the normal value-mapping mode.
@@ -1015,6 +1062,24 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       const message = data.error?.message || data.errors?.[0]?.message || 'A query returned an error.';
       return { level: 'error', message: `Query error: ${message}` };
     }
+    // A broken background (#344) is edit-mode only and ranks below a query
+    // error, but above the no-data hint: it is a configuration mistake the
+    // editor can see and fix immediately. Gated on isEditMode HERE as well as
+    // in the probe effect — the effect's reset runs after the render that
+    // switched modes, so without this the banner can flash once in view mode.
+    if (isEditMode && bgImageStatus === 'rejected') {
+      return {
+        level: 'error',
+        message:
+          'Background image source was rejected. Use an http(s) or relative URL, or upload a PNG, JPEG, GIF, WebP, or SVG file.',
+      };
+    }
+    if (isEditMode && bgImageStatus === 'failed') {
+      return {
+        level: 'error',
+        message: `Background image failed to load: ${bgSafeSrc.startsWith('data:') ? 'embedded image is not valid' : bgSafeSrc}`,
+      };
+    }
     // Only warn about missing data when the map actually expects some — i.e. at
     // least one node or link has a query configured. A topology-only map is fine.
     const expectsData = Boolean(
@@ -1457,8 +1522,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             backgroundImage:
               wm.settings.panel.backgroundImage &&
               !wm.settings.panel.backgroundImage.attachToCanvas &&
-              sanitizeUrl(wm.settings.panel.backgroundImage.url)
-                ? `url(${sanitizeUrl(wm.settings.panel.backgroundImage.url)})`
+              bgSafeSrc
+                ? `url(${bgSafeSrc})`
                 : 'none',
             backgroundSize: wm.settings.panel.backgroundImage?.fit,
             backgroundPosition: 'center',
@@ -1600,9 +1665,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
           >
             {wm.settings.panel.backgroundImage &&
             wm.settings.panel.backgroundImage.attachToCanvas &&
-            sanitizeUrl(wm.settings.panel.backgroundImage.url) ? (
+            bgSafeSrc ? (
               <image
-                href={sanitizeUrl(wm.settings.panel.backgroundImage.url)}
+                href={bgSafeSrc}
                 x={0}
                 y={0}
                 width={wm.settings.panel.panelSize.width}

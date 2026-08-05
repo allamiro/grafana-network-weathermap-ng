@@ -29,6 +29,10 @@ import {
   removeVia,
   sampleAtTime,
   sanitizeUrl,
+  sanitizeImageSource,
+  formatBytes,
+  BG_IMAGE_MAX_BYTES,
+  BG_IMAGE_WARN_BYTES,
   valueAtTime,
   buildLegacyNameAliases,
   getLegacyDataFrameName,
@@ -1020,5 +1024,89 @@ describe('finitePosition (#339)', () => {
     const out = finitePosition(input);
     expect(out).not.toBe(input);
     expect(input).toEqual([10, 20]);
+  });
+});
+
+// Embedded background images (#344). The security boundary matters most here:
+// sanitizeUrl also guards NAVIGATION targets, so data: URIs must be accepted
+// by the image helper WITHOUT ever becoming acceptable to navigate to.
+describe('sanitizeImageSource (#344)', () => {
+  const PNG = 'data:image/png;base64,iVBORw0KGgo=';
+  const SVG = 'data:image/svg+xml;base64,PHN2Zy8+';
+
+  test('accepts the image data URI types we support', () => {
+    for (const type of ['png', 'jpeg', 'jpg', 'gif', 'webp', 'svg+xml']) {
+      const uri = `data:image/${type};base64,PHN2Zy8+`;
+      expect(sanitizeImageSource(uri)).toBe(uri);
+    }
+  });
+
+  test('still accepts everything a linked source could be', () => {
+    expect(sanitizeImageSource('https://example.com/bg.png')).toBe('https://example.com/bg.png');
+    expect(sanitizeImageSource('http://localhost:8080/rack2.svg')).toBe('http://localhost:8080/rack2.svg');
+    expect(sanitizeImageSource('/public/img/bg.png')).toBe('/public/img/bg.png');
+    expect(sanitizeImageSource('  https://example.com/bg.png  ')).toBe('https://example.com/bg.png');
+  });
+
+  test('rejects non-image and script-bearing data URIs', () => {
+    expect(sanitizeImageSource('data:text/html;base64,PHNjcmlwdD4=')).toBe('');
+    expect(sanitizeImageSource('data:application/javascript;base64,YWxlcnQoMSk=')).toBe('');
+    expect(sanitizeImageSource('data:image/svg+xml,<svg onload=alert(1)>')).toBe(''); // not base64
+    expect(sanitizeImageSource('data:image/png,rawbytes')).toBe(''); // missing base64 marker
+    expect(sanitizeImageSource('data:image/tiff;base64,AAAA')).toBe(''); // unsupported type
+  });
+
+  test('rejects the schemes sanitizeUrl rejects', () => {
+    expect(sanitizeImageSource('javascript:alert(1)')).toBe('');
+    expect(sanitizeImageSource('java\nscript:alert(1)')).toBe('');
+    expect(sanitizeImageSource('//evil.example.com/bg.png')).toBe('');
+    expect(sanitizeImageSource('')).toBe('');
+    expect(sanitizeImageSource(null)).toBe('');
+    expect(sanitizeImageSource(undefined)).toBe('');
+  });
+
+  test('does NOT widen the shared navigation guard', () => {
+    // The whole reason this helper exists: a data: URI is fine as an image and
+    // must stay unusable as a link target.
+    expect(sanitizeUrl(PNG)).toBe('');
+    expect(sanitizeUrl(SVG)).toBe('');
+    expect(sanitizeImageSource(PNG)).toBe(PNG);
+    expect(sanitizeImageSource(SVG)).toBe(SVG);
+  });
+
+  test('rejects a truncated base64 payload at the sanitizer, not at load time', () => {
+    // Canonical base64 is whole 4-char groups; without a length check a
+    // truncated payload passed here and only surfaced later as a broken image.
+    expect(sanitizeImageSource('data:image/png;base64,iVBORw0KGg')).toBe(''); // 10 chars
+    expect(sanitizeImageSource('data:image/png;base64,iVBORw0KGgo')).toBe(''); // 11 chars
+    expect(sanitizeImageSource('data:image/png;base64,iVBORw0KGgo=')).toBe('data:image/png;base64,iVBORw0KGgo='); // 12
+  });
+
+  test('strips whitespace inside a data URI rather than rejecting it', () => {
+    // Base64 wrapped across lines (some encoders do this) still resolves.
+    expect(sanitizeImageSource('data:image/png;base64,iVBO\n Rw0K Ggo=')).toBe('data:image/png;base64,iVBORw0KGgo=');
+  });
+});
+
+describe('background image size limits (#344)', () => {
+  test('warn threshold sits below the hard cap', () => {
+    expect(BG_IMAGE_WARN_BYTES).toBeLessThan(BG_IMAGE_MAX_BYTES);
+    expect(BG_IMAGE_WARN_BYTES).toBe(1024 * 1024);
+    expect(BG_IMAGE_MAX_BYTES).toBe(4 * 1024 * 1024);
+  });
+
+  test('formatBytes reads the way an editor message should', () => {
+    expect(formatBytes(0)).toBe('0 B');
+    expect(formatBytes(512)).toBe('512 B');
+    expect(formatBytes(5 * 1024)).toBe('5.0 KB');
+    expect(formatBytes(53 * 1024)).toBe('53 KB');
+    expect(formatBytes(1024 * 1024)).toBe('1.0 MB');
+    expect(formatBytes(4 * 1024 * 1024)).toBe('4.0 MB');
+  });
+
+  test('formatBytes never emits NaN for junk input', () => {
+    expect(formatBytes(NaN)).toBe('0 B');
+    expect(formatBytes(-5)).toBe('0 B');
+    expect(formatBytes(Infinity)).toBe('0 B');
   });
 });

@@ -850,6 +850,81 @@ export function isSafeUrl(raw: string | undefined | null): boolean {
 }
 
 /**
+ * Image MIME types accepted as an embedded `data:` background (#344).
+ *
+ * SVG is included on purpose. A `data:image/svg+xml` source is NOT safe to
+ * navigate to — the document could script — but both places this is used load
+ * it as an IMAGE (a CSS `background-image` and an SVG `<image href>`), and
+ * browsers render images in a non-scripting mode where external references and
+ * scripts are inert. SVG is also the format worth encouraging here: vector
+ * rack elevations and floor plans embed in tens of KB where a screenshot of the
+ * same thing costs megabytes.
+ */
+const ALLOWED_IMAGE_DATA_TYPES = ['png', 'jpeg', 'jpg', 'gif', 'webp', 'svg+xml'];
+
+/**
+ * Size limits for an embedded background (#344), in bytes of the ORIGINAL
+ * file. Base64 inflates by ~33% and the result lives in the dashboard JSON,
+ * which Grafana stores in its database and re-serializes on every save — so an
+ * oversized embed does not just bloat the export, it makes saving slow in a way
+ * that is hard to attribute to the image.
+ *
+ * WARN is advisory (the upload still happens, with a visible note); MAX is
+ * refused outright. A vector floor plan or rack elevation lands far under both
+ * — the bundled demo rack art is ~53 KB — so anything approaching these is a
+ * screenshot that would be better linked by URL or converted to SVG.
+ */
+export const BG_IMAGE_WARN_BYTES = 1024 * 1024; // 1 MB
+export const BG_IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4 MB
+
+/** Human-readable byte size for editor messages ("1.4 MB", "512 KB"). */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return '0 B';
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Sanitize a background-image source (#344). Accepts everything `sanitizeUrl`
+ * does, PLUS a `data:image/...;base64,` URI so a map can embed its background
+ * instead of depending on an external host staying reachable.
+ *
+ * Deliberately separate from `sanitizeUrl`: that one also guards NAVIGATION
+ * targets (node and link dashboard links), and a `data:` URI that is harmless
+ * as an image is a real hazard as a navigation target. Widening the shared
+ * helper would silently make every dashboard link accept them too — so this
+ * stays image-only and is used exactly where a background is drawn.
+ *
+ * @param raw the stored background source
+ * @returns the trimmed source when safe, otherwise an empty string
+ */
+export function sanitizeImageSource(raw: string | undefined | null): string {
+  if (raw == null) {
+    return '';
+  }
+  const trimmed = raw.trim();
+  // Match a base64 image data URI and nothing else — no `data:text/html`, no
+  // percent-encoded payloads, no missing base64 marker.
+  const normalized = trimmed.replace(/\s+/g, '');
+  const dataMatch = /^data:image\/([a-z0-9+.-]+);base64,([a-z0-9+/]+={0,2})$/i.exec(normalized);
+  if (dataMatch) {
+    // Canonical base64 is a whole number of 4-char groups. Without this a
+    // truncated payload passes the sanitizer and only fails later as a broken
+    // image, which contradicts what this helper promises its callers.
+    const validLength = dataMatch[2].length % 4 === 0;
+    return validLength && ALLOWED_IMAGE_DATA_TYPES.includes(dataMatch[1].toLowerCase()) ? normalized : '';
+  }
+  return sanitizeUrl(trimmed);
+}
+
+/**
  * Sanitize a user-provided URL. Returns the cleaned value when it is safe to
  * use, or an empty string when it is not. This is applied both when a value is
  * entered/saved in the editor and again at the point of use (navigation or
