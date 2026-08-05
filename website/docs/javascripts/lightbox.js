@@ -121,7 +121,16 @@
     document.body.style.top = '';
     window.scrollTo(0, y);
     if (opener && typeof opener.focus === 'function') {
-      opener.focus();
+      // preventScroll matters: focus() otherwise scrolls the element into
+      // view and overrides the restore above. On a long page (the icon
+      // reference is ~15,000px) that silently dropped the reader hundreds of
+      // pixels from where they were — the exact thing this overlay exists to
+      // avoid. Older browsers ignore the option and simply focus.
+      try {
+        opener.focus({ preventScroll: true });
+      } catch (e) {
+        opener.focus();
+      }
     }
     opener = null;
   }
