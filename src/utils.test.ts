@@ -1608,6 +1608,42 @@ describe('pathGradientStops (#336)', () => {
     });
   });
 
+  test('a non-finite coordinate anywhere in the path never reaches a stop', () => {
+    // Node positions come straight from saved options, so a hand-edited
+    // coordinate can be junk. Without the finiteness guard this emitted
+    // offset NaN and "rgba(NaN,NaN,NaN,NaN)" into the SVG.
+    const cases = [
+      // bad interior vertex — only pathTotalLength sees it
+      [
+        { x: 0, y: 0 },
+        { x: NaN, y: 30 },
+        { x: 80, y: 0 },
+      ],
+      // bad endpoint — the chord sees it too
+      [
+        { x: 0, y: 0 },
+        { x: 40, y: 30 },
+        { x: NaN, y: NaN },
+      ],
+      [
+        { x: Infinity, y: 0 },
+        { x: 40, y: 30 },
+        { x: 80, y: 0 },
+      ],
+    ];
+    for (const pts of cases) {
+      const stops = pathGradientStops(pts, RED, BLUE);
+      expect(stops).toEqual([
+        { offset: 0, color: RED },
+        { offset: 1, color: BLUE },
+      ]);
+      stops.forEach((s) => {
+        expect(Number.isFinite(s.offset)).toBe(true);
+        expect(s.color).not.toMatch(/NaN/);
+      });
+    }
+  });
+
   test('falls back to two stops for coincident endpoints and zero-length paths', () => {
     const closed = [
       { x: 10, y: 10 },

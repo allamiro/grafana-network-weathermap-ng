@@ -1441,9 +1441,10 @@ function tryParseColor(input: string): number[] | null {
  * paths, and colors the parser cannot read — the last of which keeps an
  * unexpected color format from silently rendering as black.
  *
- * A path that doubles back projects non-monotonically; offsets are clamped
- * non-decreasing (as SVG requires), so that stretch flattens to a constant
- * band instead of reversing.
+ * A path that doubles back projects non-monotonically. Offsets are clamped
+ * non-decreasing, as SVG requires: the backtracking stretch collapses onto a
+ * single offset, so it renders as one color step at that point rather than a
+ * reversed ramp. Only a hairpin tighter than the link's own chord does this.
  */
 export function pathGradientStops(pts: Position[], colorA: string, colorZ: string): GradientStop[] {
   const plain: GradientStop[] = [
@@ -1459,7 +1460,12 @@ export function pathGradientStops(pts: Position[], colorA: string, colorZ: strin
   const cy = last.y - first.y;
   const chordLen2 = cx * cx + cy * cy;
   const total = pathTotalLength(pts);
-  if (chordLen2 === 0 || total === 0) {
+  // Node positions reach here straight from saved options, so a hand-edited
+  // coordinate can be NaN/Infinity. pathTotalLength propagates a bad interior
+  // vertex into `total` and a bad endpoint into `chordLen2`, so these two
+  // checks cover the whole path — without them a single junk number renders as
+  // offset="NaN%" and stop-color="rgba(NaN,NaN,NaN,NaN)".
+  if (!Number.isFinite(chordLen2) || !Number.isFinite(total) || chordLen2 === 0 || total === 0) {
     return plain;
   }
   const rgbA = tryParseColor(colorA);
