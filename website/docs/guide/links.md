@@ -95,9 +95,8 @@ By default a link is a straight line. Add **waypoints** (Link Options → **Wayp
 - **Space your bends at least twice the Corner Radius apart.** Each bend's radius is capped at half the length of the shorter adjoining segment, so two waypoints 30 px apart can only round to 15 px however high the slider goes. If a corner looks squarer than you asked for, the neighbouring bend is too close — move it out rather than raising the radius.
 - Everything follows the drawn path by **arc length**: both directional halves, the arrowheads (which rotate with the segment they sit on), the value labels, the [arrow meeting point](#arrow-meeting-point) percentage, port labels, and [traffic animation](animation.md) dots — which travel around the bends.
 - **Link Offset (parallel links)** combines with waypoints: the whole polyline shifts sideways, keeping its shape. See [Parallel links](#parallel-links-link-offset).
+- **Gradient link coloring** follows the bent path too: the A→Z color ramp is measured by distance *along the line as drawn*, so the halfway color sits at the halfway point of the route, not of the straight A→Z axis. A link that bows well off its axis no longer squashes most of its ramp into the ends.
 - An empty waypoint list is exactly the old straight link, so existing maps are unchanged.
-
-One current limitation: **gradient link coloring** still shades along the straight A→Z axis, which can look odd on sharp bends.
 
 ### Step by step: bend a link
 

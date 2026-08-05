@@ -482,3 +482,91 @@ describe('linkOffset on polyline links (#336)', () => {
     expect(wm.links[0].waypoints).toEqual([{ x: 111, y: 222 }]);
   });
 });
+
+// Gradient coloring follows the drawn path (#336 item 4).
+describe('gradient coloring on bent links (#336)', () => {
+  const withGradient = (mutate?: (wm: Weathermap) => void) =>
+    renderPanel((wm) => {
+      wm.settings.link.gradientColor = true;
+      mutate?.(wm);
+    });
+
+  const stopsOf = (container: HTMLElement, which: 'a' | 'z' = 'a') =>
+    Array.from(container.querySelectorAll(`linearGradient[id^="grad-${which}-"] stop`)).map((s) => ({
+      offset: s.getAttribute('offset') ?? '',
+      color: s.getAttribute('stop-color') ?? '',
+    }));
+
+  test('a straight link still renders exactly two stops at 0% and 100%', () => {
+    const { container } = withGradient();
+    const stops = stopsOf(container);
+    expect(stops).toHaveLength(2);
+    expect(stops[0].offset).toBe('0%');
+    expect(stops[1].offset).toBe('100%');
+  });
+
+  test('a bent link renders a stop per path vertex, in non-decreasing order', () => {
+    const { container } = withGradient((wm) => {
+      wm.links[0].waypoints = [{ x: 300, y: 180 }];
+    });
+    const stops = stopsOf(container);
+    expect(stops.length).toBeGreaterThan(2);
+    const offsets = stops.map((s) => parseFloat(s.offset));
+    offsets.forEach((o) => {
+      expect(o).toBeGreaterThanOrEqual(0);
+      expect(o).toBeLessThanOrEqual(100);
+      expect(Number.isNaN(o)).toBe(false);
+    });
+    for (let i = 1; i < offsets.length; i++) {
+      expect(offsets[i]).toBeGreaterThanOrEqual(offsets[i - 1]);
+    }
+    expect(offsets[0]).toBe(0);
+    expect(offsets[offsets.length - 1]).toBe(100);
+  });
+
+  test('both halves sample identical stops, so there is no break at the arrow tips', () => {
+    const { container } = withGradient((wm) => {
+      wm.links[0].waypoints = [{ x: 300, y: 180 }];
+    });
+    expect(stopsOf(container, 'a')).toEqual(stopsOf(container, 'z'));
+  });
+
+  test('a rounded bend produces a dense, still-valid stop list', () => {
+    const { container } = withGradient((wm) => {
+      wm.links[0].waypoints = [
+        { x: 260, y: 200 },
+        { x: 340, y: 200 },
+      ];
+      wm.links[0].cornerRadius = 16;
+    });
+    const stops = stopsOf(container);
+    expect(stops.length).toBeGreaterThan(8);
+    stops.forEach((s) => {
+      expect(s.offset).not.toMatch(/NaN/);
+      expect(s.color).not.toMatch(/NaN/);
+    });
+  });
+
+  test('the gradient axis moves with linkOffset', () => {
+    const plain = withGradient();
+    const shifted = withGradient((wm) => {
+      wm.links[0].linkOffset = 20;
+    });
+    const axis = (c: HTMLElement) => {
+      const g = c.querySelector('linearGradient[id^="grad-a-"]')!;
+      return { y1: Number(g.getAttribute('y1')), y2: Number(g.getAttribute('y2')) };
+    };
+    const before = axis(plain.container);
+    const after = axis(shifted.container);
+    expect(after.y1).toBeCloseTo(before.y1 + 20, 5);
+    expect(after.y2).toBeCloseTo(before.y2 + 20, 5);
+  });
+
+  test('gradient rendering never writes panel options', () => {
+    const { onOptionsChange } = withGradient((wm) => {
+      wm.links[0].waypoints = [{ x: 300, y: 180 }];
+      wm.links[0].linkOffset = 12;
+    });
+    expect(onOptionsChange).not.toHaveBeenCalled();
+  });
+});

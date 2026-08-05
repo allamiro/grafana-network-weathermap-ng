@@ -50,6 +50,7 @@ import {
   chordNormalOffset,
   translatePoint,
   translatePath,
+  pathGradientStops,
 } from 'utils';
 
 test('getSolidFromAlphaColor', () => {
@@ -1476,5 +1477,182 @@ describe('chordNormalOffset and path translation (#336)', () => {
       expect(p.x).toBeCloseTo(shiftThenRound[i].x, 9);
       expect(p.y).toBeCloseTo(shiftThenRound[i].y, 9);
     });
+  });
+});
+
+// Gradient coloring on bent paths (#336 item 4). An SVG linearGradient axis is
+// always straight, so the stops are repositioned instead: each vertex sits at
+// its chord projection, colored by its ARC-LENGTH fraction.
+describe('pathGradientStops (#336)', () => {
+  const RED = '#ff0000';
+  const BLUE = '#0000ff';
+
+  test('a straight link keeps the plain two-stop chord gradient', () => {
+    // The regression guarantee: no waypoints must render exactly as before.
+    expect(
+      pathGradientStops(
+        [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+        ],
+        RED,
+        BLUE
+      )
+    ).toEqual([
+      { offset: 0, color: RED },
+      { offset: 1, color: BLUE },
+    ]);
+  });
+
+  test('a collinear midpoint keeps the ramp linear (projection == arc length)', () => {
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(stops.map((s) => s.offset)).toEqual([0, 0.5, 1]);
+    // Halfway along, the color is the halfway blend.
+    expect(stops[1].color).toBe('rgb(128,0,128)');
+  });
+
+  test('a bend puts the mid-path color where the path is halfway, not the chord', () => {
+    // An isoceles "roof": both segments are 50 long, so the apex is at 50% of
+    // the ARC length but only 50% of the chord by projection — and the color
+    // there must be the 50% blend.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 40, y: 30 },
+        { x: 80, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(stops).toHaveLength(3);
+    expect(stops[1].color).toBe('rgb(128,0,128)');
+    expect(stops[0].offset).toBe(0);
+    expect(stops[2].offset).toBe(1);
+  });
+
+  test('a bow-out path shifts stops away from their arc-length fraction', () => {
+    // The whole point of the fix: on this path the apex is at 50% of the arc
+    // length but only 25% of the chord, so the 50% color must be pinned to
+    // offset 0.25 — with the old two-stop gradient it appeared at 0.5.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 25, y: 60 },
+        { x: 50, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(stops[1].offset).toBeCloseTo(0.5, 6);
+    // Now an asymmetric bend: apex much closer to A along the chord.
+    const asym = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 10, y: 60 },
+        { x: 100, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    expect(asym[1].offset).toBeCloseTo(0.1, 6); // chord projection
+    // ...while its color is the arc-length blend, which is NOT 10%.
+    const channels = /rgb\((\d+),/.exec(asym[1].color);
+    expect(channels).not.toBeNull();
+    const midChannel = Number(channels![1]);
+    expect(midChannel).toBeLessThan(255 * 0.9); // red has decayed well past 10%
+    expect(midChannel).toBeGreaterThan(255 * 0.2);
+  });
+
+  test('offsets are non-decreasing even when the path doubles back', () => {
+    // A hairpin projects non-monotonically; SVG requires sorted offsets.
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 100, y: 10 },
+        { x: 40, y: 20 },
+        { x: 60, y: 0 },
+      ],
+      RED,
+      BLUE
+    );
+    for (let i = 1; i < stops.length; i++) {
+      expect(stops[i].offset).toBeGreaterThanOrEqual(stops[i - 1].offset);
+    }
+    expect(stops[0].offset).toBe(0);
+    expect(stops[stops.length - 1].offset).toBe(1);
+  });
+
+  test('every stop stays inside 0..1 and carries a parseable color', () => {
+    const stops = pathGradientStops(roundPathCorners(
+      [
+        { x: 0, y: 0 },
+        { x: 80, y: 0 },
+        { x: 80, y: 60 },
+        { x: 160, y: 60 },
+      ],
+      18
+    ), RED, BLUE);
+    expect(stops.length).toBeGreaterThan(8); // dense rounded path
+    stops.forEach((s) => {
+      expect(s.offset).toBeGreaterThanOrEqual(0);
+      expect(s.offset).toBeLessThanOrEqual(1);
+      expect(s.color).toMatch(/^rgba?\([\d.,]+\)$|^#[0-9a-fA-F]+$/);
+    });
+  });
+
+  test('falls back to two stops for coincident endpoints and zero-length paths', () => {
+    const closed = [
+      { x: 10, y: 10 },
+      { x: 60, y: 40 },
+      { x: 10, y: 10 },
+    ];
+    expect(pathGradientStops(closed, RED, BLUE)).toEqual([
+      { offset: 0, color: RED },
+      { offset: 1, color: BLUE },
+    ]);
+    const degenerate = [
+      { x: 5, y: 5 },
+      { x: 5, y: 5 },
+      { x: 5, y: 5 },
+    ];
+    expect(pathGradientStops(degenerate, RED, BLUE)).toEqual([
+      { offset: 0, color: RED },
+      { offset: 1, color: BLUE },
+    ]);
+  });
+
+  test('falls back to two stops rather than mis-rendering an unreadable color', () => {
+    const bent = [
+      { x: 0, y: 0 },
+      { x: 40, y: 30 },
+      { x: 80, y: 0 },
+    ];
+    // Named CSS colors are not handled by the parser — keep the original
+    // strings instead of emitting black.
+    expect(pathGradientStops(bent, 'red', BLUE)).toEqual([
+      { offset: 0, color: 'red' },
+      { offset: 1, color: BLUE },
+    ]);
+  });
+
+  test('preserves alpha when the scale colors are translucent', () => {
+    const stops = pathGradientStops(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      'rgba(255, 0, 0, 0)',
+      'rgba(0, 0, 255, 1)'
+    );
+    expect(stops[1].color).toBe('rgba(128,0,128,0.5)');
   });
 });

@@ -74,6 +74,7 @@ import {
   chordNormalOffset,
   translatePoint,
   translatePath,
+  pathGradientStops,
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
@@ -1706,38 +1707,53 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               `}</style>
             )}
             {wm.settings.link.gradientColor &&
-              resolvedLinks.map((d) => (
-                <React.Fragment key={d.id}>
-                  {/*
-                    Both gradients span the full link (A node -> Z node) with the
-                    same A->Z stops so every element that samples them — the A and
-                    Z line halves and both arrow heads — sits on one continuous
-                    gradient. This removes the color break at the arrow tips (#283).
-                  */}
-                  <linearGradient
-                    id={`grad-a-${d.id}`}
-                    x1={d.lineStartA.x}
-                    y1={d.lineStartA.y}
-                    x2={d.lineStartZ.x}
-                    y2={d.lineStartZ.y}
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                  </linearGradient>
-                  <linearGradient
-                    id={`grad-z-${d.id}`}
-                    x1={d.lineStartA.x}
-                    y1={d.lineStartA.y}
-                    x2={d.lineStartZ.x}
-                    y2={d.lineStartZ.y}
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor={getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth)} />
-                    <stop offset="100%" stopColor={getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)} />
-                  </linearGradient>
-                </React.Fragment>
-              ))}
+              resolvedLinks.map((d) => {
+                /*
+                  Both gradients span the full link (A node -> Z node) with the
+                  same A->Z stops so every element that samples them — the A and
+                  Z line halves and both arrow heads — sits on one continuous
+                  gradient. This removes the color break at the arrow tips (#283).
+
+                  The stops are placed by ARC LENGTH along the drawn path
+                  (#336), so a bent link's colors track the line the user sees
+                  instead of the straight A->Z axis. Computed once and rendered
+                  into both gradients; a straight link yields the same two stops
+                  as before.
+                */
+                const stops = pathGradientStops(
+                  d.pathPoints ?? [d.lineStartA, d.lineStartZ],
+                  getScaleColor(d.sides.A.currentValue, d.sides.A.bandwidth),
+                  getScaleColor(d.sides.Z.currentValue, d.sides.Z.bandwidth)
+                );
+                const renderStops = (prefix: string) =>
+                  stops.map((s, si) => (
+                    <stop key={`${prefix}-${si}`} offset={`${s.offset * 100}%`} stopColor={s.color} />
+                  ));
+                return (
+                  <React.Fragment key={d.id}>
+                    <linearGradient
+                      id={`grad-a-${d.id}`}
+                      x1={d.lineStartA.x}
+                      y1={d.lineStartA.y}
+                      x2={d.lineStartZ.x}
+                      y2={d.lineStartZ.y}
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      {renderStops('a')}
+                    </linearGradient>
+                    <linearGradient
+                      id={`grad-z-${d.id}`}
+                      x1={d.lineStartA.x}
+                      y1={d.lineStartA.y}
+                      x2={d.lineStartZ.x}
+                      y2={d.lineStartZ.y}
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      {renderStops('z')}
+                    </linearGradient>
+                  </React.Fragment>
+                );
+              })}
           </defs>
           <g
             transform={`translate(${

@@ -1390,6 +1390,102 @@ export function translatePath(pts: Position[], delta: Position): Position[] {
   return pts.map((p) => translatePoint(p, delta));
 }
 
+export interface GradientStop {
+  /** Position along the gradient axis, 0..1, non-decreasing. */
+  offset: number;
+  color: string;
+}
+
+/** rgb/rgba string for a linear blend of two parsed colors. Alpha-aware. */
+function blendRgb(a: number[], b: number[], f: number): string {
+  const t = Math.min(1, Math.max(0, f));
+  const ch = (i: number) => Math.round(a[i] + (b[i] - a[i]) * t);
+  const alphaA = a.length > 3 ? a[3] : 1;
+  const alphaZ = b.length > 3 ? b[3] : 1;
+  const alpha = alphaA + (alphaZ - alphaA) * t;
+  return alpha >= 1
+    ? `rgb(${ch(0)},${ch(1)},${ch(2)})`
+    : `rgba(${ch(0)},${ch(1)},${ch(2)},${Math.round(alpha * 1000) / 1000})`;
+}
+
+/** parseColor, but returns null instead of throwing on formats it can't read. */
+function tryParseColor(input: string): number[] | null {
+  try {
+    const parsed = parseColor(input.toUpperCase());
+    return Array.isArray(parsed) && parsed.length >= 3 && parsed.every((n) => Number.isFinite(n)) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stops for a link's color gradient, placed so the A->Z ramp follows the DRAWN
+ * path by ARC LENGTH rather than the straight A->Z chord (#336 item 4).
+ *
+ * The gradient axis stays the chord — an SVG linearGradient has no other
+ * option — but a point at arc length s along the path lands at chord fraction
+ * `project(s)`, which on a bent path is not s/L. Emitting one stop per vertex,
+ * positioned at that vertex's chord projection and colored by its arc-length
+ * fraction, makes the two agree: the color seen at s becomes exactly
+ * ramp(s / L). Between two vertices, projection and arc length are both linear
+ * in the segment parameter, so the gradient's own linear interpolation is
+ * exact, not an approximation.
+ *
+ * This keeps ONE gradient element per link. The alternative — a gradient per
+ * segment — would also require rendering every segment as its own element,
+ * multiplying SVG nodes by the bend count on exactly the dense maps that need
+ * polylines most.
+ *
+ * Falls back to the plain two-stop chord gradient (byte-identical to the
+ * pre-#336 output) for straight paths, coincident endpoints, zero-length
+ * paths, and colors the parser cannot read — the last of which keeps an
+ * unexpected color format from silently rendering as black.
+ *
+ * A path that doubles back projects non-monotonically; offsets are clamped
+ * non-decreasing (as SVG requires), so that stretch flattens to a constant
+ * band instead of reversing.
+ */
+export function pathGradientStops(pts: Position[], colorA: string, colorZ: string): GradientStop[] {
+  const plain: GradientStop[] = [
+    { offset: 0, color: colorA },
+    { offset: 1, color: colorZ },
+  ];
+  if (pts.length < 3) {
+    return plain;
+  }
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const cx = last.x - first.x;
+  const cy = last.y - first.y;
+  const chordLen2 = cx * cx + cy * cy;
+  const total = pathTotalLength(pts);
+  if (chordLen2 === 0 || total === 0) {
+    return plain;
+  }
+  const rgbA = tryParseColor(colorA);
+  const rgbZ = tryParseColor(colorZ);
+  if (!rgbA || !rgbZ) {
+    return plain;
+  }
+
+  const stops: GradientStop[] = [];
+  let walked = 0;
+  let highest = 0;
+  for (let i = 0; i < pts.length; i++) {
+    if (i > 0) {
+      walked += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    }
+    const raw = ((pts[i].x - first.x) * cx + (pts[i].y - first.y) * cy) / chordLen2;
+    const offset = Math.max(highest, Math.min(1, Math.max(0, raw)));
+    highest = offset;
+    stops.push({ offset, color: blendRgb(rgbA, rgbZ, walked / total) });
+  }
+  // The endpoints ARE the axis ends; pin them past any floating-point drift.
+  stops[0].offset = 0;
+  stops[stops.length - 1].offset = 1;
+  return stops;
+}
+
 /**
  * Index of the polyline segment nearest to a point (#336): used to decide
  * where along a link a right-click-inserted waypoint belongs. Returns i such
