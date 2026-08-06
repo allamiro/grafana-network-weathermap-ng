@@ -53,6 +53,7 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — BGP Session Detail** | Per-router drill-down (state / prefixes / uptime / flaps), reached from the map; `node_name` variable. |
 | **WAN Demo — BGP Fleet Overview** | Established / down / total counters, a session status table, and a prefixes-received bar gauge. |
 | **WAN Demo — Drag & Arrange (editing playground)** | The WAN map with three nodes deliberately parked where they crowd their neighbours and drag their links across each other. Only the layout is wrong, so it is a safe place to practise node dragging and watch it commit; grid snapping and guides are on. |
+| **WAN Demo — Layer Visibility** | The rack rear elevation deliberately over-labelled — port numbers on every jack, live throughput on every cable, interface names on both ends of every network run. Ships with every layer visible; Panel Options → **Layers** turns node, value, and port labels off and back on without deleting any of them. |
 | **WAN Demo — Port Label Positioning** | The WAN map with per-side **Port Label Offset %** (along the link axis) and **Port Label Distance** (perpendicular) set on every interface label, lifting each one clear of its node icon. |
 
 The WAN dashboards are generated — do not hand-edit them. To change the topology
@@ -66,6 +67,7 @@ python3 testing/scripts/generate-port-label-demo.py        # port label offset +
 python3 testing/scripts/generate-drag-demo.py             # drag & arrange playground
 python3 testing/scripts/generate-polyline-demo.py          # polyline waypoints
 python3 testing/scripts/generate-polyline-offset-demo.py   # polyline waypoints + Link Offset
+python3 testing/scripts/generate-layers-demo.py           # layer visibility (dense rack)
 ```
 
 Run the polyline generators from `testing/` (they read and write paths relative

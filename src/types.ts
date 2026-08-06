@@ -28,6 +28,26 @@ export interface BGImageOptions {
   attachToCanvas?: boolean;
 }
 
+/**
+ * Layer visibility (#269). Every field is optional and absent means VISIBLE, so
+ * a saved map without this block renders exactly as it always has — no
+ * migration, and `needsMigration` is deliberately not extended (adding it there
+ * would flag every existing dashboard for a rewrite it does not need).
+ *
+ * Visibility is a pure DISPLAY concern: hidden elements still resolve their
+ * queries and still participate in value mapping and timeline scrubbing. That
+ * keeps adjacent behaviour — notably the first-wins ordering of duplicate
+ * display names (#204) — identical whether a layer is shown or hidden.
+ */
+export interface LayerVisibility {
+  /** Device names drawn on each node. */
+  nodeLabels?: boolean;
+  /** The throughput value pill on each half of a link. */
+  valueLabels?: boolean;
+  /** Per-side interface names drawn alongside each link. */
+  portLabels?: boolean;
+}
+
 export interface TooltipOptions {
   fontSize: number;
   textColor: string;
@@ -344,6 +364,9 @@ export interface WeathermapSettings {
   panel: PanelOptions;
   tooltip: TooltipOptions;
   scale: TrafficPanelSettings;
+  // Show/hide categories of map content without deleting any of it (#269).
+  // Absent = every layer visible, so existing maps are unchanged.
+  layers?: LayerVisibility;
   // Optional built-in legend explaining status colors (#179), positioned in
   // panel percent coordinates like the utilization scale.
   statusLegend?: {
