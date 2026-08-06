@@ -172,7 +172,7 @@ unzip tamirsuliman-weathermap-panel-*.zip -d /var/lib/grafana/plugins/
 systemctl restart grafana-server
 ```
 
-Every release ships a `.zip.md5` checksum, a community signature (`MANIFEST.txt`), and a GitHub build-provenance attestation.
+Every release ships a `.zip.sha1` checksum, a community signature (`MANIFEST.txt`), and a GitHub build-provenance attestation.
 
 ### 🐳 Local environments — know which one you want
 
