@@ -1,5 +1,11 @@
 name: Release
 
+# Cutting a tag builds, signs, and publishes the plugin — and, crucially,
+# generates a SLSA build-provenance attestation that the Grafana plugin catalog
+# validator recognizes ("build verification"). This uses Grafana's own
+# build-plugin action so the attestation is produced in the exact shape the
+# validator checks; a hand-rolled actions/attest-build-provenance step is NOT
+# recognized by the catalog review.
 on:
   push:
     tags:
@@ -8,92 +14,109 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-      attestations: write
+# Least privilege by default: the `test` job only needs to read the repo. The
+# `release` job widens this for itself (contents/id-token/attestations) — an
+# explicit default keeps any future job from silently inheriting a write-capable
+# GITHUB_TOKEN. Flagged by CodeQL on #305.
+permissions:
+  contents: read
 
+jobs:
+  # Release gate: build-plugin does not run tests, so fail fast here before any
+  # artifact is signed and published.
+  test:
+    name: Test and verify build
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run tests
         run: npm run test:ci
-
       - name: Build plugin
         run: npm run build
-
       - name: Verify dist packaging
         run: node scripts/verify-dist.js
 
-      - name: Sign plugin
+  release:
+    name: Build, sign, attest, and draft release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # create the release
+      id-token: write        # OIDC for signing the provenance (sigstore)
+      attestations: write    # publish the build-provenance attestation
+    steps:
+      - uses: actions/checkout@v5
+
+      # Grafana's recommended pipeline: npm ci + build, community sign, package
+      # the zip, verify the version matches the tag, generate the build
+      # provenance attestation (attestation: true), and create a DRAFT GitHub
+      # release with the zip + SHA1 checksum. Publish the draft after reviewing.
+      #
+      # node-version is pinned to 22 to match the test job above and the rest of
+      # CI; the action would otherwise default to 20 and release from a
+      # different toolchain than everything that verified the code.
+      #
+      # use_changelog_generator stays off (its default): it would rewrite
+      # CHANGELOG.md from issue/PR labels and force-push that to the default
+      # branch. This repo writes its changelog by hand.
+      - name: Build, sign, and attest plugin
+        id: build
+        uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.0
+        with:
+          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          attestation: true
+          node-version: '22'
+
+      # The action signs but never asserts the result, so an unsigned or
+      # differently-signed build would package and publish quietly. Keep the
+      # gate the hand-rolled workflow had: the zip must carry a community
+      # MANIFEST.txt.
+      - name: Verify the packaged plugin is community-signed
         env:
-          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-        run: npx --yes @grafana/sign-plugin@latest
-
-      - name: Verify signature manifest
+          ARCHIVE: ${{ steps.build.outputs.archive }}
         run: |
-          if [ ! -f dist/MANIFEST.txt ]; then
-            echo "::error::dist/MANIFEST.txt missing — plugin was not signed"
+          set -euo pipefail
+          # List to a file rather than piping into grep -q: grep exits on the
+          # first match, unzip takes SIGPIPE, and under pipefail the pipeline
+          # reports failure even though the file IS there.
+          unzip -l "$ARCHIVE" > archive_listing.txt
+          if ! grep -q 'MANIFEST.txt' archive_listing.txt; then
+            echo "::error::$ARCHIVE has no MANIFEST.txt — the plugin was not signed"
             exit 1
           fi
-          grep -q '"signatureType": "community"' dist/MANIFEST.txt
-
-      - name: Get plugin metadata
-        id: metadata
-        run: |
-          GRAFANA_PLUGIN_ID=$(jq -r .id dist/plugin.json)
-          GRAFANA_PLUGIN_VERSION=$(jq -r .info.version dist/plugin.json)
-          GRAFANA_PLUGIN_ARTIFACT="${GRAFANA_PLUGIN_ID}-${GRAFANA_PLUGIN_VERSION}.zip"
-          GRAFANA_PLUGIN_ARTIFACT_CHECKSUM="${GRAFANA_PLUGIN_ARTIFACT}.md5"
-
-          echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> "$GITHUB_OUTPUT"
-          echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> "$GITHUB_OUTPUT"
-          echo "archive-checksum=${GRAFANA_PLUGIN_ARTIFACT_CHECKSUM}" >> "$GITHUB_OUTPUT"
-          echo "github-tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-
-      - name: Check package version matches tag
-        run: |
-          if [ "v${{ steps.metadata.outputs.plugin-version }}" != "${{ steps.metadata.outputs.github-tag }}" ]; then
-            echo "::error::Plugin version v${{ steps.metadata.outputs.plugin-version }} doesn't match tag ${{ steps.metadata.outputs.github-tag }}"
+          unzip -p "$ARCHIVE" '*/MANIFEST.txt' > manifest.txt
+          if ! grep -q '"signatureType": "community"' manifest.txt; then
+            echo "::error::MANIFEST.txt is not a community signature"
+            sed -n '1,40p' manifest.txt
             exit 1
           fi
+          echo "Community signature verified in $ARCHIVE"
 
-      - name: Package plugin
-        id: package-plugin
+      # build-plugin creates the draft with generic submission boilerplate and
+      # GitHub's auto-generated commit list, discarding the notes we write by
+      # hand. Put the CHANGELOG entry for this version back on top, keeping the
+      # action's submission checklist underneath.
+      - name: Use the CHANGELOG entry as the release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
         run: |
-          mv dist ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
-          md5sum ${{ steps.metadata.outputs.archive }} > ${{ steps.metadata.outputs.archive-checksum }}
-          echo "checksum=$(cut -d' ' -f1 < ${{ steps.metadata.outputs.archive-checksum }})" >> "$GITHUB_OUTPUT"
-
-      - name: Generate provenance attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: ${{ steps.metadata.outputs.archive }}
-
-      - name: Extract release notes
-        id: changelog
-        run: |
-          awk '/^## / {s++} s == 1 {print}' CHANGELOG.md > release_notes.md
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          body_path: release_notes.md
-          files: |
-            ${{ steps.metadata.outputs.archive }}
-            ${{ steps.metadata.outputs.archive-checksum }}
-          draft: false
+          set -euo pipefail
+          awk '/^## / {s++} s == 1 {print}' CHANGELOG.md > changelog_section.md
+          if [ ! -s changelog_section.md ]; then
+            echo "::error::No leading '## ' section found in CHANGELOG.md for $TAG"
+            exit 1
+          fi
+          gh release view "$TAG" --json body --jq .body > existing_body.md
+          cat changelog_section.md > release_notes.md
+          printf '\n---\n\n' >> release_notes.md
+          cat existing_body.md >> release_notes.md
+          gh release edit "$TAG" --notes-file release_notes.md
+          echo "Release notes set from CHANGELOG.md"
