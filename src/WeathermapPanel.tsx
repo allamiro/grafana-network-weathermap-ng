@@ -52,6 +52,7 @@ import {
   LabelPlacement,
   sanitizeUrl,
   sanitizeImageSource,
+  isLayerVisible,
   aggregateFieldValues,
   getTimeField,
   valueAtTime,
@@ -942,7 +943,21 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   // Zoom-dependent labels (#179): hide value labels once zoomed out past the
   // configured number of wheel steps.
   const labelHideZoom = wm?.settings?.link?.labelHideZoom ?? 0;
-  const hideValueLabels = labelHideZoom > 0 && renderedZoomScale >= labelHideZoom;
+  // Layer visibility (#269) folds into the same switch rather than adding a
+  // second one, so the two reasons a value label can be hidden stay in one
+  // place. Port labels have no zoom rule, so they read the layer directly.
+  const hideValueLabels =
+    (labelHideZoom > 0 && renderedZoomScale >= labelHideZoom) || !isLayerVisible(wm, 'valueLabels');
+  const showPortLabels = isLayerVisible(wm, 'portLabels');
+
+  // Hiding a layer removes hover surfaces from under the cursor, and an element
+  // that disappears mid-hover never fires its mouseout — which would strand an
+  // open tooltip with no way to dismiss it. Drop any hover state whenever the
+  // layer settings change (#269).
+  const layersKey = JSON.stringify(wm?.settings?.layers ?? {});
+  useEffect(() => {
+    setHoveredLink(null as unknown as HoveredLink);
+  }, [layersKey]);
 
   // VIA-chain data collection for rendering (#201): a segment leaving a
   // connection node displays the incoming link's A-side data. Resolved once
@@ -1263,6 +1278,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         )}
         {hoveredLink ? (
           <div
+            data-testid="weathermap-link-tooltip"
             className={css`
               position: absolute;
               top: ${hoveredLink.mouseY - 10}px;
@@ -2023,6 +2039,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     : getPercentPoint(d.lineStartZ, d.lineStartA, aPct / 100);
                 return (
                   <g
+                    data-testid="link-value-label"
                     fontStyle={'italic'}
                     opacity={linkOpacity(d.id)}
                     transform={`translate(${transform.x},${transform.y})`}
@@ -2086,6 +2103,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     : getPercentPoint(d.lineStartA, d.lineStartZ, zPct / 100);
                 return (
                   <g
+                    data-testid="link-value-label"
                     fontStyle={'italic'}
                     opacity={linkOpacity(d.id)}
                     transform={`translate(${transform.x},${transform.y})`}
@@ -2211,7 +2229,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         onto every downstream segment for value/color propagation,
                         so without this guard the port label would re-render at
                         each VIA bend. */}
-                    {d.sides.A.portLabel && !tempNodes[d.source.index]?.isConnection && (
+                    {d.sides.A.portLabel && showPortLabels && !tempNodes[d.source.index]?.isConnection && (
                       <g transform={`translate(${aPosX},${aPosY}) rotate(${aAngle})`}>
                         <text
                           x={0}
@@ -2226,7 +2244,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                         </text>
                       </g>
                     )}
-                    {d.sides.Z.portLabel && !tempNodes[d.target.index]?.isConnection && (
+                    {d.sides.Z.portLabel && showPortLabels && !tempNodes[d.target.index]?.isConnection && (
                       <g transform={`translate(${zPosX},${zPosY}) rotate(${zAngle})`}>
                         <text
                           x={0}

@@ -211,8 +211,11 @@ Hovering the link shows usage, bandwidth, throughput %, and a mini graph.
 4. **Panel Options → Status Legend** — a built-in legend with your own color+label rows (visible top-left in the screenshots), positioned in panel percent coordinates.
 5. **Per link: Single Direction (A → Z)** — flows that physically go one way (power feeds, one-way replication) render as one full-length line with a single arrow into the destination and one value label, instead of the two-sided default.
 6. **Per node: Label Font Size / Bold** (under the node's Advanced section) — emphasize important labels (here the PSU inlet `A`/`B` markers) while structural labels stay muted.
+7. **Panel Options → [Layers](panel-options.md#layers-hide-what-you-dont-need-right-now)** — when a map carries more text than any one question needs, switch a whole category off: node labels, value labels, or port labels. The configuration stays put; only the drawing changes, so the same dashboard can be a traffic view, a cabling view, and a status wall in turn.
 
-**Demo:** *WAN Demo — Interactive Rack View* — the rack-cabling topology with all six features enabled: hover any cable to trace it, note the one-way power feeds carrying live wattage into each PSU inlet, and zoom out two steps to watch the labels declutter.
+    ![The same rack map with node and port labels hidden](../img/getting-started/layers-after.png)
+
+**Demo:** *WAN Demo — Interactive Rack View* — the rack-cabling topology with the first six features enabled: hover any cable to trace it, note the one-way power feeds carrying live wattage into each PSU inlet, and zoom out two steps to watch the labels declutter. *WAN Demo — Layer Visibility* is the same rack deliberately over-labelled, for practising the layer switches.
 
 ---
 

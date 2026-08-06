@@ -88,6 +88,16 @@ This page documents all editing fields with their expected inputs and usage. It 
 | - Border Color | `picker` |
 | - Font Color | `picker` |
 
+### Layers
+
+Show or hide a whole category of map content. All default to **on**; an absent setting means visible, so maps saved before this option keep every label.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Show Node Labels | `boolean` | Node names. A node's own `Show Label` still applies when this is on |
+| Show Value Labels | `boolean` | The throughput value on each link, at every zoom level |
+| Show Port Labels | `boolean` | Per-side interface names alongside each link |
+
 ### Grid Options
 
 | Field | Type | Description |
