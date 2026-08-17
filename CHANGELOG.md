@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.11](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.11) (2026-08-17)
+
+### Chores
+
+* **the release pipeline now produces a build-provenance attestation the catalog recognizes** ([#305](https://github.com/allamiro/grafana-network-weathermap-ng/pull/305)): the 1.6.10 submission came back with `no-provenance-attestation` — "this plugin was built without build verification" — even though the workflow already ran `actions/attest-build-provenance`. The validator checks for an attestation in the specific shape Grafana's own tooling emits, so a hand-rolled step does not count no matter how correct the SLSA statement is. Building through `grafana/plugin-actions/build-plugin` produces it in the expected form. Tests, the `verify-dist.js` packaging check and the community-signature assertion all still gate the release — `build-plugin` runs none of them itself, so they now sit in a `test` job the release job depends on, and the packaged zip is still rejected if it carries no community `MANIFEST.txt`. Two consequences worth knowing: the checksum published alongside the zip is now **SHA1** rather than MD5, and the GitHub release is created as a **draft** to be published after review
+* **exporter Go toolchain raised to 1.26.6** ([#298](https://github.com/allamiro/grafana-network-weathermap-ng/issues/298)): the catalog's `govulncheck` source scan reported three reachable stdlib advisories — GO-2026-5972 / CVE-2026-33818 (`encoding/asn1` recursion depth), GO-2026-6089 / CVE-2026-56853 (`net/http` not applying `ReadHeaderTimeout` to the unencrypted HTTP/2 check) and GO-2026-6090 / CVE-2026-56862 (`crypto/tls` post-handshake message limits), all fixed in 1.25.13 and 1.26.6. The `go` directive moves only to **1.25.13**, the patched release on the line it was already on, rather than to 1.26.6: the validator's runner uses `GOTOOLCHAIN=local`, and a directive above its own version turns the scan from a warning into a hard failure, which is exactly what happened when this was last set to 1.26.5. The `toolchain` directive carries the 1.26.6 recommendation. None of this reaches a Grafana instance — the module is the simulated-WAN Prometheus exporter behind the demo dashboards and is not part of the panel
+
 ## [1.6.10](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.10) (2026-08-17)
 
 ### Security
