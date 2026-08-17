@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.10](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.10) (2026-08-17)
+
+### Security
+
+* **three high-severity advisories cleared from the lockfile.** None of the three reach a Grafana instance — `nanoid` arrives through `postcss`, and both `js-yaml` lines through `eslint` and `jest`, so all of them are build- and test-time tooling that the webpack bundle never includes; the shipped `module.js` contains no code from any of them. They are pinned anyway because the marketplace review reads the lockfile, and the equivalent dev-only findings in **brace-expansion** and **fast-uri** are what blocked the 1.6.5 submission. Pinned: **nanoid** 3.3.18 (GHSA-2v37-7h3g-55p8 / CVE-2026-67213 — custom generators can loop indefinitely when `size` is zero), and **js-yaml** 3.15.1 and 4.3.1 (GHSA-5p4m-2wfm-xmqj — quadratic CPU consumption resolving `!!omap`, where the CVE-2026-59870 fix was never backported to either line). `npm audit` now reports **0 high and 0 critical** findings
+* **dompurify** raised to 3.4.13 (GHSA-55q2-fjhq-7xh7 — an `IN_PLACE` hook removal leaves a detached subtree executable, causing XSS). It reaches the plugin only as a transitive dependency of `@grafana/data`, which Grafana supplies at runtime rather than bundling, so this pin hardens the dependency graph the reviewer inspects rather than the panel itself ([#354](https://github.com/allamiro/grafana-network-weathermap-ng/pull/354))
+* four moderate advisories remain, all in `react-router` by way of `@grafana/ui`. They are externalized at runtime for the same reason as `dompurify` and cannot be resolved without a breaking `@grafana/ui` upgrade, so they are carried forward unchanged
+
+### Notes
+
+* no panel behaviour changes in this release — 1.6.10 is 1.6.9 with a clean lockfile. Maps, dashboards and saved options are untouched
+
 ## [1.6.9](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.9) (2026-08-06)
 
 ### Features
