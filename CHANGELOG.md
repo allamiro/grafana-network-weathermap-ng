@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.12](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.12) (2026-08-17)
+
+### Fixed
+
+* **link animations can no longer collide with another plugin's**: the flow and blink animations were emitted as raw `<style>` tags declaring `@keyframes link-flow-forward` and `@keyframes link-blink`. Animation names are global to the page, not scoped to the element that uses them, so any other panel on the same dashboard declaring an animation by either of those names would silently redefine ours — or have ours redefine theirs — with the winner decided by mount order. Both are now built with Emotion's `keyframes()` helper, which hashes the rule body into a unique `animation-<hash>` name, so a collision is impossible regardless of what else is on the dashboard. The animations themselves are unchanged
+* **the export anchor is rendered by React instead of being spliced into the document**: SVG and JSON export created an `<a>`, appended it to `document.body`, clicked it and removed it. That mutates the document outside the component's own subtree, and an unmount or a throw between the append and the remove would leave the node stranded in the DOM. The anchor is now part of the form's JSX and is driven through a `useRef`, so React owns its lifetime and it disappears with the component
+
+### Chores
+
+* **panel styling uses Grafana's theme tokens instead of literal values**: the data-notice banner, both hover tooltips, the animation and status legends, and the colour scale carried hard-coded pixel sizes, `z-index: 9999` / `10000`, and in one case a literal `rgba(204, 204, 220, 0.25)` border that could not follow a light/dark switch at all. These now read from `theme.spacing()`, `theme.shape.radius.default`, `theme.typography.bodySmall.fontSize`, `theme.zIndex` and `theme.colors`. The notice maps to `theme.zIndex.tooltip` and the hover tooltips to `theme.zIndex.portal`, preserving the stacking order the old 9999/10000 pair produced. Two `z-index: 2` values are deliberately left as-is: they stack an element directly above the map SVG rather than acting as an overlay layer, and no theme token expresses that. One visual nuance worth noting — `theme.shape.radius.default` is 2px where the literals were 4px, so those corners are slightly less rounded, which is the point of deferring to the theme
+
 ## [1.6.11](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.11) (2026-08-17)
 
 ### Chores

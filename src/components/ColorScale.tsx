@@ -1,5 +1,5 @@
 import { useStyles2, useTheme2 } from '@grafana/ui';
-import { getValueFormat } from '@grafana/data';
+import { getValueFormat, GrafanaTheme2 } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import React from 'react';
 import { Threshold, WeathermapSettings } from 'types';
@@ -75,8 +75,8 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
           settings.scale.backgroundColor
             ? css`
                 background: ${settings.scale.backgroundColor};
-                border: 1px solid rgba(204, 204, 220, 0.25);
-                border-radius: 4px;
+                border: 1px solid ${theme.colors.border.weak};
+                border-radius: ${theme.shape.radius.default};
               `
             : css``
         )}
@@ -145,27 +145,35 @@ const ColorScale: React.FC<ColorScaleProps> = (props: ColorScaleProps) => {
   }
 };
 
-const getStyles = () => {
+const getStyles = (theme: GrafanaTheme2) => {
   return {
     colorScaleContainer: css`
       position: relative;
-      padding: 10px;
+      padding: ${theme.spacing(1.25)};
       display: flex;
       flex-direction: column;
-      color: black;
+      /*
+        Inherited only: the title and every threshold label set their own color
+        (an explicit fontColor, or automatic contrast against the panel
+        background). This is the fallback for anything that does not, and is a
+        theme token rather than a literal so it follows light/dark switching.
+      */
+      color: ${theme.colors.text.primary};
+      /* Local stacking above the map SVG — not an overlay layer, so no
+         theme.zIndex token applies. */
       z-index: 2;
       width: fit-content;
     `,
     colorBoxTitle: css`
       font-weight: bold;
-      padding: 5px 0px;
+      padding: ${theme.spacing(0.625, 0)};
     `,
     colorScaleItem: css`
       display: flex;
       align-items: center;
     `,
     colorBox: css`
-      margin-right: 5px;
+      margin-right: ${theme.spacing(0.625)};
     `,
     colorLabel: css`
       line-height: normal;
