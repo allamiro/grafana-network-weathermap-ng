@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { InlineFieldRow, Button, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
 import { Weathermap } from 'types';
@@ -11,15 +11,21 @@ interface Props extends StandardEditorProps<Weathermap, Settings> {}
 export const ExportForm = ({ value, onChange }: Props) => {
   const styles = useStyles2(getStyles);
 
-  const generateDownloadLink = (href: string, download: string) => {
-    let downloadLink = document.createElement('a');
-    downloadLink.href = href;
-    downloadLink.download = download;
-    downloadLink.target = '_blank';
+  // The download anchor is part of this component's own JSX (below) and is
+  // driven through a ref. It used to be created, appended to document.body,
+  // clicked and removed imperatively — that reaches outside the component's
+  // subtree and mutates the document behind React's back, so an unmount or an
+  // exception between append and remove would strand the node in the DOM.
+  const downloadRef = useRef<HTMLAnchorElement>(null);
 
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+  const generateDownloadLink = (href: string, download: string) => {
+    const anchor = downloadRef.current;
+    if (!anchor) {
+      return;
+    }
+    anchor.href = href;
+    anchor.download = download;
+    anchor.click();
   };
 
   const handleSVGExport = async () => {
@@ -89,6 +95,12 @@ export const ExportForm = ({ value, onChange }: Props) => {
             Export JSON
           </Button>
         </InlineFieldRow>
+        {/*
+          Hidden, but rendered and owned by React. href/download are set on it
+          immediately before the programmatic click; a display:none anchor still
+          activates via HTMLElement.click().
+        */}
+        <a ref={downloadRef} className={styles.downloadAnchor} target="_blank" rel="noreferrer" aria-hidden="true" />
       </React.Fragment>
     );
   } else {
@@ -104,6 +116,9 @@ const getStyles = (theme: GrafanaTheme2) => {
     `,
     exportJSONButton: css`
       margin: ${theme.spacing(1)} 0;
+    `,
+    downloadAnchor: css`
+      display: none;
     `,
   };
 };

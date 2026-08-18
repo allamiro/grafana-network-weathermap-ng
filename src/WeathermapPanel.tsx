@@ -25,7 +25,7 @@ import {
   NodeTooltipMetric,
   Threshold,
 } from 'types';
-import { css, cx } from '@emotion/css';
+import { css, cx, keyframes } from '@emotion/css';
 import {
   Button,
   LegendDisplayMode,
@@ -78,6 +78,26 @@ import {
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
+
+// Link animations used to be emitted as raw <style> tags holding global
+// `@keyframes link-flow-forward` / `link-blink` rules. A global animation name
+// is shared by every stylesheet on the page, so a second plugin defining an
+// animation of the same name on the same dashboard would silently redefine
+// ours (or we would redefine theirs), depending on which mounted last.
+//
+// Emotion's keyframes() hashes the rule body into a unique name
+// (`animation-<hash>`) and inserts the @keyframes into its own stylesheet as
+// soon as this module loads, so the name below can be used directly in the
+// inline `animation` shorthand and cannot collide with anything.
+const linkFlowForwardAnimation = keyframes`
+  from { stroke-dashoffset: 15; }
+  to { stroke-dashoffset: 0; }
+`;
+
+const linkBlinkAnimation = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+`;
 
 // Calculate node position, width, etc.
 function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
@@ -1237,15 +1257,20 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             data-testid="weathermap-data-notice"
             className={css`
               position: absolute;
-              top: 8px;
+              top: ${theme.spacing(1)};
               left: 50%;
               transform: translateX(-50%);
               max-width: 90%;
-              z-index: 9999;
+              /*
+                Was a literal 9999. theme.zIndex.tooltip keeps the notice above
+                the map while staying below the hover tooltips (portal), which
+                is the same order the old 9999 / 10000 pair produced.
+              */
+              z-index: ${theme.zIndex.tooltip};
               pointer-events: none;
-              padding: 6px 12px;
-              border-radius: 4px;
-              font-size: 12px;
+              padding: ${theme.spacing(0.75, 1.5)};
+              border-radius: ${theme.shape.radius.default};
+              font-size: ${theme.typography.bodySmall.fontSize};
               text-align: center;
               box-shadow: ${theme.shadows.z1};
               background-color: ${dataNotice.level === 'error'
@@ -1275,11 +1300,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               background-color: ${wm.settings.tooltip.backgroundColor};
               color: ${wm.settings.tooltip.textColor} !important;
               font-size: ${wm.settings.tooltip.fontSize} !important;
-              z-index: 10000;
+              z-index: ${theme.zIndex.portal};
               display: ${hoveredLink ? 'flex' : 'none'};
               flex-direction: column;
               padding: ${wm.settings.tooltip.fontSize}px;
-              border-radius: 4px;
+              border-radius: ${theme.shape.radius.default};
               border: 1px solid
                 ${getScaleColor(
                   hoveredLink.link.sides[hoveredLink.side].currentValue,
@@ -1479,11 +1504,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               background-color: ${wm.settings.tooltip.backgroundColor};
               color: ${wm.settings.tooltip.textColor} !important;
               font-size: ${wm.settings.tooltip.fontSize} !important;
-              z-index: 10000;
+              z-index: ${theme.zIndex.portal};
               display: flex;
               flex-direction: column;
               padding: ${wm.settings.tooltip.fontSize}px;
-              border-radius: 4px;
+              border-radius: ${theme.shape.radius.default};
               border: 1px solid ${theme.colors.border.medium};
             `}
           >
@@ -1530,12 +1555,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               position: absolute;
               bottom: 1%;
               left: 1%;
+              /* Local stacking above the map SVG only — not an overlay layer,
+                 so no theme.zIndex token applies. */
               z-index: 2;
-              padding: 6px 10px;
-              border-radius: 4px;
+              padding: ${theme.spacing(0.75, 1.25)};
+              border-radius: ${theme.shape.radius.default};
               background-color: ${theme.colors.background.secondary};
               border: 1px solid ${theme.colors.border.weak};
-              font-size: 12px;
+              font-size: ${theme.typography.bodySmall.fontSize};
               pointer-events: none;
               color: ${theme.colors.text.primary};
             `}
@@ -1582,12 +1609,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               position: absolute;
               top: ${wm.settings.statusLegend.position.y}%;
               left: ${wm.settings.statusLegend.position.x}%;
+              /* Local stacking above the map SVG only — not an overlay layer,
+                 so no theme.zIndex token applies. */
               z-index: 2;
-              padding: 6px 10px;
-              border-radius: 4px;
+              padding: ${theme.spacing(0.75, 1.25)};
+              border-radius: ${theme.shape.radius.default};
               background-color: ${theme.colors.background.secondary};
               border: 1px solid ${theme.colors.border.weak};
-              font-size: 12px;
+              font-size: ${theme.typography.bodySmall.fontSize};
               pointer-events: none;
             `}
             data-testid="status-legend"
@@ -1694,22 +1723,6 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   opacity={1}
                 />
               </pattern>
-            )}
-            {wm.settings.link.flowAnimation?.enabled && (
-              <style>{`
-                @keyframes link-flow-forward {
-                  from { stroke-dashoffset: 15; }
-                  to { stroke-dashoffset: 0; }
-                }
-              `}</style>
-            )}
-            {links.some((d) => d.isDown && d.statusBlink) && (
-              <style>{`
-                @keyframes link-blink {
-                  0%, 100% { opacity: 1; }
-                  50% { opacity: 0.15; }
-                }
-              `}</style>
             )}
             {wm.settings.link.gradientColor &&
               resolvedLinks.map((d) => {
@@ -1886,11 +1899,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       style={{
                         ...(d.sides.A.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}),
                         ...(d.isDown && d.statusBlink
-                          ? { animation: 'link-blink 1s ease-in-out infinite' }
+                          ? { animation: `${linkBlinkAnimation} 1s ease-in-out infinite` }
                           : wm.settings.link.flowAnimation?.enabled
                           ? {
                               strokeDasharray: '10 5',
-                              animation: `link-flow-forward ${wm.settings.link.flowAnimation.speed}s linear infinite`,
+                              animation: `${linkFlowForwardAnimation} ${wm.settings.link.flowAnimation.speed}s linear infinite`,
                             }
                           : {}),
                       }}
@@ -1964,11 +1977,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                           style={{
                             ...(d.sides.Z.dashboardLink.length > 0 ? { cursor: 'pointer' } : {}),
                             ...(d.isDown && d.statusBlink
-                              ? { animation: 'link-blink 1s ease-in-out infinite' }
+                              ? { animation: `${linkBlinkAnimation} 1s ease-in-out infinite` }
                               : wm.settings.link.flowAnimation?.enabled
                               ? {
                                   strokeDasharray: '10 5',
-                                  animation: `link-flow-forward ${wm.settings.link.flowAnimation.speed}s linear infinite`,
+                                  animation: `${linkFlowForwardAnimation} ${wm.settings.link.flowAnimation.speed}s linear infinite`,
                                 }
                               : {}),
                           }}

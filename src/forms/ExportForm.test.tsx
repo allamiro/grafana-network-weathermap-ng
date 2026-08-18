@@ -27,6 +27,30 @@ test('SVG export does not crash when the SVG element is missing', async () => {
   expect(createObjectURL).not.toHaveBeenCalled();
 });
 
+test('the download anchor is owned by React and no stray node is left in the document', async () => {
+  const value = getData(theme);
+  const props = { value, onChange: jest.fn() } as unknown as StandardEditorProps<Weathermap>;
+  const { container, unmount } = render(<ExportForm {...props} />);
+
+  // The anchor is part of the component's own subtree rather than something
+  // appended to document.body behind React's back.
+  const anchors = container.querySelectorAll('a');
+  expect(anchors).toHaveLength(1);
+
+  const anchorCountBefore = document.querySelectorAll('a').length;
+  fireEvent.click(screen.getByText('Export JSON'));
+  await new Promise((r) => setTimeout(r, 0));
+
+  // Exporting reuses that one anchor: it neither appends nor leaks a node.
+  expect(document.querySelectorAll('a')).toHaveLength(anchorCountBefore);
+  expect(anchors[0].getAttribute('download')).toContain('network-weathermap-');
+
+  // And unmounting takes the anchor with it, which an imperatively appended
+  // node would not have done.
+  unmount();
+  expect(document.querySelectorAll('a')).toHaveLength(anchorCountBefore - 1);
+});
+
 describe('SVG export URL handling (#203)', () => {
   const setupSvg = (value: Weathermap, hrefs: string[]) => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
