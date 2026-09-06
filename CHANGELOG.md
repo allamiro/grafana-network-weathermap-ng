@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.13](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.13) (2026-09-06)
+
+### Security
+
+* **four high `fast-uri` advisories cleared**: GHSA host-confusion via percent-encoded scheme normalization and via skipped IDN canonicalization, plus SSRF via malformed IPv6 normalization and via repeated hostname percent-decoding, all fixed in 3.1.6. The dependency arrives through `copy-webpack-plugin` → `schema-utils` → `ajv`, and the reason it sat on the vulnerable 3.1.5 was our own `overrides` entry pinning `^3.1.5` — `ajv` itself asks for `^3.0.1` and would have taken the fix on its own. The override is now `^3.1.7`
+* **two high `browserslist` advisories cleared**: unbounded memory growth from missing cache eviction, and an uncaught crash / prototype write via an untrusted `browserslist-stats.json`. Both fixed in 4.28.7; overridden to `^4.28.9`. It reaches the tree twice, through `webpack` and through `@babel/core`
+* **two moderate `qs` advisories cleared**: array-limit bypass via bracket-key comma parsing, and denial of service via attacker-controlled `isBuffer`. Fixed in 6.16.0, overridden to `^6.16.0`, reached through `webpack-livereload-plugin` → `tiny-lr`
+* **the two moderate `react-router` advisories are now resolved too** — open redirect via backslash in `<Link>`/`useNavigate` (the CVE-2025-68470 bypass) and arbitrary constructor injection via `deserializeErrors()`. The 1.6.10 notes said these could not be fixed without a breaking `@grafana/ui` change; that turned out to be avoidable. The vulnerable copy is the one nested under `react-router-dom-v5-compat`, so the override is scoped to that package alone (`react-router-dom-v5-compat` → `react-router: ^7.18.0`) and leaves `react-router-dom@5`'s own `react-router@5.3.4` untouched. Verified rather than assumed: the shim still loads and exports all 75 names under 7.18.3, and `@grafana/ui` imports exactly one of them (`Link`), which is present
+
+None of these packages ship in the plugin. The bundle externalizes `react`, `react-router`, `react-router-dom` and every `@grafana/*` package, and `grep` finds no trace of `react-router`, `fast-uri`, `browserslist` or `qs` in `dist/module.js`; the first three are build-time only. They are pinned because the marketplace review reads the lockfile — dev-only findings of exactly this kind blocked the 1.6.5 submission.
+
+`npm audit` now reports **0 vulnerabilities of any severity**, down from 4 high and 4 moderate.
+
 ## [1.6.12](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.12) (2026-08-17)
 
 ### Fixed
