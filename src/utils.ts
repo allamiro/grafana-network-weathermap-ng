@@ -1,6 +1,6 @@
 import { DataFrame, Field, FieldType, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
 import merge from 'lodash.merge';
-import { Anchor, DrawnNode, Link, Node, Position, ValueMappingMode, Weathermap } from 'types';
+import { Anchor, DrawnNode, LayerVisibility, Link, Node, Position, ValueMappingMode, Weathermap } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 
 export const CURRENT_VERSION = 14;
@@ -278,6 +278,17 @@ export function handleFileUploadErrors(files: FileList | null): void {
  * propagates into SVG geometry and the viewBox. Required numeric fields keep
  * their previous valid value instead; 0 is a valid value.
  */
+/**
+ * Is a display layer visible? (#269) Absent settings, an absent block, and an
+ * absent field all mean VISIBLE, so a saved map without any layer config —
+ * i.e. every map that existed before this feature — renders unchanged.
+ * Centralised so the "absent means visible" default cannot drift between the
+ * render sites and the editor.
+ */
+export function isLayerVisible(wm: Weathermap | undefined | null, layer: keyof LayerVisibility): boolean {
+  return wm?.settings?.layers?.[layer] !== false;
+}
+
 export function finiteOrFallback(value: number, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }

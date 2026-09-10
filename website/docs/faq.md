@@ -56,6 +56,9 @@ New to the plugin? See the **[Tutorial → Getting Started](guide/getting-starte
 - **Q: Two links overlap and dragging the nodes doesn't help — what else can I do?**
     - Moving a node often just moves the problem. For two links between the **same pair of nodes**, give each a different **Link Offset**; to route **one** link around something, add waypoints and drag their handles. See [Links](guide/links.md#parallel-links-link-offset).
 
+- **Q: My rack/topology map has so many labels I can't read it. Do I have to delete them?**
+    - No. **Panel Options → Layers** turns off **node labels**, **value labels**, or **port labels** for the whole panel without touching the configuration behind them — flip the switch back and every label returns exactly as it was. See [Panel Options → Layers](guide/panel-options.md#layers-hide-what-you-dont-need-right-now), and try the **WAN Demo — Layer Visibility** dashboard.
+
 - **Q: There are grid lines all over my map — how do I turn them off?**
     - Those are **Grid Guides** (Panel Options → **Grid Options**). Turn off **Grid Guides** to remove the lines while keeping drag snapping, or turn off **Enable Node Grid Snapping** to remove both in one toggle — it clears the guides for you. Note the lines only ever appear **while editing the panel**; a saved dashboard never shows them. See [Panel Options → Grid](guide/panel-options.md#grid-snapping-and-guide-lines).
 

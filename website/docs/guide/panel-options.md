@@ -70,6 +70,51 @@ Whichever you choose, if the image can't be loaded the panel tells you: while **
 
 ---
 
+## Layers (hide what you don't need right now)
+
+A dense map carries more text than any one question needs. A rack rear-elevation has a port number on every jack, a throughput value on every cable, and an interface name on both ends of every run — all correct, all at once, and unreadable together.
+
+**Layers** turn whole categories of label off for the panel. Nothing is deleted: the labels, the queries behind them, and the per-node settings all stay exactly as configured, and turning the layer back on restores them untouched.
+
+### Where the options are
+
+**Edit** the panel → in the options sidebar, scroll to **Layers**:
+
+![The Layers section of the panel editor: Show Node Labels, Show Value Labels, and Show Port Labels](../img/getting-started/layers-options.png)
+
+| Option | Hides |
+|---|---|
+| **Show Node Labels** | The name drawn on/under every node. |
+| **Show Value Labels** | The throughput value on every link. |
+| **Show Port Labels** | The per-side interface names alongside every link. |
+
+All three are **on by default**, and a map saved before this option existed keeps every label — absent means visible.
+
+### What it looks like
+
+![A rack map with every label on: port numbers, throughput values, and interface names overlapping each other](../img/getting-started/layers-before.png)
+
+*Everything on. Port numbers, interface names, and throughput pills compete for the same strip of canvas.*
+
+![The same rack map with node labels and port labels hidden, leaving the throughput values](../img/getting-started/layers-after.png)
+
+*Node labels and port labels off. Same map, same config — now you can read the traffic.*
+
+![The same rack map with all three label layers hidden, leaving colored cables and port status](../img/getting-started/layers-cabling-only.png)
+
+*All three off. A pure status-and-cabling view for the wall screen.*
+
+Try it on the **WAN Demo — Layer Visibility** dashboard in the [demo set](use-cases.md).
+
+!!! note "Hidden means gone, not transparent"
+    A hidden layer is not drawn at all, so its labels cannot be hovered, clicked, or picked up by **Export SVG**. That is deliberate — an invisible element you can still bump into is worse than no element.
+
+!!! tip "Related, but not the same thing"
+    - **Hide Labels When Zoomed Out** (Link Options) hides value labels **only while zoomed out** past a threshold. **Show Value Labels** hides them at every zoom level.
+    - A node's own **Show Label** hides that one node's name. The layer switch is the panel-wide version — and a node with **Show Label** off stays hidden either way.
+
+---
+
 ## Grid (snapping and guide lines)
 
 The grid makes node dragging snap to fixed steps, so a large map can be aligned cleanly instead of by eye. It is **off by default** — a new panel has no grid and no guide lines.

@@ -14,12 +14,13 @@ import {
   useTheme2,
 } from '@grafana/ui';
 import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
-import { Weathermap, ValueMappingMode } from 'types';
+import { Weathermap, ValueMappingMode, LayerVisibility } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 import { FormDivider } from './FormDivider';
 import { css } from '@emotion/css';
 import {
   finiteOrFallback,
+  isLayerVisible,
   sanitizeUrl,
   sanitizeImageSource,
   formatBytes,
@@ -69,6 +70,19 @@ export const PanelForm = ({ value, onChange }: Props) => {
   const resetUploads = () => {
     uploadSeq.current += 1;
     setBgUploadNote(null);
+  };
+
+  // Layer visibility (#269). Writes only into settings.layers so toggling a
+  // layer can never touch node/link config — hiding must be reversible by
+  // flipping the same switch back, with nothing else changed.
+  const updateLayer = (layer: keyof LayerVisibility, visible: boolean) => {
+    onChange({
+      ...value,
+      settings: {
+        ...value.settings,
+        layers: { ...(value.settings.layers ?? {}), [layer]: visible },
+      },
+    });
   };
 
   // Immutable panel-settings update (#225): clone the settings path so
@@ -641,6 +655,43 @@ export const PanelForm = ({ value, onChange }: Props) => {
           </>
         )}
 
+        <FormDivider title="Layers" />
+        <InlineField
+          grow
+          label="Show Node Labels"
+          className={styles.inlineField}
+          tooltip={'Hide device names without deleting them. Nodes with "Show Label" already off stay hidden either way.'}
+        >
+          <InlineSwitch
+            value={isLayerVisible(value, 'nodeLabels')}
+            onChange={(e) => updateLayer('nodeLabels', e.currentTarget.checked)}
+            data-testid="layer-nodeLabels"
+          />
+        </InlineField>
+        <InlineField
+          grow
+          label="Show Value Labels"
+          className={styles.inlineField}
+          tooltip={'Hide the throughput value on each link. Independent of Hide Labels When Zoomed Out, which hides the same labels only past a zoom threshold.'}
+        >
+          <InlineSwitch
+            value={isLayerVisible(value, 'valueLabels')}
+            onChange={(e) => updateLayer('valueLabels', e.currentTarget.checked)}
+            data-testid="layer-valueLabels"
+          />
+        </InlineField>
+        <InlineField
+          grow
+          label="Show Port Labels"
+          className={styles.inlineField}
+          tooltip={'Hide the per-side interface names alongside each link.'}
+        >
+          <InlineSwitch
+            value={isLayerVisible(value, 'portLabels')}
+            onChange={(e) => updateLayer('portLabels', e.currentTarget.checked)}
+            data-testid="layer-portLabels"
+          />
+        </InlineField>
         <FormDivider title="Grid Options" />
         <InlineFieldRow className={styles.inlineRow}>
           <InlineField grow label="Enable Node Grid Snapping" className={styles.inlineField}>

@@ -261,3 +261,60 @@ describe('background image upload (#344)', () => {
     expect(field.readOnly).toBe(false);
   });
 });
+
+describe('layer visibility switches (#269)', () => {
+  // Targeted by test id rather than by walking up from the label text: the
+  // E2E suite needs a locator that survives Grafana's own markup changing, so
+  // the switches carry ids and both suites use them.
+  const switchFor = (layer: string) => screen.getByTestId(`layer-${layer}`) as HTMLInputElement;
+
+  test('all three read as on for a map with no layer settings', () => {
+    render(<Harness initial={getData(theme)} onChangeSpy={jest.fn()} />);
+    expect(switchFor('nodeLabels').checked).toBe(true);
+    expect(switchFor('valueLabels').checked).toBe(true);
+    expect(switchFor('portLabels').checked).toBe(true);
+    // The visible labels are what the docs and the issue name.
+    expect(screen.getByText('Show Node Labels')).toBeInTheDocument();
+    expect(screen.getByText('Show Value Labels')).toBeInTheDocument();
+    expect(screen.getByText('Show Port Labels')).toBeInTheDocument();
+  });
+
+  test.each([['nodeLabels'], ['valueLabels'], ['portLabels']])('%s writes only its own flag', (key) => {
+    const label = key;
+    const spy = jest.fn();
+    render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+    fireEvent.click(switchFor(label));
+    expect(lastValue(spy).settings.layers).toEqual({ [key]: false });
+    expect(switchFor(label).checked).toBe(false);
+  });
+
+  test('toggling one layer leaves the others untouched', () => {
+    const spy = jest.fn();
+    render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+    fireEvent.click(switchFor('nodeLabels'));
+    fireEvent.click(switchFor('portLabels'));
+    expect(lastValue(spy).settings.layers).toEqual({ nodeLabels: false, portLabels: false });
+    expect(switchFor('valueLabels').checked).toBe(true);
+  });
+
+  test('turning a layer back on records it rather than dropping the key', () => {
+    // Explicit true and absent both mean visible, so either is correct — this
+    // pins the round trip so a later refactor cannot flip the read-time default.
+    const spy = jest.fn();
+    render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+    fireEvent.click(switchFor('valueLabels'));
+    fireEvent.click(switchFor('valueLabels'));
+    expect(lastValue(spy).settings.layers!.valueLabels).toBe(true);
+    expect(switchFor('valueLabels').checked).toBe(true);
+  });
+
+  test('the switches never touch anything outside settings.layers', () => {
+    const before = JSON.parse(JSON.stringify(getData(theme)));
+    const spy = jest.fn();
+    render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+    fireEvent.click(switchFor('nodeLabels'));
+    const after = JSON.parse(JSON.stringify(lastValue(spy)));
+    delete after.settings.layers;
+    expect(after).toEqual(before);
+  });
+});

@@ -10,6 +10,7 @@ import {
   getValueSeries,
   sanitizeUrl,
   sampleAtTime,
+  isLayerVisible,
 } from '../utils';
 import { css } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
@@ -195,7 +196,7 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
               ry={7}
               style={{ paintOrder: 'stroke' }}
             ></rect>
-            {node.showLabel !== false && (
+            {node.showLabel !== false && isLayerVisible(wm, 'nodeLabels') && (
               <text
                 x={0}
                 y={textY}

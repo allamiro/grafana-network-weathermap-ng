@@ -61,6 +61,9 @@ With bandwidth set, the tooltip and coloring can express **throughput %** (curre
 !!! tip "Label overlapping a node?"
     Port labels sit ~25% from each endpoint, so on dense maps they can overlap the node icon or its label. Nudge **Offset %** positive (toward the midpoint, away from the node) and/or **Distance** to lift it off the icon.
 
+!!! tip "Too many labels to place individually?"
+    On a really dense map, positioning every label one by one is the wrong tool. **Panel Options → [Layers](panel-options.md#layers-hide-what-you-dont-need-right-now)** switches whole categories — port labels, value labels, node labels — off for the panel and back on again, without deleting anything.
+
 ![WAN map with port labels and direction labels on links](../img/use-cases/wm-wan-utilization.png)
 
 *Port labels (interface names near each endpoint) and value labels on a live WAN map — from the [demo dashboards](use-cases.md).*
