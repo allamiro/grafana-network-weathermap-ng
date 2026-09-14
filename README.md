@@ -21,6 +21,12 @@ Live network weathermaps for Grafana — nodes, links, and color scales driven b
 [**Icon Reference**](https://allamiro.github.io/grafana-network-weathermap-ng/icons/) ·
 [**FAQ**](https://allamiro.github.io/grafana-network-weathermap-ng/faq/)
 
+<a href="https://github.com/sponsors/allamiro">
+  <img src="https://img.shields.io/badge/%E2%98%95_Buy_me_a_coffee-Sponsor-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=24292f" alt="Buy me a coffee — sponsor this project on GitHub Sponsors">
+</a>
+
+<sub>If this plugin is useful to you, a coffee helps keep it maintained.</sub>
+
 <img src="src/img/general-example.png" alt="A live network weathermap rendered by the plugin" width="760">
 
 </div>
@@ -248,5 +254,8 @@ If you use this project in research or publications, please cite it — GitHub's
 ```
 
 <div align="center">
-<sub>⭐ If this plugin lights up your NOC wall, a star helps others find it.</sub>
+
+<sub>⭐ If this plugin lights up your NOC wall, a star helps others find it —
+and if it saved you a weekend, <a href="https://github.com/sponsors/allamiro">buy me a coffee</a>.</sub>
+
 </div>

@@ -1,0 +1,8 @@
+# Drives the native "Sponsor" button GitHub renders at the top of the repo page
+# and on the repo's sidebar. Separate from the button in README.md — that one is
+# only visible to someone already reading the README.
+#
+# Add other platforms here if you ever open them (open_collective, ko_fi,
+# buy_me_a_coffee, custom: [...]). buy_me_a_coffee is intentionally absent:
+# there is no buymeacoffee.com/allamiro account, so listing one would 404.
+github: [allamiro]
