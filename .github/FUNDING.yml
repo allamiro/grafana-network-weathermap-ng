@@ -1,8 +1,13 @@
 # Drives the native "Sponsor" button GitHub renders at the top of the repo page
-# and on the repo's sidebar. Separate from the button in README.md — that one is
-# only visible to someone already reading the README.
+# and in the sidebar. Separate from the buttons in README.md — those are only
+# visible to someone already reading the README.
 #
-# Add other platforms here if you ever open them (open_collective, ko_fi,
-# buy_me_a_coffee, custom: [...]). buy_me_a_coffee is intentionally absent:
-# there is no buymeacoffee.com/allamiro account, so listing one would 404.
+# Both routes are listed deliberately, because they reach different people:
+#   github           - requires the sponsor to have a GitHub account and be
+#                      signed in; there is no guest checkout.
+#   buy_me_a_coffee  - no account and no login needed, so it is the only one a
+#                      drive-by visitor or a non-developer can actually use.
+#
+# The buy_me_a_coffee slug is the handle BMC assigned, not the GitHub username.
 github: [allamiro]
+buy_me_a_coffee: pcileky2q

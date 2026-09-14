@@ -1,5 +1,23 @@
 <div align="center">
 
+<table>
+<tr><td align="center" width="760">
+
+### ☕ Support this project
+
+<a href="https://buymeacoffee.com/pcileky2q">
+  <img height="56" src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=pcileky2q&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee — no account needed">
+</a>
+&nbsp;&nbsp;
+<a href="https://github.com/sponsors/allamiro">
+  <img height="56" src="https://img.shields.io/badge/%E2%99%A5%20%20Sponsor-on%20GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=1f2328" alt="Sponsor on GitHub Sponsors">
+</a>
+
+<sub><b>Buy me a coffee</b> takes a card and needs no account &nbsp;·&nbsp; <b>GitHub Sponsors</b> offers monthly tiers and needs a GitHub login</sub>
+
+</td></tr>
+</table>
+
 <img src="src/img/logo.svg" alt="Network Weathermap NG" width="170" height="170">
 
 # Network Weathermap NG
@@ -21,11 +39,6 @@ Live network weathermaps for Grafana — nodes, links, and color scales driven b
 [**Icon Reference**](https://allamiro.github.io/grafana-network-weathermap-ng/icons/) ·
 [**FAQ**](https://allamiro.github.io/grafana-network-weathermap-ng/faq/)
 
-<a href="https://github.com/sponsors/allamiro">
-  <img height="52" src="https://img.shields.io/badge/%E2%98%95%20%20Buy%20me%20a%20coffee-Sponsor%20on%20GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=1f2328" alt="Buy me a coffee — sponsor this project on GitHub Sponsors">
-</a>
-
-<sub><b>Like this plugin?</b> Sponsorship keeps it maintained, documented, and compatible with each new Grafana release.</sub>
 
 <img src="src/img/general-example.png" alt="A live network weathermap rendered by the plugin" width="760">
 
@@ -256,6 +269,7 @@ If you use this project in research or publications, please cite it — GitHub's
 <div align="center">
 
 <sub>⭐ If this plugin lights up your NOC wall, a star helps others find it —
-and if it saved you a weekend, <a href="https://github.com/sponsors/allamiro">buy me a coffee</a>.</sub>
+and if it saved you a weekend, <a href="https://buymeacoffee.com/pcileky2q">buy me a coffee</a>
+or <a href="https://github.com/sponsors/allamiro">sponsor on GitHub</a>.</sub>
 
 </div>
