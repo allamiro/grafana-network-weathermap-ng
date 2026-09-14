@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.14](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.14) (2026-09-14)
+
+### Security
+
+* **a new high `js-yaml` advisory cleared on both lines**: GHSA-2883-xcg3-v3hh / CVE-2026-84375 — `maxTotalMergeKeys` does not limit CPU use for empty merge sources, so the cap meant to bound merge-key expansion can be sidestepped and a crafted document burns CPU unbounded. It was published on 2026-09-08, two days *after* 1.6.13 shipped, which is why the 3.15.1 / 4.3.1 pins that release carried do not cover it. Fixed in 3.15.2 and 4.3.2, and the `js-yaml@3` / `js-yaml@4` overrides now name those exactly. Both copies are development-only: the 3.x line arrives through `jest` (`@istanbuljs/load-nyc-config`) and the 4.x through `eslint` (`@eslint/eslintrc`), so neither is reachable from a running panel — they are pinned because the marketplace review reads the lockfile, which is what blocked the 1.6.5 submission
+* `npm audit` reports **0 vulnerabilities of any severity**, holding the clean state 1.6.13 reached
+
+### Notes
+
+* no panel behaviour changes — 1.6.14 is 1.6.13 with the new advisory patched
+* the exporter's Go module was re-checked rather than assumed: every current stdlib advisory (through GO-2026-6218) is fixed in 1.25.13 / 1.26.6, which is what `go.mod` already pins, and every dependency is at or above its fixed version — `logrus` 1.8.3 (GO-2025-4188), `golang.org/x/sys` 0.44.0 (GO-2026-5024), `client_golang` 1.23.2 (GO-2022-0322) and `protobuf` 1.36.8 (GO-2024-2611). The toolchain is deliberately left at 1.26.6 rather than chased to 1.26.8: it clears every known advisory, and raising the `go` directive is what hard-failed the validator's `GOTOOLCHAIN=local` scan in #298
+
 ## [1.6.13](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.13) (2026-09-06)
 
 ### Security
