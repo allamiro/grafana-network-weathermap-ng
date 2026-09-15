@@ -1162,8 +1162,28 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         if (name !== hoveredLink.link.sides.A.query && name !== hoveredLink.link.sides.Z.query) {
           continue;
         }
+        // Grafana's <TimeSeries> requires an x field of FieldType.time and
+        // crashes on hover when none exists (#364). getTimeField's epoch-ms
+        // fallback returns a number-typed field (e.g. Infinity's table parser
+        // leaves "Time" as a plain number), so the slim copy retypes it to
+        // time — dropping the inherited display processor, which was built for
+        // a number field and would render the graph-tooltip timestamp as an
+        // SI-abbreviated number. Frames with no usable time axis — or where
+        // the fallback is the value field itself — keep the text tooltip but
+        // skip the graph.
+        if (!timeField || timeField === field) {
+          continue;
+        }
         filteredGraphSeries.push({
-          frame: { ...frame, fields: timeField ? [timeField, field] : [field] },
+          frame: {
+            ...frame,
+            fields: [
+              timeField.type === FieldType.time
+                ? timeField
+                : { ...timeField, type: FieldType.time, display: undefined },
+              field,
+            ],
+          },
           isInbound: name === hoveredLink.link.sides.Z.query,
         });
       }

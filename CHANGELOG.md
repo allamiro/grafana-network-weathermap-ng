@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.15](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.15) (2026-09-15)
+
+### Fixed
+
+* **hovering a link no longer crashes the panel when the time column is a plain number field** ([#364](https://github.com/allamiro/grafana-network-weathermap-ng/issues/364)): Grafana's `<TimeSeries>` locates its x axis by looking for a field of type `time` and dereferences the match unconditionally, so a tooltip frame without one took the whole panel down with `TypeError: Cannot read properties of undefined (reading 'name')` the moment a link was hovered. Datasources that build frames from tables — Infinity's JSONata and UQL parsers among them — return epoch-ms timestamps as plain `number` fields, and the tooltip graph passed them straight through. The slim tooltip frame now retypes the epoch-ms fallback field to `time` before handing it to Grafana — dropping the number-built display processor it inherited, so the graph readout shows a date rather than an SI-abbreviated epoch — and when a frame has no usable time axis at all (or the only numeric field is the value itself) the text tooltip still opens and simply skips the graph instead of crashing. The map itself was never affected — throughput colors, labels and animations read the number-typed column fine — which is why the break only surfaced on hover
+
 ## [1.6.14](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.14) (2026-09-14)
 
 ### Security

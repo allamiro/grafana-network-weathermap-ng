@@ -132,6 +132,106 @@ test('wide frame: link sides bound to separate value fields both resolve (#260)'
   fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
 });
 
+test('link hover survives a frame whose time column is a plain number field (#364)', () => {
+  // Infinity's table parser (JSONata/UQL) returns epoch-ms time as a
+  // number-typed field. Grafana's <TimeSeries> requires a time-typed x field
+  // and crashed on hover ("Cannot read properties of undefined (reading
+  // 'name')") when the tooltip frames carried none.
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'A_TX_D';
+  weathermap.links[0].sides.Z.query = 'A_RX_D';
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', type: FieldType.number, values: [1784835810000] },
+          { name: 'A_TX_D', type: FieldType.number, values: [29000000000] },
+          { name: 'A_RX_D', type: FieldType.number, values: [76000000000] },
+        ],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // Hovering the link must render the tooltip — graph included: the retyped
+  // epoch-ms field satisfies <TimeSeries>' time-field matcher, so uPlot mounts.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  expect(document.body.textContent).toContain('Usage -');
+  expect(document.querySelector('canvas')).not.toBeNull();
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
+test('link hover skips the tooltip graph when no time axis exists at all (#364)', () => {
+  // A single-column table frame has no time axis to graph against: the text
+  // tooltip must still open, and nothing may be passed to <TimeSeries>.
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'A_TX_D';
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [{ name: 'A_TX_D', type: FieldType.number, values: [29000000000] }],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // The text tooltip opens, but no frame reaches <TimeSeries> — no uPlot canvas.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  expect(document.body.textContent).toContain('Usage -');
+  expect(document.querySelector('canvas')).toBeNull();
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
+test('link hover skips the tooltip graph when the first column is a string (#364)', () => {
+  // A table frame led by a label column: getTimeField finds neither a
+  // time-typed field nor a numeric first field, so the tooltip graph must be
+  // skipped — before the fix the value field was graphed alone and crashed
+  // Grafana's <TimeSeries> the same way.
+  let testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'A_TX_D';
+  testProps.options = { weathermap };
+  testProps.data = {
+    ...mPanelProps.data,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'interface', type: FieldType.string, values: ['ge-0/0/1'] },
+          { name: 'A_TX_D', type: FieldType.number, values: [29000000000] },
+        ],
+      }),
+    ],
+  };
+  testProps.onOptionsChange = (options: SimpleOptions) => {
+    testProps.options = options;
+  };
+
+  render(<WeathermapPanel {...testProps} />);
+
+  // The text tooltip opens, but no frame reaches <TimeSeries> — no uPlot canvas.
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  expect(document.body.textContent).toContain('Usage -');
+  expect(document.querySelector('canvas')).toBeNull();
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+});
+
 test('Port label offset slides the label along the link axis (#309)', () => {
   const build = (offset?: number) => {
     let testProps = { ...mPanelProps };
