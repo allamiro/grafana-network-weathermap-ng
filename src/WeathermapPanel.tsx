@@ -1,9 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
-  DataFrame,
   dateTimeFormat,
-  Field,
-  FieldType,
   getTimeZone,
   getValueFormat,
   LoadingState,
@@ -28,11 +25,7 @@ import {
 import { css, cx, keyframes } from '@emotion/css';
 import {
   Button,
-  LegendDisplayMode,
   Slider,
-  TimeSeries,
-  TooltipDisplayMode,
-  TooltipPlugin,
   useStyles2,
   useTheme2,
 } from '@grafana/ui';
@@ -78,6 +71,7 @@ import {
 } from 'utils';
 import MapNode from './components/MapNode';
 import ColorScale from 'components/ColorScale';
+import { LinkTooltipGraph } from './components/LinkTooltipGraph';
 
 // Link animations used to be emitted as raw <style> tags holding global
 // `@keyframes link-flow-forward` / `link-blink` rules. A global animation name
@@ -140,13 +134,6 @@ function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
 
 // Format link values as the proper prefix of bits
 const getlinkValueFormatter = (fmt_id: string) => getValueFormat(fmt_id);
-const getlinkGraphFormatter =
-  (fmt_id: string) =>
-  (v: any): string => {
-    let formatter = getValueFormat(fmt_id);
-    let formattedValue = formatter(v);
-    return `${formattedValue.text} ${formattedValue.suffix}`;
-  };
 
 /**
  * Saved dashboards can carry missing or partial weathermap options
@@ -1143,53 +1130,6 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
   };
 
-  // Tooltip graph series: one slim frame (time + value field) per value series
-  // bound to the hovered link. Wide frames (#260) can carry both bound series —
-  // or unrelated ones — inside a single frame, so matching happens per value
-  // field rather than per frame, and only the matching field is graphed.
-  const filteredGraphSeries: Array<{ frame: DataFrame; isInbound: boolean }> = [];
-  if (hoveredLink) {
-    for (const frame of data.series) {
-      let series: Array<{ name: string; field: Field }> = [];
-      try {
-        series = getValueSeries(frame, data.series);
-      } catch (e) {
-        console.warn('Network Weathermap: Error while attempting to access query data.', e);
-        continue;
-      }
-      const timeField = getTimeField(frame);
-      for (const { name, field } of series) {
-        if (name !== hoveredLink.link.sides.A.query && name !== hoveredLink.link.sides.Z.query) {
-          continue;
-        }
-        // Grafana's <TimeSeries> requires an x field of FieldType.time and
-        // crashes on hover when none exists (#364). getTimeField's epoch-ms
-        // fallback returns a number-typed field (e.g. Infinity's table parser
-        // leaves "Time" as a plain number), so the slim copy retypes it to
-        // time — dropping the inherited display processor, which was built for
-        // a number field and would render the graph-tooltip timestamp as an
-        // SI-abbreviated number. Frames with no usable time axis — or where
-        // the fallback is the value field itself — keep the text tooltip but
-        // skip the graph.
-        if (!timeField || timeField === field) {
-          continue;
-        }
-        filteredGraphSeries.push({
-          frame: {
-            ...frame,
-            fields: [
-              timeField.type === FieldType.time
-                ? timeField
-                : { ...timeField, type: FieldType.time, display: undefined },
-              field,
-            ],
-          },
-          isInbound: name === hoveredLink.link.sides.Z.query,
-        });
-      }
-    }
-  }
-
   // Build an in-panel notice for query errors or missing data so operators can
   // diagnose problems without opening the browser console. The map still renders
   // underneath; the notice is a non-interactive banner overlaid at the top.
@@ -1308,20 +1248,21 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         )}
         {hoveredLink ? (
           <div
+            style={{
+              top: hoveredLink.mouseY - 10,
+              left: hoveredLink.mouseX + 14,
+              transform: `translate(${hoveredLink.mouseX > width2 * 0.65 ? '-100%' : '0%'}, ${
+                hoveredLink.mouseY < 120 ? '0%' : '-100%'
+              })`,
+            }}
             className={css`
               position: absolute;
-              top: ${hoveredLink.mouseY - 10}px;
-              left: ${hoveredLink.mouseX + 14}px;
-              transform: translate(
-                ${hoveredLink.mouseX > width2 * 0.65 ? '-100%' : '0%'},
-                ${hoveredLink.mouseY < 120 ? '0%' : '-100%'}
-              );
               pointer-events: none;
               background-color: ${wm.settings.tooltip.backgroundColor};
               color: ${wm.settings.tooltip.textColor} !important;
               font-size: ${wm.settings.tooltip.fontSize} !important;
               z-index: ${theme.zIndex.portal};
-              display: ${hoveredLink ? 'flex' : 'none'};
+              display: flex;
               flex-direction: column;
               padding: ${wm.settings.tooltip.fontSize}px;
               border-radius: ${theme.shape.radius.default};
@@ -1394,117 +1335,18 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             <div style={{ fontSize: wm.settings.tooltip.fontSize, paddingBottom: '4px' }}>
               {hoveredLink.link.sides[hoveredLink.side].dashboardLink.length > 0 ? 'Click to see more.' : ''}
             </div>
-            {(hoveredLink.link.sides.A.query || hoveredLink.link.sides.Z.query) && filteredGraphSeries.length > 0 ? (
-              <React.Fragment>
-                <TimeSeries
-                  width={250}
-                  height={100}
-                  timeRange={timeRange}
-                  timeZone={getTimeZone()}
-                  frames={filteredGraphSeries.map(({ frame, isInbound }) => {
-                    const lineColor = isInbound
-                      ? wm.settings.tooltip.inboundColor
-                      : wm.settings.tooltip.outboundColor;
-                    // Spread each field to avoid mutating the original frame stored in data.series.
-                    // Mutating originals causes stale colors on subsequent renders.
-                    return {
-                      ...frame,
-                      fields: frame.fields.map((f) => ({
-                        ...f,
-                        config: {
-                          ...f.config,
-                          custom: {
-                            ...f.config.custom,
-                            fillOpacity: 10,
-                            lineColor,
-                          },
-                        },
-                      })),
-                    };
-                  })}
-                  legend={{
-                    calcs: [],
-                    displayMode: LegendDisplayMode.List,
-                    placement: 'bottom',
-                    isVisible: true,
-                    showLegend: false,
-                  }}
-                  tweakScale={(opts, forField: Field) => {
-                    // Only adjust the value (y) axis — not the time axis.
-                    if (forField.type !== FieldType.number) {
-                      return opts;
-                    }
-                    opts.softMin = 0;
-                    if (
-                      wm.settings.tooltip.scaleToBandwidth &&
-                      hoveredLink.link.sides[hoveredLink.side].bandwidth > 0
-                    ) {
-                      opts.softMax = hoveredLink.link.sides[hoveredLink.side].bandwidth;
-                    }
-                    return opts;
-                  }}
-                  tweakAxis={(opts, forField: Field) => {
-                    // Only format the value (y) axis — leave the time axis alone.
-                    if (forField.type !== FieldType.number) {
-                      return opts;
-                    }
-                    opts.formatValue = getlinkGraphFormatter(
-                      hoveredLink.link.units
-                        ? hoveredLink.link.units
-                        : wm.settings.link.defaultUnits
-                        ? wm.settings.link.defaultUnits
-                        : 'bps'
-                    );
-                    return opts;
-                  }}
-                >
-                  {(config, alignedDataFrame) => {
-                    return (
-                      <>
-                        <TooltipPlugin
-                          config={config}
-                          data={alignedDataFrame}
-                          mode={TooltipDisplayMode.Multi}
-                          timeZone={getTimeZone()}
-                        />
-                      </>
-                    );
-                  }}
-                </TimeSeries>
-                <div style={{ display: 'flex', alignItems: 'center', paddingTop: '10px' }}>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '3px',
-                      background: wm.settings.tooltip.inboundColor,
-                      paddingLeft: '5px',
-                      marginRight: '4px',
-                    }}
-                  ></div>
-                  <div style={{ fontSize: wm.settings.tooltip.fontSize }}>
-                    {sideDirectionLabel(hoveredLink.link, 'Z', 'Inbound')}
-                  </div>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '3px',
-                      background: wm.settings.tooltip.outboundColor,
-                      marginLeft: '10px',
-                      marginRight: '4px',
-                    }}
-                  ></div>
-                  <div
-                    style={{
-                      fontSize: wm.settings.tooltip.fontSize,
-                    }}
-                  >
-                    {sideDirectionLabel(hoveredLink.link, 'A', 'Outbound')}
-                  </div>
-                </div>
-              </React.Fragment>
-            ) : (
-              ''
-            )}
+            <LinkTooltipGraph
+              data={data}
+              queryA={hoveredLink.link.sides.A.query}
+              queryZ={hoveredLink.link.sides.Z.query}
+              timeRange={timeRange}
+              timeZone={getTimeZone()}
+              settings={wm.settings.tooltip}
+              bandwidth={hoveredLink.link.sides[hoveredLink.side].bandwidth}
+              units={hoveredLink.link.units || wm.settings.link.defaultUnits || 'bps'}
+              inboundLabel={sideDirectionLabel(hoveredLink.link, 'Z', 'Inbound')}
+              outboundLabel={sideDirectionLabel(hoveredLink.link, 'A', 'Outbound')}
+            />
           </div>
         ) : (
           ''
@@ -1512,14 +1354,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         {hoveredNode && hoveredNode.node.tooltipMetrics && hoveredNode.node.tooltipMetrics.length > 0 ? (
           <div
             data-testid="weathermap-node-tooltip"
+            style={{
+              top: hoveredNode.mouseY - 10,
+              left: hoveredNode.mouseX + 14,
+              transform: `translate(${hoveredNode.mouseX > width2 * 0.65 ? '-100%' : '0%'}, ${
+                hoveredNode.mouseY < 120 ? '0%' : '-100%'
+              })`,
+            }}
             className={css`
               position: absolute;
-              top: ${hoveredNode.mouseY - 10}px;
-              left: ${hoveredNode.mouseX + 14}px;
-              transform: translate(
-                ${hoveredNode.mouseX > width2 * 0.65 ? '-100%' : '0%'},
-                ${hoveredNode.mouseY < 120 ? '0%' : '-100%'}
-              );
               pointer-events: none;
               background-color: ${wm.settings.tooltip.backgroundColor};
               color: ${wm.settings.tooltip.textColor} !important;
