@@ -42,6 +42,16 @@ Gestures that change the map are **edit-mode only**, so they cannot interfere wi
 
 ---
 
+## Hover tooltips
+
+Hover a link to see its usage, bandwidth, throughput percentage, and inbound/outbound history graphs. The legend uses your [direction labels](links.md#direction-labels-inbound-outbound) when configured. A node shows a tooltip when it has extra tooltip metrics configured.
+
+Starting with **v1.6.16**, moving the pointer within the same link keeps the history chart steady while the tooltip follows the cursor. Incoming query data and dashboard time-range changes still update the graph; hovering another link shows that link's history. This improvement applies automatically to existing dashboards.
+
+Use [Tooltip settings](panel-options.md#tooltip-settings) to customize fonts, text/background colors, inbound/outbound line colors, and bandwidth scaling. Links without a usable time axis still show their text tooltip and omit the graph.
+
+---
+
 ## Gesture reference
 
 **Edit mode** below means the gesture works only in the panel editor.
