@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.16](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.16) (2026-09-16)
+
+### Fixed
+
+* **smoother link and node hover tooltips** ([#365](https://github.com/allamiro/grafana-network-weathermap-ng/issues/365), [PR #366](https://github.com/allamiro/grafana-network-weathermap-ng/pull/366)): moving the pointer within a link no longer rebuilds its history chart on every mouse event. The existing chart and direction legend now live in a memoized component, while tooltip positions and edge flipping use inline styles instead of generating a CSS rule for every cursor location. The regression scenario goes from 21 chart renders to one for an initial hover followed by 20 pointer moves. Incoming data, time-range changes, query bindings, units, bandwidth scaling, colors, and custom direction labels still update the chart. Wide-frame support and the numeric-time/no-time safeguards from 1.6.15 are preserved. No dashboard migration or new setting is required.
+
+### Documentation
+
+* Added hover-tooltip guidance to the interactions guide, including link history graphs, node metric tooltips, and the existing display settings.
+
+
 ## [1.6.15](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.15) (2026-09-15)
 
 ### Fixed
