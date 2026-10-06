@@ -47,6 +47,7 @@ import {
   sanitizeImageSource,
   aggregateFieldValues,
   getTimeField,
+  sampleAtTime,
   valueAtTime,
   addViaToLink,
   removeVia,
@@ -696,11 +697,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     return toReturn;
   }
 
-  // Build the data-frame value map once per data/mode change instead of once per link.
-  // Key: display name (from getDataFrameName). Value: resolved numeric value.
-  const dataFrameMap = useMemo(() => {
+  // Build the data-frame value maps once per data/mode change instead of once per link.
+  // Key: display name (from getDataFrameName).
+  // dataFrameMap clamps negatives (throughput, bandwidth, link status).
+  // rawFrameMap keeps them (tooltip extra metrics such as RSSI, #370).
+  const { dataFrameMap, rawFrameMap } = useMemo(() => {
     const mode = wm?.settings?.link?.valueMappingMode;
-    const map = new Map<string, number>();
+    const values = new Map<string, number>();
+    const rawValues = new Map<string, number>();
     data.series.forEach((frame) => {
       if (frame.fields.length < 2) {
         return;
@@ -709,29 +713,34 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
         // Wide frames carry one bindable series per value field (#260).
         for (const { name, field } of getValueSeries(frame, data.series)) {
           const fieldValues = field.values as Array<number | null | undefined>;
+          const times = getTimeField(frame)?.values as Array<number | null | undefined>;
           const resolvedValue =
             useTimeline && effectiveScrub !== null
-              ? valueAtTime(
-                  getTimeField(frame)?.values as Array<number | null | undefined>,
-                  fieldValues,
-                  effectiveScrub
-                )
+              ? valueAtTime(times, fieldValues, effectiveScrub)
               : aggregateFieldValues(fieldValues, mode);
+          // Same sample walk, without the throughput clamp. A missing sample
+          // stays 0 so an empty extra metric still reads as 0, matching the
+          // clamped map; a real negative (RSSI) is kept.
+          const rawValue =
+            useTimeline && effectiveScrub !== null
+              ? (sampleAtTime(times, fieldValues, effectiveScrub) ?? 0)
+              : aggregateFieldValues(fieldValues, mode, { preserveNegative: true });
           // Duplicate display names (#204): keep the FIRST series' value. The
           // query dropdown de-duplicates by first occurrence (buildQueryOptions)
           // and node status resolution takes the first match, so a last-wins
           // overwrite here silently resolved a different series than the one
           // the user picked. TODO: true disambiguation needs a stable
           // frame/field id in the stored link config, not just a display name.
-          if (!map.has(name)) {
-            map.set(name, resolvedValue);
+          if (!values.has(name)) {
+            values.set(name, resolvedValue);
+            rawValues.set(name, rawValue);
           }
         }
       } catch (e) {
         console.warn('Network Weathermap: Error while attempting to access query data.', e);
       }
     });
-    return map;
+    return { dataFrameMap: values, rawFrameMap: rawValues };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, wm?.settings?.link?.valueMappingMode, useTimeline, effectiveScrub]);
 
@@ -1310,8 +1319,8 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                     metric.units || (hoveredLink.link.units ? hoveredLink.link.units : wm.settings.link.defaultUnits ? wm.settings.link.defaultUnits : 'bps')
                   );
                   const linkDecimals = wm.settings.link.linkDecimals;
-                  const inboundVal = metric.queryA ? dataFrameMap.get(metric.queryA) : undefined;
-                  const outboundVal = metric.queryZ ? dataFrameMap.get(metric.queryZ) : undefined;
+                  const inboundVal = metric.queryA ? rawFrameMap.get(metric.queryA) : undefined;
+                  const outboundVal = metric.queryZ ? rawFrameMap.get(metric.queryZ) : undefined;
                   const fmtVal = (v: number | undefined) => {
                     if (v === undefined) { return 'n/a'; }
                     const r = fmt(v, linkDecimals);
@@ -1388,7 +1397,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             </div>
             {hoveredNode.node.tooltipMetrics.map((metric: NodeTooltipMetric, idx: number) => {
               const fmt = getlinkValueFormatter(metric.units || 'none');
-              const raw = metric.query ? dataFrameMap.get(metric.query) : undefined;
+              const raw = metric.query ? rawFrameMap.get(metric.query) : undefined;
               let valueText = 'n/a';
               if (raw !== undefined) {
                 const formatted = fmt(raw, wm.settings.link.linkDecimals);

@@ -294,6 +294,57 @@ test('Port label distance moves the label perpendicular to the link (#309)', () 
   expect(textY()).toBeCloseTo(defaultY - 20, 5);
 });
 
+// #370: tooltip extra metrics are signed readings (RSSI in dBm). Throughput
+// on the link itself still clamps negatives to 0.
+test('Renders negative tooltip extra metrics without clamping throughput', () => {
+  const testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.links[0].sides.A.query = 'rssi';
+  weathermap.links[0].tooltipMetrics = [
+    { label: 'RSSI', queryA: 'rssi', queryZ: 'rssi-z', units: 'dbm' },
+  ];
+  weathermap.nodes[0].tooltipMetrics = [{ label: 'RSSI', query: 'rssi', units: 'dbm' }];
+  testProps.options = { weathermap };
+  testProps.data = {
+    state: LoadingState.Done,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', values: [1, 2] },
+          { name: 'Value', values: [-51, -53], config: { displayNameFromDS: 'rssi' } },
+        ],
+      }),
+      toDataFrame({
+        refId: 'B',
+        fields: [
+          { name: 'Time', values: [1, 2] },
+          { name: 'Value', values: [-40, -42], config: { displayNameFromDS: 'rssi-z' } },
+        ],
+      }),
+    ],
+    timeRange: getDefaultRelativeTimeRange(),
+  } as unknown as PanelProps<SimpleOptions>['data'];
+  testProps.onOptionsChange = jest.fn();
+
+  const { container } = render(<WeathermapPanel {...testProps} />);
+
+  // Link throughput uses the clamped map: -53 must not paint on the link.
+  expect(container.textContent).not.toContain('-53');
+  expect(container.textContent).not.toContain('-51');
+
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  const metricRow = screen.getByText(/RSSI/).textContent || '';
+  expect(metricRow).toContain('-53');
+  expect(metricRow).toContain('-42');
+  expect(metricRow).not.toContain('0 dbm');
+  fireEvent.mouseLeave(screen.getByTestId('link').firstChild!);
+
+  const nodeGroup = screen.getByText(weathermap.nodes[0].label!).closest('g')!;
+  fireEvent.mouseMove(nodeGroup);
+  expect(screen.getByTestId('weathermap-node-tooltip').textContent).toContain('-53');
+});
+
 test('Uses explicit per-side direction labels in the link tooltip when set', () => {
   let testProps = { ...mPanelProps };
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);

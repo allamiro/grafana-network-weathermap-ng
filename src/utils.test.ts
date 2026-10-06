@@ -316,6 +316,17 @@ describe('aggregateFieldValues', () => {
     expect(aggregateFieldValues([null, NaN], 'max')).toBe(0);
     expect(aggregateFieldValues(undefined, 'last')).toBe(0);
   });
+
+  // #370: tooltip extra metrics (RSSI and other signed readings) must keep
+  // negatives. Throughput callers omit the flag and still clamp.
+  test('preserveNegative keeps signed samples', () => {
+    expect(aggregateFieldValues([-51, -53], 'last', { preserveNegative: true })).toBe(-53);
+    expect(aggregateFieldValues([-51, -40], 'min', { preserveNegative: true })).toBe(-51);
+    expect(aggregateFieldValues([-51, -40], 'max', { preserveNegative: true })).toBe(-40);
+    expect(aggregateFieldValues([-10, 10], 'avg', { preserveNegative: true })).toBe(0);
+    expect(aggregateFieldValues([null, NaN, -7], 'last', { preserveNegative: true })).toBe(-7);
+    expect(aggregateFieldValues([-51], 'last')).toBe(0);
+  });
 });
 
 describe('VIA helpers (addViaToLink / removeVia)', () => {

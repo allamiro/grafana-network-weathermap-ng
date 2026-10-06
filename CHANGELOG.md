@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.17](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.17) (2026-10-06)
+
+### Fixed
+
+* **tooltip extra metrics keep negative values** ([#370](https://github.com/allamiro/grafana-network-weathermap-ng/issues/370)): a signed reading such as RSSI in dBm was drawn as `0` because extra metrics shared the throughput value map, which floors every sample at 0. Link and node extra metrics now keep the signed value, including while the timeline is scrubbed. Throughput, bandwidth, and link status still floor negatives at 0, so a counter dip does not paint a negative rate on the link.
+
+### Security
+
+* **DOMPurify raised to 3.4.16** (GHSA-p98j-92pf-mc4p): the `IN_PLACE` node-removing hook advisory that 3.4.13 through 3.4.15 are still inside. The override now requires `^3.4.16`. It reaches the tree through `@grafana/data`, which Grafana supplies at runtime, and is pinned because catalog review reads the lockfile.
+* **moment pinned to 2.31.0** (GHSA-4p3w-j4w9-5jqw / CVE-2026-17495): path traversal via a crafted non-string locale name, fixed in 2.31.0. The copy in the lockfile was 2.30.1, pulled in by `@grafana/data`. The override replaces that copy without moving the Grafana packages off the 11.x line the panel builds against.
+
 ## [1.6.16](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.16) (2026-09-16)
 
 ### Fixed

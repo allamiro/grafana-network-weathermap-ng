@@ -1058,9 +1058,11 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
 
 /**
  * Resolve a single display value from a field's data points according to the
- * chosen value-mapping mode. Null/NaN entries are skipped and negative values
- * are clamped to 0 (matching how the panel treats throughput). Returns 0 when
- * there are no valid data points.
+ * chosen value-mapping mode. Null/NaN entries are skipped. Negative values are
+ * clamped to 0 by default (matching how the panel treats throughput). Pass
+ * `{ preserveNegative: true }` for tooltip extra metrics, where a signed
+ * reading such as RSSI is a real value (#370). Returns 0 when there are no
+ * valid data points.
  *
  * - last: the most recent valid value (default, original behaviour)
  * - avg:  arithmetic mean of the valid values
@@ -1070,20 +1072,22 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
  */
 export function aggregateFieldValues(
   values: Array<number | null | undefined> | null | undefined,
-  mode: ValueMappingMode | undefined
+  mode: ValueMappingMode | undefined,
+  options?: { preserveNegative?: boolean }
 ): number {
   if (!values || values.length === 0) {
     return 0;
   }
 
+  const preserveNegative = options?.preserveNegative === true;
   const valid: number[] = [];
   let lastValid = 0;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (v !== null && v !== undefined && !isNaN(v)) {
-      const clamped = Math.max(0, v);
-      valid.push(clamped);
-      lastValid = clamped;
+      const resolved = preserveNegative ? v : Math.max(0, v);
+      valid.push(resolved);
+      lastValid = resolved;
     }
   }
 
