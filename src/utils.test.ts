@@ -317,14 +317,19 @@ describe('aggregateFieldValues', () => {
     expect(aggregateFieldValues(undefined, 'last')).toBe(0);
   });
 
-  // #370: tooltip extra metrics (RSSI and other signed readings) must keep
-  // negatives. Throughput callers omit the flag and still clamp.
-  test('preserveNegative keeps signed samples', () => {
-    expect(aggregateFieldValues([-51, -53], 'last', { preserveNegative: true })).toBe(-53);
-    expect(aggregateFieldValues([-51, -40], 'min', { preserveNegative: true })).toBe(-51);
-    expect(aggregateFieldValues([-51, -40], 'max', { preserveNegative: true })).toBe(-40);
-    expect(aggregateFieldValues([-10, 10], 'avg', { preserveNegative: true })).toBe(0);
-    expect(aggregateFieldValues([null, NaN, -7], 'last', { preserveNegative: true })).toBe(-7);
+  // #370: tooltip extra metrics keep every finite reading. Throughput callers
+  // omit the flag and still clamp negatives. Zero is a real measurement.
+  test.each([-100, -67.5, -1, -0.01, 0, 0.01, 1, 67.5, 100])(
+    'preserveNegative keeps finite sample %s',
+    (sample) => {
+      expect(aggregateFieldValues([sample], 'last', { preserveNegative: true })).toBe(sample);
+    }
+  );
+
+  test('preserveNegative skips null, NaN, and infinities', () => {
+    expect(aggregateFieldValues([null, undefined, NaN, Infinity, -Infinity, -7], 'last', { preserveNegative: true })).toBe(-7);
+    expect(aggregateFieldValues([Infinity, -Infinity, NaN], 'last', { preserveNegative: true })).toBe(0);
+    expect(aggregateFieldValues([Infinity], 'last')).toBe(0);
     expect(aggregateFieldValues([-51], 'last')).toBe(0);
   });
 });

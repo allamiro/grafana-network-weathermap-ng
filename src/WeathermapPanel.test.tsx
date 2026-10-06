@@ -345,6 +345,46 @@ test('Renders negative tooltip extra metrics without clamping throughput', () =>
   expect(screen.getByTestId('weathermap-node-tooltip').textContent).toContain('-53');
 });
 
+// #370: 0 is a real extra-metric reading (SINR at the boundary, a zero delta).
+// A truthiness check would render it as n/a.
+test.each([
+  [-100, '-100'],
+  [-67.5, '-67.5'],
+  [-1, '-1'],
+  [-0.01, '-0.01'],
+  [0, '0'],
+  [0.01, '0.01'],
+  [1, '1'],
+  [67.5, '67.5'],
+  [100, '100'],
+])('Renders finite tooltip extra metric %s', (sample, shown) => {
+  const testProps = { ...mPanelProps };
+  const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+  weathermap.nodes[0].tooltipMetrics = [{ label: 'Reading', query: 'signed', units: 'none' }];
+  testProps.options = { weathermap };
+  testProps.data = {
+    state: LoadingState.Done,
+    series: [
+      toDataFrame({
+        refId: 'A',
+        fields: [
+          { name: 'Time', values: [1] },
+          { name: 'Value', values: [sample], config: { displayNameFromDS: 'signed' } },
+        ],
+      }),
+    ],
+    timeRange: getDefaultRelativeTimeRange(),
+  } as unknown as PanelProps<SimpleOptions>['data'];
+  testProps.onOptionsChange = jest.fn();
+
+  render(<WeathermapPanel {...testProps} />);
+  fireEvent.mouseMove(screen.getByText(weathermap.nodes[0].label!).closest('g')!);
+  const text = screen.getByTestId('weathermap-node-tooltip').textContent || '';
+  expect(text).toContain(shown);
+  expect(text).not.toContain('n/a');
+  cleanup();
+});
+
 test('Uses explicit per-side direction labels in the link tooltip when set', () => {
   let testProps = { ...mPanelProps };
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);

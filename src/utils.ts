@@ -526,8 +526,9 @@ export function getTimeField(frame: DataFrame): Field | undefined {
 /**
  * Resolve the value of a series at a specific point in time (timeline slider).
  * Uses a step-hold: returns the value of the most recent sample at or before
- * `timeMs`. Times are assumed ascending. Null/NaN samples are skipped (walking
- * backwards to the previous valid one) and negatives are clamped to 0, matching
+ * `timeMs`. Times are assumed ascending. Non-finite samples (null, NaN,
+ * Infinity) are skipped (walking backwards to the previous valid one) and
+ * negatives are clamped to 0, matching
  * the panel's throughput handling. Returns 0 when there is no usable value.
  */
 export function valueAtTime(
@@ -541,7 +542,8 @@ export function valueAtTime(
 
 /**
  * Raw step-hold sample at a point in time: same walk as valueAtTime (most
- * recent valid sample at or before timeMs, null/NaN skipped backwards) but
+ * recent valid sample at or before timeMs, non-finite samples skipped
+ * backwards) but
  * without the throughput-specific negative clamp and 0 default. Used for
  * node status (#201), where negative values are legitimate mapping inputs
  * and "no usable sample" must stay distinguishable from a real 0.
@@ -575,7 +577,7 @@ export function sampleAtTime(
 
   for (let i = idx; i >= 0; i--) {
     const v = values[i];
-    if (v !== null && v !== undefined && !isNaN(v)) {
+    if (typeof v === 'number' && Number.isFinite(v)) {
       return v;
     }
   }
@@ -1058,11 +1060,12 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
 
 /**
  * Resolve a single display value from a field's data points according to the
- * chosen value-mapping mode. Null/NaN entries are skipped. Negative values are
- * clamped to 0 by default (matching how the panel treats throughput). Pass
- * `{ preserveNegative: true }` for tooltip extra metrics, where a signed
- * reading such as RSSI is a real value (#370). Returns 0 when there are no
- * valid data points.
+ * chosen value-mapping mode. Null, NaN, and non-finite values are skipped.
+ * Negative values are clamped to 0 by default (matching how the panel treats
+ * throughput). Pass `{ preserveNegative: true }` for tooltip extra metrics,
+ * where any finite reading is a real value (#370): RSSI, RSRP, optical power,
+ * temperature, deltas, and a genuine 0. Returns 0 when there are no valid
+ * data points.
  *
  * - last: the most recent valid value (default, original behaviour)
  * - avg:  arithmetic mean of the valid values
@@ -1084,7 +1087,7 @@ export function aggregateFieldValues(
   let lastValid = 0;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
-    if (v !== null && v !== undefined && !isNaN(v)) {
+    if (typeof v === 'number' && Number.isFinite(v)) {
       const resolved = preserveNegative ? v : Math.max(0, v);
       valid.push(resolved);
       lastValid = resolved;
