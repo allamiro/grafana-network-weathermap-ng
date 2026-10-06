@@ -1,0 +1,25 @@
+diff --git a/node_modules/brace-expansion/dist/commonjs/index.js b/node_modules/brace-expansion/dist/commonjs/index.js
+index 48cf0d3..6dd9b4d 100644
+--- a/node_modules/brace-expansion/dist/commonjs/index.js
++++ b/node_modules/brace-expansion/dist/commonjs/index.js
+@@ -330,4 +330,19 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+     }
+     return acc;
+ }
++
++// compat shim (weathermap-ng): brace-expansion 5.x exports `expand` as a named
++// export only, which breaks consumers that `require('brace-expansion')()`
++// (minimatch 3.x) or default-import it (minimatch 9.x). Restore a callable
++// CJS default instead of upgrading the whole build/test toolchain.
++const expandFn = exports.expand;
++module.exports = expandFn;
++module.exports.expand = expandFn;
++module.exports.default = expandFn;
++for (const key of Object.keys(exports)) {
++    if (key !== 'expand' && key !== '__esModule') {
++        module.exports[key] = exports[key];
++    }
++}
++Object.defineProperty(module.exports, '__esModule', { value: true });
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file

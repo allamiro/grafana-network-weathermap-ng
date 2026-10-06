@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.18](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.18) (2026-10-06)
+
+### Security
+
+* **source-map-js pinned to 1.2.2** (GHSA-68fv-2mgg-jv7q): indexed source-map section offsets could block the event loop. Fixed in 1.2.2. It arrives through `postcss`, a direct dependency, and through `sass`.
+* **brace-expansion pinned to 5.0.12** (GHSA-q2hr-2g5m-vwhr, plus the earlier high recursion advisories CVE-2026-102276 and CVE-2026-102278): the `{a},b}` rewrite was quadratic. 5.0.9, the previous pin, is inside the vulnerable range. The CJS callable-default shim moves with it, so minimatch 3 and 9 keep working.
+* **postcss-selector-parser pinned to 7.1.6** (GHSA-rj75-hqrm-r3gf): flat selector parsing was quadratic. Every 6.x release is inside the advisory, and 7.1.6 is the first patched version. It is a dev dependency of `css-loader`.
+* **sprintf-js has no patched release.** GHSA-hp3w-g68c-fv3c covers every published version through 1.1.3, which is still the latest on npm. The copy is dev-only, reached through Jest's `js-yaml@3` → `argparse`. It stays until upstream publishes a fix.
+
 ## [1.6.17](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.17) (2026-10-06)
 
 ### Fixed
