@@ -11,6 +11,7 @@
     "website/scripts/",
     "website/docs/javascripts/",
     "website/site/",
-    "scripts/"
+    "scripts/",
+    "vendor/"
   ]
 }
