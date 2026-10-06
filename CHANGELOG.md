@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.19](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.19) (2026-10-06)
+
+### Fixed
+
+* **tooltip extra metrics keep every finite value** ([#370](https://github.com/allamiro/grafana-network-weathermap-ng/issues/370)): a signed reading such as RSSI in dBm, optical Tx/Rx power, or a calculated delta was drawn as `0` because extra metrics shared the throughput value map, which floors every sample at 0. Link and node extra metrics now keep the sample when it is a finite number, including negatives, zero, and values that cross zero. `null`, `undefined`, `NaN`, `Infinity`, and `-Infinity` are still skipped. Throughput, bandwidth, and link status still floor negatives at 0. This is the first published release that contains the fix; 1.6.17 and 1.6.18 were tagged but never became GitHub releases.
+
+### Security
+
+* **braces replaced with a depth-limited local 3.0.4** (GHSA-vfj7-8cjw-p6xm / CVE-2026-93687): nested brace expansion recurses until the process stack overflows, and every published release through 3.0.3 is inside the advisory. There is no 3.0.4 on npm. `micromatch` and `chokidar` still need the package, so the lockfile now points at `vendor/braces`, which is the 3.0.3 sources plus a hard stop at 100 levels of nesting in parse, expand, and compile. The advisory's last affected version is 3.0.3, which is what failed plugin validation on the 1.6.17 and 1.6.18 tags.
+* **fast-uri pinned to 3.1.8**: the previous `^3.1.7` pin is inside a new moderate advisory for inconsistent host case normalization via percent-encoded octets. 3.1.8 is the first 3.x release outside that range. It stays on the 3.x line `ajv` asks for.
+
+The lockfile pins from the unpublished 1.6.17 and 1.6.18 tags are in this release as well: DOMPurify 3.4.16, moment 2.31.0, source-map-js 1.2.2, brace-expansion 5.0.12, postcss-selector-parser 7.1.6, and the removal of sprintf-js via a js-yaml 4.3.2 override. `npm audit` reports no vulnerabilities.
+
 ## [1.6.18](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.18) (2026-10-06)
 
 ### Security
