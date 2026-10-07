@@ -23,7 +23,21 @@ docker compose build
 docker compose up
 ```
 
-Grafana will be available at `http://localhost:3101`. Five dashboards are provisioned, connected to the Prometheus data source.
+Grafana will be available at `http://localhost:3101`. Every dashboard below is provisioned automatically and connected to the Prometheus data source.
+
+### The demos are editable
+
+The provider sets `allowUiUpdates: true`, so you can open a demo, change panel
+options, and **Save** — the edit persists to Grafana's database instead of being
+rejected as a read-only provisioned file. That is the point of the stack: try
+Layers, View Mode Zoom & Pan, or Port Label Offset on a real map without
+hand-editing JSON first.
+
+The trade-off is that a dashboard you have saved from the UI stops tracking its
+file. Re-running a generator updates the JSON on disk, but Grafana keeps your
+saved copy until the file's `version` is higher than the stored one. To get the
+pristine demo back, either delete the dashboard in the UI (provisioning restores
+it within `updateIntervalSeconds`) or bump `version` in the file.
 
 To test against a specific Grafana version:
 
