@@ -328,7 +328,7 @@ describe('aggregateFieldValues', () => {
 
   test('preserveNegative skips null, NaN, and infinities', () => {
     expect(aggregateFieldValues([null, undefined, NaN, Infinity, -Infinity, -7], 'last', { preserveNegative: true })).toBe(-7);
-    expect(aggregateFieldValues([Infinity, -Infinity, NaN], 'last', { preserveNegative: true })).toBe(0);
+    expect(aggregateFieldValues([Infinity, -Infinity, NaN], 'last', { preserveNegative: true })).toBeUndefined();
     expect(aggregateFieldValues([Infinity], 'last')).toBe(0);
     expect(aggregateFieldValues([-51], 'last')).toBe(0);
   });
@@ -1764,5 +1764,20 @@ describe('pathGradientStops (#336)', () => {
       'rgba(0, 0, 255, 1)'
     );
     expect(stops[1].color).toBe('rgba(128,0,128,0.5)');
+  });
+});
+
+// #373: missing evidence is distinct from zero in every aggregation mode.
+describe.each(['last', 'avg', 'min', 'max', 'p95'] as const)('extra metrics using %s', (mode) => {
+  test.each([undefined, null, [], [null, undefined, NaN, Infinity, -Infinity]])(
+    'preserves missing samples %p while throughput defaults to zero',
+    (values) => {
+      expect(aggregateFieldValues(values, mode, { preserveNegative: true })).toBeUndefined();
+      expect(aggregateFieldValues(values, mode)).toBe(0);
+    }
+  );
+  test.each([0, -53, 42])('preserves finite reading %s', (value) => {
+    expect(aggregateFieldValues([null, value, NaN], mode, { preserveNegative: true })).toBe(value);
+    expect(aggregateFieldValues([null, value, NaN], mode)).toBe(Math.max(0, value));
   });
 });

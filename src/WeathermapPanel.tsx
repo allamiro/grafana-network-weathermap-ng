@@ -704,7 +704,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   const { dataFrameMap, rawFrameMap } = useMemo(() => {
     const mode = wm?.settings?.link?.valueMappingMode;
     const values = new Map<string, number>();
-    const rawValues = new Map<string, number>();
+    const rawValues = new Map<string, number | undefined>();
     data.series.forEach((frame) => {
       if (frame.fields.length < 2) {
         return;
@@ -718,12 +718,11 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             useTimeline && effectiveScrub !== null
               ? valueAtTime(times, fieldValues, effectiveScrub)
               : aggregateFieldValues(fieldValues, mode);
-          // Same sample walk, without the throughput clamp. A missing sample
-          // stays 0 so an empty extra metric still reads as 0, matching the
-          // clamped map; a real negative (RSSI) is kept.
+          // Preserve missing extra metrics as undefined (n/a), while keeping
+          // genuine zero and signed readings (#370, #373).
           const rawValue =
             useTimeline && effectiveScrub !== null
-              ? (sampleAtTime(times, fieldValues, effectiveScrub) ?? 0)
+              ? sampleAtTime(times, fieldValues, effectiveScrub)
               : aggregateFieldValues(fieldValues, mode, { preserveNegative: true });
           // Duplicate display names (#204): keep the FIRST series' value. The
           // query dropdown de-duplicates by first occurrence (buildQueryOptions)

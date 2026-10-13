@@ -1064,8 +1064,8 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
  * Negative values are clamped to 0 by default (matching how the panel treats
  * throughput). Pass `{ preserveNegative: true }` for tooltip extra metrics,
  * where any finite reading is a real value (#370): RSSI, RSRP, optical power,
- * temperature, deltas, and a genuine 0. Returns 0 when there are no valid
- * data points.
+ * temperature, deltas, and a genuine 0. With preserveNegative, missing
+ * data returns undefined; otherwise it returns 0.
  *
  * - last: the most recent valid value (default, original behaviour)
  * - avg:  arithmetic mean of the valid values
@@ -1076,13 +1076,24 @@ export function removeVia(wm: Weathermap, connectionNodeId: string): Weathermap 
 export function aggregateFieldValues(
   values: Array<number | null | undefined> | null | undefined,
   mode: ValueMappingMode | undefined,
+  options?: { preserveNegative?: false }
+): number;
+// eslint-disable-next-line no-redeclare
+export function aggregateFieldValues(
+  values: Array<number | null | undefined> | null | undefined,
+  mode: ValueMappingMode | undefined,
+  options: { preserveNegative?: boolean }
+): number | undefined;
+// eslint-disable-next-line no-redeclare
+export function aggregateFieldValues(
+  values: Array<number | null | undefined> | null | undefined,
+  mode: ValueMappingMode | undefined,
   options?: { preserveNegative?: boolean }
-): number {
-  if (!values || values.length === 0) {
-    return 0;
-  }
-
+): number | undefined {
   const preserveNegative = options?.preserveNegative === true;
+  if (!values || values.length === 0) {
+    return preserveNegative ? undefined : 0;
+  }
   const valid: number[] = [];
   let lastValid = 0;
   for (let i = 0; i < values.length; i++) {
@@ -1095,7 +1106,7 @@ export function aggregateFieldValues(
   }
 
   if (valid.length === 0) {
-    return 0;
+    return preserveNegative ? undefined : 0;
   }
 
   switch (mode) {

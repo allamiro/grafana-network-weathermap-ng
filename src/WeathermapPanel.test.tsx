@@ -1551,3 +1551,71 @@ test('down behavior needs nothing but a status query — works on a fresh defaul
   expect(screen.queryAllByTestId('link-anim-dot')).toHaveLength(0);
   expect(screen.getAllByTestId('link-down-marker')).toHaveLength(3);
 });
+
+// #373: both tooltip targets must distinguish missing, zero, and signed readings.
+describe.each([false, true])('extra metric missing values (scrubbing=%s)', (scrubbing) => {
+  test.each([
+    ['empty', [], 'n/a'],
+    ['non-finite', [null, undefined, NaN, Infinity, -Infinity], 'n/a'],
+    ['zero', [null, 0], '0'],
+    ['negative', [null, -53], '-53'],
+    ['positive', [null, 42], '42'],
+    ['future finite sample', [null, null, 42], scrubbing ? 'n/a' : '42'],
+  ] as Array<[string, Array<number | null | undefined>, string]>)(
+    '%s is rendered correctly for nodes and both link sides',
+    (_name, samples, expected) => {
+      const props = { ...mPanelProps };
+      const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+      weathermap.settings.link.timeline = { enabled: true };
+      weathermap.settings.animation = { enabled: true };
+      const link = weathermap.links[0];
+      link.sides.A.query = 'reading';
+      link.sides.Z.query = 'reading';
+      link.statusQuery = 'reading';
+      link.sides.A.bandwidth = 100;
+      link.sides.Z.bandwidth = 100;
+      link.tooltipMetrics = [{ label: 'Extra', queryA: 'reading', queryZ: 'reading', units: 'none' }];
+      weathermap.nodes[0].tooltipMetrics = [{ label: 'Extra', query: 'reading', units: 'none' }];
+      props.options = { weathermap };
+      props.timeRange = {
+        from: { valueOf: () => 1_000_000 },
+        to: { valueOf: () => 2_000_000, toLocaleString: () => '2M' },
+      } as unknown as PanelProps<SimpleOptions>['timeRange'];
+      // The final sample is after the scrub position; shorter series have
+      // already reached their final sample when the slider steps left.
+      const times = samples.map((_, i) => (i === 2 && samples.length === 3 ? 2_000_000 : 1_000_000 + i * 100_000));
+      props.data = {
+        ...props.data,
+        series: [toDataFrame({ fields: [
+          { name: 'Time', type: FieldType.time, values: times },
+          { name: 'Value', type: FieldType.number, values: samples, config: { displayNameFromDS: 'reading' } },
+        ] })],
+      };
+      props.onOptionsChange = jest.fn();
+      render(<WeathermapPanel {...props} />);
+      if (scrubbing) {
+        fireEvent.keyDown(screen.getByRole('slider'), { key: 'ArrowLeft', keyCode: 37 });
+      }
+      // Missing/negative/zero status still resolves down via the clamped map.
+      if (expected === 'n/a' || expected === '0' || expected === '-53') {
+        expect(screen.getByTestId('link').querySelector('polyline')).toHaveAttribute('stroke', '#d32f2f');
+      }
+      const target = screen.getByTestId('link').firstChild!;
+      fireEvent.mouseMove(target);
+      const row = screen.getByText(/^Extra -/);
+      expect(row).toHaveTextContent(`Inbound: ${expected}`);
+      expect(row).toHaveTextContent(`Outbound: ${expected}`);
+      if (expected !== 'n/a') {
+        expect(row).not.toHaveTextContent('n/a');
+      }
+      const throughput = screen.getByText(/^Throughput \(/);
+      if (expected === 'n/a' || expected === '0' || expected === '-53') {
+        expect(throughput.textContent).not.toContain('-53');
+        expect(throughput.textContent).toContain('0');
+      }
+      fireEvent.mouseLeave(target);
+      fireEvent.mouseMove(screen.getByText(weathermap.nodes[0].label!).closest('g')!);
+      expect(screen.getByTestId('weathermap-node-tooltip')).toHaveTextContent(`Extra: ${expected}`);
+    }
+  );
+});
