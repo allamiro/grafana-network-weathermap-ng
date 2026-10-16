@@ -23,7 +23,23 @@ docker compose build
 docker compose up
 ```
 
-Grafana will be available at `http://localhost:3101`. Five dashboards are provisioned, connected to the Prometheus data source.
+Grafana will be available at `http://localhost:3101`. Every dashboard below is provisioned automatically. Most use the Prometheus data source; five are the WAN Utilization map on InfluxDB, Elasticsearch, MySQL, PostgreSQL, or Zabbix instead (see [Datasource variants](#datasource-variants)).
+
+### The demos are editable
+
+The provider sets `allowUiUpdates: true`, so you can open a demo, change panel
+options, and **Save** — the edit persists to Grafana's database instead of being
+rejected as a read-only provisioned file. That is the point of the stack: try
+Layers, View Mode Zoom & Pan, or Port Label Offset on a real map without
+hand-editing JSON first.
+
+The trade-off is that a UI save and the file can overwrite each other. Grafana
+does not compare the dashboard's `version`; it compares an MD5 checksum of the
+file with the one recorded at the last import. If a generator run changes the
+file's contents, the next provisioning scan (every `updateIntervalSeconds`)
+replaces your saved copy with the file. If the file is unchanged, your edits
+stay. To get the pristine demo back without regenerating, delete the dashboard
+in the UI; provisioning re-imports it from the file on the next scan.
 
 To test against a specific Grafana version:
 
@@ -47,6 +63,7 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — Interactive Rack View** | The rack-cabling topology with the dense-map readability features on (plugin ≥ 1.5.12): hover highlight with VIA-chain tracing, one-way power cables, label collision avoidance, zoom-dependent labels, built-in status legend, bold PSU labels. |
 | **WAN Demo — Multi-hop Path (VIAs)** | One DC interconnect routed through three VIA points, as double-click VIA editing produces. |
 | **WAN Demo — Parallel Links (LAG members)** | Three-member LAG spread with Link Offset, each member with its own query, port label, and utilization %. |
+| **WAN Demo — Polyline Links** | Links drawn as polylines through per-link waypoints (#332): one logical link bent around the map, with arrows, labels, and traffic animation following the path. |
 | **WAN Demo — Polyline Links + Link Offset** | The same three-member LAG routed around a firewall pair through shared waypoints: Link Offset (-14 / 0 / +14) combined with a bent path and a 26 px corner radius, so the bundle keeps even spacing and in-step animation through both corners. |
 | **WAN Demo — Animated Traffic Flow** | Metric-driven particle animation: dots flow per direction, speed/density scale with utilization, a permanently-down CORE trunk shows ✕ badges. |
 | **WAN Demo — BGP Neighbor Map** | BGP sessions as links: session state = link status (dashed + ✕ + DOWN + blink on drop), prefixes as labels, max-prefix fullness as color. iBGP core + eBGP transits (Cisco/Juniper/F5), a permanently-down eBGP peer (EDGE2↔PEER-Y), parallel IPv4/IPv6. Click a router for session detail. |
@@ -54,6 +71,22 @@ GRAFANA_VERSION=12.0.0 docker compose up --build
 | **WAN Demo — BGP Fleet Overview** | Established / down / total counters, a session status table, and a prefixes-received bar gauge. |
 | **WAN Demo — Drag & Arrange (editing playground)** | The WAN map with three nodes deliberately parked where they crowd their neighbours and drag their links across each other. Only the layout is wrong, so it is a safe place to practise node dragging and watch it commit; grid snapping and guides are on. |
 | **WAN Demo — Port Label Positioning** | The WAN map with per-side **Port Label Offset %** (along the link axis) and **Port Label Distance** (perpendicular) set on every interface label, lifting each one clear of its node icon. |
+
+### Datasource variants
+
+These five are the **WAN Demo — Utilization** map with the same diagram and
+bindings, queried from a different datasource. The `bridge` service copies the
+simulator's metrics into each store, tagged with the display names the
+Prometheus dashboards use. `testing/scripts/generate-datasource-dashboards.py`
+generates the InfluxDB and Elasticsearch files from the Prometheus one.
+
+| Dashboard | Datasource (uid) |
+|---|---|
+| **WAN Demo — Utilization (InfluxDB)** | InfluxDB 2.x (`influxdb-wm`) |
+| **WAN Demo — Utilization (Elasticsearch)** | Elasticsearch 8 (`elastic-wm`) |
+| **WAN Demo — Utilization (MySQL)** | MySQL (`mysql-wm`) |
+| **WAN Demo — Utilization (PostgreSQL)** | PostgreSQL (`postgres-wm`) |
+| **WAN Demo — Utilization (Zabbix)** | Zabbix, via the `alexanderzobnin-zabbix-app` plugin (`zabbix-wm`) |
 
 The WAN dashboards are generated — do not hand-edit them. To change the topology
 or scenarios, edit and re-run:
