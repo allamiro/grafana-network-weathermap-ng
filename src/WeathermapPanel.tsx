@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   dateTimeFormat,
+  FormattedValue,
   getTimeZone,
   getValueFormat,
   LoadingState,
@@ -135,6 +136,11 @@ function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
 
 // Format link values as the proper prefix of bits
 const getlinkValueFormatter = (fmt_id: string) => getValueFormat(fmt_id);
+
+// Grafana leaves prefix and suffix undefined for some units: 'none' (the node
+// tooltip default) has no suffix, and currencies put the symbol in prefix.
+// Joining the parts raw rendered "5 undefined" and dropped "$" (#380).
+const formatValueText = (v: FormattedValue) => `${v.prefix ?? ''}${v.text} ${v.suffix ?? ''}`.trim();
 
 /**
  * Saved dashboards can carry missing or partial weathermap options
@@ -541,7 +547,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
           // Get the text formatted to KiB/MiB/etc.
           let scaledSideValue = linkValueFormatter(toReturn.sides[side].currentValue, linkDecimals);
-          toReturn.sides[side].currentValueText = `${scaledSideValue.text} ${scaledSideValue.suffix}`;
+          toReturn.sides[side].currentValueText = formatValueText(scaledSideValue);
 
           // Get the percentage througput text
           toReturn.sides[side].currentPercentageText =
@@ -559,7 +565,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       }
 
       let scaledBandwidth = linkValueFormatter(toReturn.sides[side].bandwidth, linkDecimals);
-      toReturn.sides[side].currentBandwidthText = `${scaledBandwidth.text} ${scaledBandwidth.suffix}`;
+      toReturn.sides[side].currentBandwidthText = formatValueText(scaledBandwidth);
     }
 
     // Calculate positions for links and arrow polygons. Not included above to help with typing.
@@ -1322,8 +1328,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   const outboundVal = metric.queryZ ? rawFrameMap.get(metric.queryZ) : undefined;
                   const fmtVal = (v: number | undefined) => {
                     if (v === undefined) { return 'n/a'; }
-                    const r = fmt(v, linkDecimals);
-                    return `${r.text} ${r.suffix}`.trim();
+                    return formatValueText(fmt(v, linkDecimals));
                   };
                   const parts: string[] = [];
                   if (metric.queryA !== undefined && metric.queryA !== '') {
@@ -1399,8 +1404,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               const raw = metric.query ? rawFrameMap.get(metric.query) : undefined;
               let valueText = 'n/a';
               if (raw !== undefined) {
-                const formatted = fmt(raw, wm.settings.link.linkDecimals);
-                valueText = `${formatted.text} ${formatted.suffix}`.trim();
+                valueText = formatValueText(fmt(raw, wm.settings.link.linkDecimals));
               }
               return (
                 <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
