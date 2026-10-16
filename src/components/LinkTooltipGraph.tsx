@@ -101,12 +101,16 @@ export const LinkTooltipGraph = memo(function LinkTooltipGraph({
         timeZone={timeZone}
         frames={filteredGraphSeries.map(({ frame, isInbound }) => {
           const lineColor = isInbound ? settings.inboundColor : settings.outboundColor;
-          // Spread each field to avoid mutating the original frame stored in data.series.
-          // Mutating originals causes stale colors on subsequent renders.
+          // Spread each field and drop its `state` so <TimeSeries> never writes into
+          // data.series. A plain spread still shares the state object, and Grafana's
+          // outerJoinDataFrames deletes and recomputes state.displayName against only
+          // the tooltip's frames. That corrupted the cached names used by the next
+          // hover's queryA/queryZ match, node status and link values (#375, #377).
           return {
             ...frame,
             fields: frame.fields.map((f) => ({
               ...f,
+              state: undefined,
               config: {
                 ...f.config,
                 custom: {
