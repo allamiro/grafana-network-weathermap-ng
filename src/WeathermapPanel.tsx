@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   dateTimeFormat,
-  FormattedValue,
   getTimeZone,
   getValueFormat,
   LoadingState,
@@ -40,6 +39,7 @@ import {
   calculateRectangleAutoHeight,
   needsMigration,
   getValueSeries,
+  formatValueText,
   handleVersionedStateUpdates,
   resolveLinkChain,
   spreadLabels,
@@ -136,11 +136,6 @@ function generateDrawnNode(d: Node, i: number, wm: Weathermap): DrawnNode {
 
 // Format link values as the proper prefix of bits
 const getlinkValueFormatter = (fmt_id: string) => getValueFormat(fmt_id);
-
-// Grafana leaves prefix and suffix undefined for some units: 'none' (the node
-// tooltip default) has no suffix, and currencies put the symbol in prefix.
-// Joining the parts raw rendered "5 undefined" and dropped "$" (#380).
-const formatValueText = (v: FormattedValue) => `${v.prefix ?? ''}${v.text} ${v.suffix ?? ''}`.trim();
 
 /**
  * Saved dashboards can carry missing or partial weathermap options

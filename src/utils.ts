@@ -1,4 +1,4 @@
-import { DataFrame, Field, FieldType, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
+import { DataFrame, Field, FieldType, FormattedValue, GrafanaTheme2, getFieldDisplayName } from '@grafana/data';
 import merge from 'lodash.merge';
 import { Anchor, DrawnNode, Link, Node, Position, ValueMappingMode, Weathermap } from 'types';
 import { v4 as uuidv4 } from 'uuid';
@@ -604,6 +604,15 @@ export function getValueSeries(frame: DataFrame, allFrames: DataFrame[]): Array<
   }
   return numeric.map((field) => ({ name: getFieldDisplayName(field, frame, allFrames), field }));
 }
+
+/**
+ * Join a Grafana FormattedValue into display text. Grafana leaves prefix and
+ * suffix undefined for some units: 'none' (the node tooltip default) has no
+ * suffix, and currencies put the symbol in prefix. Joining the parts raw
+ * rendered "5 undefined" and dropped "$" (#380).
+ */
+export const formatValueText = (v: FormattedValue): string =>
+  `${v.prefix ?? ''}${v.text} ${v.suffix ?? ''}`.trim();
 
 export const getDataFrameName = (frame: DataFrame, allFrames: DataFrame[]): string => {
   return getFieldDisplayName(getValueField(frame), frame, allFrames);

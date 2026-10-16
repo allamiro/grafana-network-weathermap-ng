@@ -4,6 +4,7 @@ import { DrawnNode, Weathermap } from 'types';
 import {
   addViaToLink,
   buildQueryOptions,
+  formatValueText,
   getDataFrameName,
   getValueField,
   clampUtilization,
@@ -1779,5 +1780,18 @@ describe.each(['last', 'avg', 'min', 'max', 'p95'] as const)('extra metrics usin
   test.each([0, -53, 42])('preserves finite reading %s', (value) => {
     expect(aggregateFieldValues([null, value, NaN], mode, { preserveNegative: true })).toBe(value);
     expect(aggregateFieldValues([null, value, NaN], mode)).toBe(Math.max(0, value));
+  });
+});
+
+// #380: Grafana leaves prefix/suffix undefined for some units.
+describe('formatValueText', () => {
+  test.each([
+    ['no suffix (unit none)', { text: '5' }, '5'],
+    ['empty suffix (unit short)', { text: '5', suffix: '' }, '5'],
+    ['suffix keeps its existing spacing', { text: '5', suffix: ' b/s' }, '5  b/s'],
+    ['currency prefix', { prefix: '$', text: '5.00' }, '$5.00'],
+    ['prefix and suffix', { prefix: '$', text: '5', suffix: 'K' }, '$5 K'],
+  ])('%s', (_case, value, shown) => {
+    expect(formatValueText(value)).toBe(shown);
   });
 });

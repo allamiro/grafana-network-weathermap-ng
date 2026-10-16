@@ -200,3 +200,18 @@ test('node tooltip movement and edge flipping reuse the same stylesheet rule', (
   expect(tooltip.className).toBe(className);
   expect(tooltip).toHaveTextContent('Traffic');
 });
+
+// #380: the graph's y axis used its own formatter, which printed "undefined"
+// for unit-less links and dropped currency symbols.
+test.each([
+  ['none', '40'],
+  ['currencyUSD', '$40'],
+  ['bps', '40  b/s'],
+])('the tooltip graph y axis formats unit %s without "undefined"', (units, shown) => {
+  const props = panelProps();
+  props.options.weathermap.links[0].units = units;
+  render(<WeathermapPanel {...props} />);
+  fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+  const graph = chartProps();
+  expect(graph.tweakAxis!({ scaleKey: 'y', theme }, graph.frames[0].fields[1]).formatValue!(40)).toBe(shown);
+});

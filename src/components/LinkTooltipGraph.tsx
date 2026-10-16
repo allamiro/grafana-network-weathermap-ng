@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { DataFrame, Field, FieldType, getValueFormat, PanelData, TimeRange } from '@grafana/data';
 import { LegendDisplayMode, TimeSeries, TooltipDisplayMode, TooltipPlugin } from '@grafana/ui';
 import { TooltipOptions } from '../types';
-import { getTimeField, getValueSeries } from '../utils';
+import { formatValueText, getTimeField, getValueSeries } from '../utils';
 
 interface Props {
   data: PanelData;
@@ -19,11 +19,8 @@ interface Props {
 
 const getlinkGraphFormatter =
   (fmt_id: string) =>
-  (v: any): string => {
-    let formatter = getValueFormat(fmt_id);
-    let formattedValue = formatter(v);
-    return `${formattedValue.text} ${formattedValue.suffix}`;
-  };
+  (v: any): string =>
+    formatValueText(getValueFormat(fmt_id)(v));
 
 // Cursor position belongs to the tooltip wrapper. Keep the chart's inputs
 // independent of it so pointer movement cannot rebuild Grafana's plot (#365).
