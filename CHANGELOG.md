@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.20](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.20) (2026-10-18)
+
+### Fixed
+
+* **hovering a link no longer corrupts series names, node status or link values** ([#375](https://github.com/allamiro/grafana-network-weathermap-ng/issues/375), [#377](https://github.com/allamiro/grafana-network-weathermap-ng/issues/377), [PR #376](https://github.com/allamiro/grafana-network-weathermap-ng/pull/376)): with two or more datasources, or more than one named query, the link tooltip graph disappeared on the second hover. The field copies handed to Grafana's `<TimeSeries>` still shared `field.state` with the panel's data, and Grafana recomputed the cached display name against only the tooltip's frames, dropping the frame-name prefix (`Traffic value router-a` became `value router-a`). Until the next data refresh, every lookup by name then missed: the tooltip graph, node status (an up node drawn in the down colour), link values (`n/a`), tooltip extra metrics, and the editor's query dropdowns, which could save a binding that stopped resolving. The copies now drop `state`, so nothing a hover renders reaches `data.series`. Thanks to [@alifankebima](https://github.com/alifankebima) for the report and fix.
+* **values with no unit suffix no longer show `undefined`** ([#380](https://github.com/allamiro/grafana-network-weathermap-ng/issues/380), [PR #381](https://github.com/allamiro/grafana-network-weathermap-ng/pull/381), [PR #382](https://github.com/allamiro/grafana-network-weathermap-ng/pull/382)): node tooltip metrics (whose default unit is `none`), link tooltip extra metrics, link value and bandwidth labels, and the link tooltip graph's y axis printed `5 undefined` for unit-less values, and currency units lost their symbol. Every formatted value now goes through one helper that joins prefix, value and suffix. Units with a suffix keep their exact output, e.g. `5  b/s`.
+* **tooltip extra metrics with no finite sample show `n/a`, not `0`** ([#373](https://github.com/allamiro/grafana-network-weathermap-ng/issues/373), [PR #374](https://github.com/allamiro/grafana-network-weathermap-ng/pull/374)): a series whose points were all `null`, `NaN` or infinite was drawn as a real `0` reading (e.g. `0 dbm`), live and while scrubbing the timeline. A genuine `0` or negative reading is still shown (#370). Throughput, bandwidth and link status keep their `0` fallback.
+
+### Tests
+
+* **hover regression coverage** ([PR #378](https://github.com/allamiro/grafana-network-weathermap-ng/pull/378)): panel-level tests hover links and nodes with Grafana's real `<TimeSeries>` and check the graph, node status, link values, extra metrics and editor query options after each hover. A further invariant hovers every link and node across four data shapes and asserts `data.series` is unchanged afterwards, so any future write into the shared frames (cached names, field config, display processors or values) fails CI.
+
+### Chores
+
+* CI no longer fails fork pull requests on the Grafana API compatibility comment step, which a fork's token cannot post ([PR #379](https://github.com/allamiro/grafana-network-weathermap-ng/pull/379)), and eslint skips the vendored `braces` sources.
+
 ## [1.6.19](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.19) (2026-10-06)
 
 ### Fixed
