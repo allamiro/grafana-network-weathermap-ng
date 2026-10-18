@@ -19,7 +19,7 @@ npm run typecheck && npm run lint
 npx prettier --check <files you changed>         # whole-tree check has pre-existing drift; only gate your files
 ```
 
-`jest-environment-jsdom cannot be found` means `node_modules` isn't installed. Grafana/React `act(...)` warnings in the output are expected noise, so judge by the assertions.
+`jest-environment-jsdom cannot be found` means `node_modules` isn't installed. Some existing suites print Grafana/React `act(...)` warnings. Don't let a new test add any: run it on its own (`npx jest <file> 2>&1 | grep -c "not wrapped in act"`). If one appears, wrap the update in `act` or await it, because an unawaited update can make the assertion pass or fail by timing.
 
 ## 1. Reproduce before fixing
 
@@ -34,7 +34,7 @@ Write the failing test first, at the level the user sees the bug. Find the root 
 | Panel behaviour (hover, tooltips, values, status, zoom, grid…) | `src/WeathermapPanel.<topic>.test.tsx`; add to the matching topic file before creating one |
 | Browser-only behaviour (drag, real Grafana) | `tests/*.spec.ts` (Playwright, see CONTRIBUTING.md) |
 
-Panel tests render the **real** `WeathermapPanel` with Grafana's real `<TimeSeries>`. Don't mock Grafana components: several bugs lived inside Grafana's own code paths (`outerJoinDataFrames`, display-name caching), and a mock hides them.
+When the bug could involve what Grafana does with the data (frames, field state, display names, formatting), render the **real** `WeathermapPanel` with Grafana's real `<TimeSeries>`. Several bugs lived inside Grafana's own code paths (`outerJoinDataFrames`, display-name caching), and a mock hides them. Mocking is right when the test is about *our* component's behaviour toward Grafana, e.g. `WeathermapPanel.hover.test.tsx` mocks `TimeSeries` with `jest.fn` to count chart renders (#365). Keep those mocks in their own file so they don't leak into real-component tests.
 
 Use the existing harness rather than inventing one. `src/WeathermapPanel.tooltipState.test.tsx` has `panelProps(data, { build, out, inbound })` and `hoverAndLeave(linkIndex)`, and `src/testData.ts` has `getData`, `getData2` (two links), `getConnectedLinkData` and `theme`. Always pass maps through `handleVersionedStateUpdates(build(theme), theme)`. Useful handles:
 
@@ -59,9 +59,10 @@ Assert exact rendered text where formatting is involved (`'1  b/s'`, `'Latency: 
 
 ## 4. Prove the test, then prove the guard
 
-Run the new tests against the unfixed code:
+Run the new tests against the unfixed code. **Commit the fix first.** Both this check and the mutation check below overwrite the fixed file and restore it from `HEAD`, so uncommitted work would be lost:
 
 ```bash
+git diff --quiet -- src/path/Fixed.tsx || { echo "commit the fix first"; exit 1; }
 git checkout origin/main -- src/path/Fixed.tsx
 npx jest <new test files>        # these must FAIL (a control case may pass, and say which)
 git checkout HEAD -- src/path/Fixed.tsx
@@ -73,7 +74,7 @@ If the bug is one of a class ("something mutates shared state", "a formatter dro
 - a guard against passing vacuously (it asserts the graph actually rendered on each hover);
 - a snapshot of everything a bug could plausibly write (names/state, config, display processor, values).
 
-Then mutation-test it: temporarily reintroduce one or two related bugs (e.g. drop `state: undefined` in `LinkTooltipGraph.tsx`, mutate `f.config` in place, retype the original time field), run, check the invariant fails, and `git checkout -- <file>` to restore. Record the result.
+Then mutation-test it: temporarily reintroduce one or two related bugs (e.g. drop `state: undefined` in `LinkTooltipGraph.tsx`, mutate `f.config` in place, retype the original time field), run, check the invariant fails, and restore with `git checkout HEAD -- <file>` (safe only because the fix is committed). Record the result.
 
 ## 5. Comments, commits, PR
 

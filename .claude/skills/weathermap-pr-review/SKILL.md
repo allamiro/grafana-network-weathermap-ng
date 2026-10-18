@@ -20,16 +20,19 @@ Review threads (inline comments, resolved state) are only in GraphQL:
 
 ```bash
 gh api graphql -F n=N -f query='query($n:Int!){repository(owner:"allamiro",name:"grafana-network-weathermap-ng"){pullRequest(number:$n){
-  reviewThreads(first:50){nodes{id isResolved path line comments(first:10){nodes{databaseId author{login} body}}}}
+  reviewThreads(first:100){pageInfo{hasNextPage endCursor} nodes{id isResolved path line comments(first:10){nodes{databaseId author{login} body}}}}
   reviews(last:10){nodes{author{login} state body}}}}}'
 ```
+
+If `hasNextPage` is true, fetch the rest with `reviewThreads(first:100, after:"<endCursor>")` before deciding nothing is unresolved.
 
 Also read the linked issue (`gh issue view`). Fixes here often have a wider impact than the title says, and the release notes need it.
 
 ## 2. Reproduce the verification locally
 
 ```bash
-git fetch origin pull/N/head:pr-N && git checkout pr-N   # works for forks too
+git status --short                      # commit or stash your own work first: the steps below overwrite files
+git fetch origin main pull/N/head:pr-N && git checkout pr-N   # works for forks; refreshes origin/main too
 npm run typecheck && npm run lint && npm run test:ci
 npx prettier --check <changed files>    # not the whole tree: other files have pre-existing drift
 ```

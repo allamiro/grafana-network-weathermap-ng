@@ -19,12 +19,12 @@ gh pr list --state open        # anything the user expects in this release?
 ```
 
 - Every fix/feature PR meant for the release must be merged first. If one is still open, land it (see the `weathermap-pr-review` skill) or open the release PR as a draft that names the merge order.
-- Version per semver: a new feature is a minor bump, fixes/chores/security are a patch bump.
+- Version per semver: a breaking change (a saved dashboard or setting that stops working, a raised minimum Grafana version) is a major bump, a new feature is a minor bump, and fixes/chores/security are a patch bump. If a change might break existing dashboards, ask the user before choosing.
 - Run `npm audit`. The Grafana catalog validator reads the lockfile: 1.6.17 and 1.6.18 were tagged but never became releases because a dependency advisory failed validation. Fix advisories (overrides in `package.json`) in their own PR before tagging.
 
 ## 2. Release branch, version bump, changelog
 
-`scripts/release.sh prepare` opens `$EDITOR` and blocks, so do its steps directly:
+`scripts/release.sh prepare X.Y.Z` opens `$EDITOR` and blocks, so do its steps directly:
 
 ```bash
 git checkout -b release/vX.Y.Z origin/main
@@ -67,6 +67,7 @@ Wait for CI and the cubic AI review. Handle cubic threads as in the `weathermap-
 ## 4. Merge and tag
 
 ```bash
+gh pr ready <N>    # if it was opened as a draft: gh pr merge refuses drafts
 gh pr merge <N> --squash --subject "chore(release): vX.Y.Z <summary> (#N)" --body "<one line, no co-author trailers>" --delete-branch
 git checkout main && git pull --ff-only
 scripts/release.sh tag X.Y.Z
@@ -76,17 +77,29 @@ Pass `--body` explicitly: without it GitHub copies every branch commit's `Co-aut
 
 ## 5. Verify the build, then publish
 
+Find the run for *this* tag. The tag push starts it asynchronously, so it can take a few seconds to appear, and the newest release run may be an older tag's:
+
 ```bash
-RID=$(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-gh run watch "$RID" --exit-status
-D=$(mktemp -d) && gh release download vX.Y.Z -D "$D"
-cat "$D"/*.sha1; shasum "$D"/*.zip                              # must match
-unzip -p "$D"/*.zip '*/plugin.json'  | jq -r .info.version      # X.Y.Z
-unzip -p "$D"/*.zip '*/MANIFEST.txt' | grep signatureType       # "community"
-gh release edit vX.Y.Z --draft=false --latest
+V=X.Y.Z
+until RID=$(gh run list --workflow release.yml --branch "v$V" --limit 1 --json databaseId --jq '.[0].databaseId // empty') && [ -n "$RID" ]; do sleep 5; done
+gh run watch "$RID" --exit-status   # run in the background; non-zero means stop here
 ```
 
-The workflow already checks the signature. Downloading the asset confirms that what users will install is the right version with a matching checksum. Publish only after all three checks pass.
+Then check the asset and publish, with each check able to stop the publish:
+
+```bash
+set -euo pipefail
+V=X.Y.Z; D=$(mktemp -d)
+gh release download "v$V" -D "$D"
+[ "$(cut -d' ' -f1 "$D"/*.sha1)" = "$(shasum "$D"/*.zip | cut -d' ' -f1)" ]       || { echo "checksum mismatch"; exit 1; }
+[ "$(unzip -p "$D"/*.zip '*/plugin.json' | jq -r .info.version)" = "$V" ]          || { echo "wrong version"; exit 1; }
+# read the manifest first: piping into grep -q under pipefail fails on SIGPIPE even when it matches
+M=$(unzip -p "$D"/*.zip '*/MANIFEST.txt')
+grep -q '"signatureType": "community"' <<<"$M"                                   || { echo "not community-signed"; exit 1; }
+gh release edit "v$V" --draft=false --latest
+```
+
+The workflow already checks the signature. Downloading the asset confirms that what users will install is the right version with a matching checksum. If any check fails, the release stays a draft. Tell the user rather than retrying.
 
 If the release workflow fails after the tag is pushed, stop and tell the user. Don't delete or move a pushed tag on your own. The repo's past practice is to fix forward with the next patch version, as 1.6.19 did after 1.6.17 and 1.6.18 failed validation.
 
