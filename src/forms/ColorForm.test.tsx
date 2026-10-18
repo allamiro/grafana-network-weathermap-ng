@@ -144,6 +144,11 @@ test('clearing a threshold renders an empty field without React NaN warnings (#2
   fireEvent.change(threshold, { target: { value: '' } });
 
   expect(threshold.value).toBe('');
+  // The rendered attribute is the reliable check. jsdom sanitizes the value
+  // property of a number input to '' either way, and React logs the NaN
+  // warning only once per process: after the #200 test above blanks a
+  // threshold, this test saw no warning even with the bug back.
+  expect(threshold.getAttribute('value')).toBe('');
   const nanWarnings = errorSpy.mock.calls.filter((c) => String(c[0]).includes('Received NaN'));
   errorSpy.mockRestore();
   expect(nanWarnings).toEqual([]);

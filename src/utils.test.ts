@@ -1795,3 +1795,44 @@ describe('formatValueText', () => {
     expect(formatValueText(value)).toBe(shown);
   });
 });
+
+// #54: the node status dropdown offers getDataFrameName, and the map binds by
+// getValueSeries. Both must compute the name against ALL frames: Grafana only
+// adds the frame-name prefix when several frames are present, so a name
+// computed against the frame alone ("value") neither matches what the map
+// resolves nor tells two datasources' series apart.
+describe('a frame name is the same in the editor and on the map (#54)', () => {
+  // Fresh frames per test: getFieldDisplayName caches into field.state, and a
+  // name cached by an earlier call would hide a lookup that skips allFrames.
+  const twoDatasources = () => [
+    toDataFrame({
+      name: 'Prometheus',
+      fields: [
+        { name: 'time', type: FieldType.time, values: [1000] },
+        { name: 'value', type: FieldType.number, values: [1] },
+      ],
+    }),
+    toDataFrame({
+      name: 'ClickHouse',
+      fields: [
+        { name: 'time', type: FieldType.time, values: [1000] },
+        { name: 'value', type: FieldType.number, values: [2] },
+      ],
+    }),
+  ];
+
+  test('each frame gets its own name when several frames share a field name', () => {
+    const frames = twoDatasources();
+    const names = frames.map((f) => getDataFrameName(f, frames));
+    expect(names).toEqual(['Prometheus value', 'ClickHouse value']);
+  });
+
+  test('the editor name matches the name the map binds', () => {
+    const frames = twoDatasources();
+    // Editor first, as in the real flow: the dropdown is built before the map
+    // resolves anything.
+    const editorNames = frames.map((f) => getDataFrameName(f, frames));
+    const boundNames = frames.map((f) => getValueSeries(f, frames)[0].name);
+    expect(editorNames).toEqual(boundNames);
+  });
+});

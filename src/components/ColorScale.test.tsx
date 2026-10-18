@@ -141,3 +141,21 @@ test('value mode with a bps scale unit formats labels with automatic prefixes', 
   expect(screen.getByText('500 Mb/s – 750 Mb/s')).not.toBeNull();
   expect(screen.getByText('750 Mb/s+')).not.toBeNull();
 });
+
+// #44: the threshold labels had line-height 0px, so they collapsed onto the
+// colour boxes and overlapped each other in a tall scale. nowrap keeps a
+// "10% - 20%" range on one line next to its box.
+test('threshold labels keep a readable line height on one line (#44)', () => {
+  render(
+    <ColorScale
+      thresholds={[
+        { color: '#73BF69', percent: 0 },
+        { color: '#F2495C', percent: 50 },
+      ]}
+      settings={getData(theme).settings}
+    />
+  );
+  const label = screen.getByText('0% - 50%');
+  expect(getComputedStyle(label).lineHeight).toBe('normal');
+  expect(getComputedStyle(label).whiteSpace).toBe('nowrap');
+});
