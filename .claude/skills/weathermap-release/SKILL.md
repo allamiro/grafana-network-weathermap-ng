@@ -81,7 +81,8 @@ Find the run for *this* tag. The tag push starts it asynchronously, so it can ta
 
 ```bash
 V=X.Y.Z
-until RID=$(gh run list --workflow release.yml --branch "v$V" --limit 1 --json databaseId --jq '.[0].databaseId // empty') && [ -n "$RID" ]; do sleep 5; done
+TAG_SHA=$(git rev-parse "v$V^{commit}")
+until RID=$(gh run list --workflow release.yml --branch "v$V" --commit "$TAG_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty') && [ -n "$RID" ]; do sleep 5; done
 gh run watch "$RID" --exit-status   # run in the background; non-zero means stop here
 ```
 

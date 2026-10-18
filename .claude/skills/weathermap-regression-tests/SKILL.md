@@ -62,7 +62,7 @@ Assert exact rendered text where formatting is involved (`'1  b/s'`, `'Latency: 
 Run the new tests against the unfixed code. **Commit the fix first.** Both this check and the mutation check below overwrite the fixed file and restore it from `HEAD`, so uncommitted work would be lost:
 
 ```bash
-git diff --quiet -- src/path/Fixed.tsx || { echo "commit the fix first"; exit 1; }
+git diff --quiet HEAD -- src/path/Fixed.tsx || { echo "commit the fix first"; exit 1; }   # HEAD: staged-only changes count too
 git checkout origin/main -- src/path/Fixed.tsx
 npx jest <new test files>        # these must FAIL (a control case may pass, and say which)
 git checkout HEAD -- src/path/Fixed.tsx

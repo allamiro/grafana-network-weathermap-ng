@@ -20,8 +20,9 @@ Review threads (inline comments, resolved state) are only in GraphQL:
 
 ```bash
 gh api graphql -F n=N -f query='query($n:Int!){repository(owner:"allamiro",name:"grafana-network-weathermap-ng"){pullRequest(number:$n){
+  headRefOid
   reviewThreads(first:100){pageInfo{hasNextPage endCursor} nodes{id isResolved path line comments(first:10){nodes{databaseId author{login} body}}}}
-  reviews(last:10){nodes{author{login} state body}}}}}'
+  reviews(last:50){nodes{author{login} state body commit{oid}}}}}}'
 ```
 
 If `hasNextPage` is true, fetch the rest with `reviewThreads(first:100, after:"<endCursor>")` before deciding nothing is unresolved.
@@ -31,8 +32,9 @@ Also read the linked issue (`gh issue view`). Fixes here often have a wider impa
 ## 2. Reproduce the verification locally
 
 ```bash
-git status --short                      # commit or stash your own work first: the steps below overwrite files
-git fetch origin main pull/N/head:pr-N && git checkout pr-N   # works for forks; refreshes origin/main too
+git status --short          # commit or stash your own work first: the steps below overwrite files
+git fetch origin main       # current base for the fails-on-main check below
+gh pr checkout N --force    # works for forks; --force resets an existing local branch after a contributor force-push
 npm run typecheck && npm run lint && npm run test:ci
 npx prettier --check <changed files>    # not the whole tree: other files have pre-existing drift
 ```
@@ -51,7 +53,16 @@ A test that passes on both is not a regression test. Say so in the review. The `
 ## 3. CI on fork PRs
 
 - **`action_required` runs:** fork workflows wait for maintainer approval. Look at the diff before approving: approved runs execute the contributor's code. Be suspicious of changes to `.github/workflows/`, `package.json` scripts, `scripts/` or `.config/`. Then:
-  `gh api -X POST repos/allamiro/grafana-network-weathermap-ng/actions/runs/<run-id>/approve` for each run (`gh run list --branch <headRefName>`).
+  approve only the runs for the exact commit you reviewed. Another fork can use the same branch name, so don't select runs by branch:
+
+  ```bash
+  SHA=$(gh pr view N --json headRefOid --jq .headRefOid)    # the commit whose diff you just read
+  for RID in $(gh run list --commit "$SHA" --status action_required --json databaseId --jq '.[].databaseId'); do
+    gh api -X POST repos/allamiro/grafana-network-weathermap-ng/actions/runs/$RID/approve
+  done
+  ```
+
+  If the head moved since you read the diff, review the new commits before approving.
 - **"Check Grafana API compatibility (latest)" fails with `Resource not accessible by integration`:** that's the Levitate sticky-comment step being denied a fork token, not an incompatibility. #379 fixed it on `main`, so a branch based before #379 shows it. Bring the branch up to date with `gh pr update-branch N` (needs `maintainerCanModify`), then approve the new runs.
 - **The Grafana 11.0.0 / 12.0.0 / 13.1.0 API checks** are real and blocking: the plugin supports `>=11.0.0`. Read the Levitate output, don't bypass it.
 - To wait without polling: `gh pr checks N --watch --interval 20` in the background.
@@ -73,7 +84,7 @@ gh api -X POST repos/allamiro/grafana-network-weathermap-ng/pulls/N/comments/<co
 gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"PRRT_..."}){thread{isResolved}}}'
 ```
 
-After pushing, wait for cubic's re-review on the new head commit. "All reported issues were addressed" or "No issues found" is the signal to continue. Re-run the GraphQL query and confirm no unresolved threads remain.
+After pushing, wait for cubic's re-review on the new head commit: the `cubic · AI code reviewer` check goes from pending to pass, and a review **by `cubic-dev-ai`** appears whose `commit.oid` equals `headRefOid`. Filter by author: every thread reply you post also shows up as a review under the maintainer's name. A "No issues found" review on an older commit says nothing about your latest push. "All reported issues were addressed" or "No issues found" *on the current head* is the signal to continue. Other AI reviewers (e.g. Codex, `codex-code-review-finding` threads) may post too: treat their threads the same way. Re-run the GraphQL query and confirm no unresolved threads remain.
 
 ## 5. Reviewing a contributor's PR
 
@@ -108,9 +119,18 @@ git checkout B-branch
 git rebase --onto origin/main <last commit of A on B's branch>
 git diff --stat origin/main..HEAD          # should show only B's files
 npm run test:ci
-git push --force-with-lease origin B-branch
 gh pr ready N                               # if it was a draft waiting on A
 ```
+
+Push to the repository that owns B's head branch. For a fork that's the contributor's repo, not `origin` (needs `maintainerCanModify`):
+
+```bash
+read OWNER REPO BRANCH OLD < <(gh pr view N --json headRepositoryOwner,headRepository,headRefName,headRefOid \
+  --jq '"\(.headRepositoryOwner.login) \(.headRepository.name) \(.headRefName) \(.headRefOid)"')
+git push --force-with-lease="$BRANCH:$OLD" "https://github.com/$OWNER/$REPO.git" "HEAD:$BRANCH"
+```
+
+The explicit `$BRANCH:$OLD` lease matters: with a URL instead of a remote there's no tracking ref, so a bare `--force-with-lease` can't protect commits the contributor pushed in the meantime.
 
 Update B's description to drop the "stacked on" note, so reviewers don't follow stale instructions.
 
