@@ -1786,3 +1786,147 @@ describe('link rendering regressions (audit)', () => {
     expect(stops()).toEqual(before);
   });
 });
+
+describe('interaction and persistence regressions (audit)', () => {
+  const editMode = () => {
+    getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  };
+  const deepFreeze = <T,>(o: T): T => {
+    Object.values(o as object).forEach((v) => {
+      if (v && typeof v === 'object' && !Object.isFrozen(v)) {
+        deepFreeze(v);
+      }
+    });
+    return Object.freeze(o);
+  };
+  const lastWeathermap = (fn: jest.Mock) => fn.mock.calls[fn.mock.calls.length - 1][0].weathermap;
+
+  // #224 (19c1eff): a map already at CURRENT_VERSION but missing settings.panel
+  // is repaired for render; the repair must also be persisted. A version-only
+  // check ("version !== CURRENT_VERSION") never writes it back.
+  test('#224 persists the repair of an incomplete current-version map', () => {
+    const wm = handleVersionedStateUpdates(getData(theme), theme);
+    delete (wm.settings as unknown as Record<string, unknown>).panel;
+    const onOptionsChange = jest.fn();
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap: wm }, onOptionsChange }} />);
+
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    expect(onOptionsChange.mock.calls[0][0].weathermap.settings.panel.panelSize).toEqual({ width: 600, height: 600 });
+  });
+
+  // #225 (d398da3): dropping a dragged node must persist a NEW weathermap with
+  // the moved position, never write into the saved options. The input is
+  // deep-frozen so an in-place write either throws or is caught below.
+  test('#225 node drag persists a new weathermap without mutating options', () => {
+    editMode();
+    const weathermap = deepFreeze(handleVersionedStateUpdates(getData(theme), theme));
+    const originalPosition = [...weathermap.nodes[0].position];
+    const spy = jest.fn();
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: spy }} />);
+    const nodeA = screen.getByText('Node A').closest('g')!;
+    // react-draggable listens for move/up on the document once the drag starts.
+    fireEvent.mouseDown(nodeA, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 130 });
+    fireEvent.mouseUp(document, { clientX: 140, clientY: 130 });
+
+    expect(spy).toHaveBeenCalled();
+    const persisted = lastWeathermap(spy);
+    expect(persisted).not.toBe(weathermap);
+    expect(persisted.nodes[0].position).not.toEqual(originalPosition);
+    expect(weathermap.nodes[0].position).toEqual(originalPosition);
+  });
+
+  // #225 (d398da3): ctrl-click selection must hand React a new array; mutating
+  // and returning the same one makes React skip the re-render, so the node
+  // never shows its selected (font-coloured) border.
+  test('#225 ctrl-click toggles the selected node border', () => {
+    editMode();
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: jest.fn() }} />);
+    const nodeA = screen.getByText('Node A').closest('g')!;
+    const rect = () => nodeA.querySelector('rect')!;
+    // Unselected: node.colors.border; selected: node.colors.font.
+    expect(rect()).toHaveAttribute('stroke', '#CCCCCC');
+
+    fireEvent.click(nodeA, { ctrlKey: true });
+    expect(rect()).toHaveAttribute('stroke', '#FFFFFF');
+
+    fireEvent.click(nodeA, { ctrlKey: true });
+    expect(rect()).toHaveAttribute('stroke', '#CCCCCC');
+  });
+
+  // #45/#50 (7519e0b): wheel zoom must persist a new zoomScale without
+  // writing it into the saved options object.
+  test('#45/#50 wheel zoom does not mutate the saved options', () => {
+    editMode();
+    const wm = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    const onOptionsChange = jest.fn();
+
+    const { container } = render(
+      <WeathermapPanel {...{ ...mPanelProps, options: { weathermap: wm }, onOptionsChange }} />
+    );
+    fireEvent.wheel(container.querySelector('#nw-testing_')!, { deltaY: 1 });
+
+    expect(wm.settings.panel.zoomScale).toBe(0);
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    expect(onOptionsChange.mock.calls[0][0].weathermap.settings.panel.zoomScale).toBe(1);
+  });
+
+  // #331 (36b4b88): links saved against the legacy name of a table frame
+  // (the first non-time field's display name) are rebound to the value
+  // field's name in the panel, and the rebind is persisted only once the
+  // query result is complete.
+  describe('#331 legacy query-name rebind', () => {
+    // 'Interface A' is the legacy name (first non-time field, a string);
+    // 'Throughput A' is the value field the link should actually read.
+    const frame = toDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'iface', type: FieldType.string, values: ['a', 'b'], config: { displayNameFromDS: 'Interface A' } },
+        { name: 'bps', values: [777, 777], config: { displayNameFromDS: 'Throughput A' } },
+      ],
+    });
+    const renderLegacy = (state: LoadingState, extra: Record<string, unknown> = {}) => {
+      const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+      weathermap.links[0].sides.A.query = 'Interface A';
+      const onOptionsChange = jest.fn();
+      const data = { state, series: [frame], timeRange: getDefaultRelativeTimeRange(), ...extra };
+      const r = render(
+        <WeathermapPanel
+          {...({
+            ...mPanelProps,
+            options: { weathermap },
+            onOptionsChange,
+            data,
+          } as unknown as PanelProps<SimpleOptions>)}
+        />
+      );
+      return { ...r, onOptionsChange };
+    };
+
+    test('renders the value of the rebound series', () => {
+      const { container } = renderLegacy(LoadingState.Done);
+      expect(container.textContent).toContain('777');
+    });
+
+    test('persists the rebound query name', () => {
+      const { onOptionsChange } = renderLegacy(LoadingState.Done);
+      expect(onOptionsChange).toHaveBeenCalled();
+      expect(lastWeathermap(onOptionsChange).links[0].sides.A.query).toBe('Throughput A');
+    });
+
+    // A partial result can make a colliding legacy alias look safe, so no
+    // rebind may be written while loading or when the query reported errors.
+    test.each([
+      ['loading', LoadingState.Loading, {}],
+      ['done with errors', LoadingState.Done, { errors: [{ message: 'x' }] }],
+    ])('does not persist a rebind when %s', (_name, state, extra) => {
+      const { onOptionsChange } = renderLegacy(state as LoadingState, extra);
+      expect(onOptionsChange).not.toHaveBeenCalled();
+    });
+  });
+});
