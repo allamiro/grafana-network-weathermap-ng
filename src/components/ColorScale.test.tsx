@@ -1,3 +1,4 @@
+import { createTheme } from '@grafana/data';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { getData, theme } from 'testData';
@@ -158,4 +159,17 @@ test('threshold labels keep a readable line height on one line (#44)', () => {
   const label = screen.getByText('0% - 50%');
   expect(getComputedStyle(label).lineHeight).toBe('normal');
   expect(getComputedStyle(label).whiteSpace).toBe('nowrap');
+});
+
+// #357: the scale's text colour and box border are theme tokens, so they
+// follow light/dark switching. Hard-coded black text was unreadable on the
+// dark theme.
+test('the scale box uses theme tokens for text and border (#357)', () => {
+  const gt = createTheme();
+  const settings = structuredClone(getData(theme).settings);
+  settings.scale.backgroundColor = 'rgb(24, 27, 31)';
+  render(<ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />);
+  const box = getComputedStyle(screen.getByTestId('color-scale'));
+  expect(box.color).toBe(gt.colors.text.primary);
+  expect(box.border).toContain(gt.colors.border.weak);
 });

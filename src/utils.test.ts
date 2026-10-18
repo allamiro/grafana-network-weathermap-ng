@@ -756,6 +756,16 @@ describe('buildQueryOptions (#49, #191)', () => {
       ],
     });
 
+  // #42/#46: the panel skips frames with fewer than two fields when it builds
+  // its value map, so offering one in the dropdown would save a binding that
+  // never resolves. A one-field frame still has a numeric field and a name,
+  // which is why only the length guard keeps it out (a zero-field frame is
+  // dropped by the value-field lookup anyway).
+  test('single-field frames are not offered (#42, #46)', () => {
+    const solo = toDataFrame({ refId: 'S', fields: [{ name: 'Solo', type: FieldType.number, values: [1] }] });
+    expect(buildQueryOptions([solo, frame('A', 'ok-series')]).map((o) => o.value)).toEqual(['ok-series']);
+  });
+
   test('one query returning many series keeps every label distinguishable (#191)', () => {
     // Simulates a single Prometheus rate() query: same refId, same "Value"
     // field, distinct label sets in the display name.
@@ -1835,4 +1845,19 @@ describe('a frame name is the same in the editor and on the map (#54)', () => {
     const boundNames = frames.map((f) => getValueSeries(f, frames)[0].name);
     expect(editorNames).toEqual(boundNames);
   });
+});
+
+// #53: non-standard datasources (table-shaped SQL/JSON results) put a string
+// column at fields[1]. The value is the first NUMERIC field, not fields[1].
+// Until now this was only guarded by accident, through the #331 fixtures.
+test('the value series is the first numeric field, not fields[1] (#53)', () => {
+  const f = toDataFrame({
+    fields: [
+      { name: 'Time', values: [1, 2] },
+      { name: 'host', type: FieldType.string, values: ['a', 'b'] },
+      { name: 'bps', type: FieldType.number, values: [5, 6], config: { displayNameFromDS: 'core tx' } },
+    ],
+  });
+  expect(getValueSeries(f, [f]).map((s) => s.field.name)).toEqual(['bps']);
+  expect(getDataFrameName(f, [f])).toBe('core tx');
 });
