@@ -10,7 +10,16 @@
 // name pass (#331) recomputes fields[1] on each data change, which hides the
 // corruption for the first value field.
 import React from 'react';
-import { dateTime, FieldType, getTimeZone, LoadingState, PanelData, PanelProps, toDataFrame } from '@grafana/data';
+import {
+  DataFrame,
+  dateTime,
+  FieldType,
+  getTimeZone,
+  LoadingState,
+  PanelData,
+  PanelProps,
+  toDataFrame,
+} from '@grafana/data';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from './WeathermapPanel';
 import { SimpleOptions, Weathermap } from './types';
@@ -168,4 +177,113 @@ test('link and node tooltip extra metrics still resolve after a link hover and r
 
   fireEvent.mouseMove(screen.getByText(nodes[0].label!).closest('g')!, { clientX: 100, clientY: 150 });
   expect(screen.getByTestId('weathermap-node-tooltip')).toHaveTextContent('Load: 1');
+});
+
+// Invariant behind #375 / #377 and the earlier stale line colours: hovering is
+// read-only. Whatever a tooltip hands to Grafana must be a copy, so nothing a
+// hover renders may change data.series. The tests above pin the symptoms; this
+// one fails for any new write into the shared frames, whichever component or
+// Grafana internal makes it.
+describe('hovering never writes into data.series', () => {
+  // Everything a hover could plausibly write: the cached display name, field
+  // config (line colours), the display processor and the values themselves.
+  const snapshot = (series: DataFrame[]) =>
+    series.map((frame) => ({
+      name: frame.name,
+      fields: frame.fields.map((f) => ({
+        name: f.name,
+        type: f.type,
+        labels: { ...f.labels },
+        config: JSON.parse(JSON.stringify(f.config)),
+        state: f.state === undefined ? undefined : JSON.parse(JSON.stringify(f.state)),
+        display: f.display,
+        values: Array.from(f.values),
+      })),
+    }));
+
+  const shapes: Array<{ shape: string; series: () => DataFrame[]; out: string; inbound: string }> = [
+    {
+      // #375's setup: the frame-name prefix is only kept in the full panel.
+      shape: 'two datasources, both series in one wide frame',
+      series: () => makeData().series,
+      out: OUT,
+      inbound: IN,
+    },
+    {
+      shape: 'one frame per series, each frame named differently',
+      series: () => [
+        toDataFrame({
+          name: 'Inbound',
+          fields: [
+            { name: 'time', type: FieldType.time, values: [1000, 2000] },
+            { name: 'value', type: FieldType.number, values: [3, 4] },
+          ],
+        }),
+        toDataFrame({
+          name: 'Outbound',
+          fields: [
+            { name: 'time', type: FieldType.time, values: [1000, 2000] },
+            { name: 'value', type: FieldType.number, values: [1, 2] },
+          ],
+        }),
+      ],
+      out: 'Outbound value',
+      inbound: 'Inbound value',
+    },
+    {
+      shape: 'a single datasource',
+      series: () => [trafficFrame()],
+      out: 'value router-a: 10105',
+      inbound: 'value router-a: 10104',
+    },
+    {
+      // #364: the tooltip retypes a number time column on its own copy.
+      shape: 'epoch-ms time column typed as a plain number',
+      series: () => [
+        toDataFrame({
+          name: 'Traffic',
+          fields: [
+            { name: 'Time', type: FieldType.number, values: [1000, 2000] },
+            { name: 'in', type: FieldType.number, values: [5, 5] },
+            { name: 'out', type: FieldType.number, values: [0, 1] },
+          ],
+        }),
+        makeData().series[1],
+      ],
+      out: 'Traffic out',
+      inbound: 'Traffic in',
+    },
+  ];
+
+  test.each(shapes)('$shape', ({ series, out, inbound }) => {
+    const data: PanelData = { state: LoadingState.Done, series: series(), timeRange };
+    const props = panelProps(data, { build: getData2, out, inbound });
+    const { links, nodes } = props.options.weathermap;
+    links.forEach((link) => {
+      link.tooltipMetrics = [{ label: 'Errors', queryA: out, queryZ: inbound, units: 'short' }];
+    });
+    nodes.forEach((node) => {
+      node.tooltipMetrics = [{ label: 'Load', query: out, units: 'short' }];
+    });
+    render(<WeathermapPanel {...props} />);
+    // The first render legitimately caches names into field.state; compare
+    // against the state after it, not against the raw frames.
+    const before = snapshot(data.series);
+
+    for (let pass = 0; pass < 2; pass++) {
+      links.forEach((_, i) => {
+        // Guards the guard: if the bindings stop resolving, no graph renders
+        // and nothing is written, so the invariant would pass vacuously.
+        expect(hoverAndLeave(i)).toBe(true);
+      });
+      nodes.forEach((node) => {
+        const target = screen.getByText(node.label!).closest('g')!;
+        fireEvent.mouseMove(target, { clientX: 100, clientY: 150 });
+        expect(screen.getByTestId('weathermap-node-tooltip')).not.toHaveTextContent('n/a');
+        fireEvent.mouseLeave(target);
+      });
+    }
+
+    expect(snapshot(data.series)).toEqual(before);
+  });
 });
