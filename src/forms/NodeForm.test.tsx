@@ -112,6 +112,52 @@ describe('number inputs do not store NaN (#200)', () => {
     fireEvent.change(xInput, { target: { value: '250' } });
     expect(lastValue(spy).nodes.find((n) => n.label === 'Node A')!.position[0]).toBe(250);
   });
+
+  // #200 (22e71ad): a blank icon width reports NaN; it must keep the previous
+  // size instead of saving NaN into the icon geometry.
+  test('clearing the icon width keeps the previous size', async () => {
+    const initial = getData(theme);
+    // A real icon with a non-zero size: the basic node's 0x0 placeholder would
+    // make "kept the previous value" indistinguishable from a reset.
+    initial.nodes[0].nodeIcon = {
+      src: 'public/plugins/tamirsuliman-weathermap-panel/icons/x.svg',
+      name: 'x',
+      size: { width: 40, height: 40 },
+      padding: { vertical: 0, horizontal: 0 },
+      drawInside: false,
+    };
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
+    await openNodeA();
+    fireEvent.click(screen.getByText('Icon'));
+
+    const width = container.querySelector('input[placeholder="Width"]')!;
+    fireEvent.change(width, { target: { value: '' } });
+    expect(lastValue(spy).nodes[0].nodeIcon!.size.width).toBe(40);
+
+    // 0 is still a real value, not treated as blank.
+    fireEvent.change(width, { target: { value: '0' } });
+    expect(lastValue(spy).nodes[0].nodeIcon!.size.width).toBe(0);
+  });
+
+  // #200 (22e71ad): a blank status-mapping threshold must keep the previous
+  // threshold instead of saving NaN (which matches no value at all).
+  test('clearing a status-mapping threshold keeps the previous value', async () => {
+    const initial = getData(theme);
+    initial.nodes[0].statusValueMappings = [{ value: 5, color: '#ff0000' }];
+    const spy = jest.fn();
+    render(<Harness initial={initial} onChangeSpy={spy} />);
+    await openStatusSection();
+
+    let row: HTMLElement | null = screen.getByText('Threshold (≥)');
+    while (row && !row.querySelector('input[type="number"]')) {
+      row = row.parentElement;
+    }
+    const threshold = row!.querySelector('input[type="number"]')!;
+    fireEvent.change(threshold, { target: { value: '' } });
+
+    expect(lastValue(spy).nodes[0].statusValueMappings![0].value).toBe(5);
+  });
 });
 
 // #225: form updates must deliver new object references, not mutations of
@@ -221,4 +267,70 @@ test('node padding sliders allow values above the old 50 cap (#279)', async () =
   const maxes = sliders.map((el) => el.getAttribute('aria-valuemax'));
   expect(maxes).toEqual(expect.arrayContaining(['200']));
   expect(maxes).not.toContain('50');
+});
+
+// Dashboard link and custom icon source handlers: they clone before writing
+// (#233) and refuse unsafe URLs at input (#133).
+describe('node link and icon URL inputs (#233, #133)', () => {
+  const lastNodeA = (spy: jest.Mock) => spy.mock.calls[spy.mock.calls.length - 1][0].nodes[0];
+
+  const selectNodeA = async () => {
+    const picker = screen.getAllByRole('combobox')[0];
+    fireEvent.keyDown(picker, { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByText('Node A'));
+  };
+
+  // #233 (d96e5a6): the dashboard link handler wrote into the frozen
+  // props.value, which throws in the harness and never reaches onChange.
+  test('dashboard link change delivers a new weathermap', async () => {
+    const initial = getData(theme);
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
+    await selectNodeA();
+
+    fireEvent.change(container.querySelector('input[name="Dashboard link"]')!, { target: { value: '/d/abc' } });
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0]).not.toBe(initial);
+    expect(lastNodeA(spy).dashboardLink).toBe('/d/abc');
+  });
+
+  // #133 (d8a582d): a javascript: URL typed into the dashboard link is
+  // dropped at input; a safe URL is stored verbatim.
+  test('dashboard link refuses unsafe URLs', async () => {
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={getData(theme)} onChangeSpy={spy} />);
+    await selectNodeA();
+    const link = container.querySelector('input[name="Dashboard link"]')!;
+
+    fireEvent.change(link, { target: { value: 'javascript:alert(1)' } });
+    expect(lastNodeA(spy).dashboardLink).toBe('');
+
+    fireEvent.change(link, { target: { value: 'https://grafana.example/d/x' } });
+    expect(lastNodeA(spy).dashboardLink).toBe('https://grafana.example/d/x');
+  });
+
+  // #133 (d8a582d): same rule for the custom icon source, which only renders
+  // when the node's icon is the "custom_icon" choice.
+  test('custom icon source refuses unsafe URLs', async () => {
+    const initial = getData(theme);
+    initial.nodes[0].nodeIcon = {
+      src: '',
+      name: 'custom_icon',
+      size: { width: 40, height: 40 },
+      padding: { vertical: 0, horizontal: 0 },
+      drawInside: false,
+    };
+    const spy = jest.fn();
+    const { container } = render(<Harness initial={initial} onChangeSpy={spy} />);
+    await selectNodeA();
+    fireEvent.click(screen.getByText('Icon'));
+    const src = container.querySelector('input[name="iconImageURL"]')!;
+
+    fireEvent.change(src, { target: { value: 'javascript:alert(1)' } });
+    expect(lastNodeA(spy).nodeIcon.src).toBe('');
+
+    fireEvent.change(src, { target: { value: 'https://grafana.example/icon.svg' } });
+    expect(lastNodeA(spy).nodeIcon.src).toBe('https://grafana.example/icon.svg');
+  });
 });
