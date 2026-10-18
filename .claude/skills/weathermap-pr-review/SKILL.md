@@ -12,6 +12,7 @@ Repo: `allamiro/grafana-network-weathermap-ng`, default branch `main`, squash me
 ```bash
 gh pr view N --json title,body,state,isDraft,mergeable,maintainerCanModify,headRefName,headRepositoryOwner,commits \
   --jq '{title,state,isDraft,mergeable,maintainerCanModify,headRefName,owner:.headRepositoryOwner.login}'
+REVIEWED_SHA=$(gh pr view N --json headRefOid --jq .headRefOid)   # record it with the diff you read
 gh pr diff N
 gh pr checks N
 ```
@@ -56,13 +57,14 @@ A test that passes on both is not a regression test. Say so in the review. The `
   approve only the runs for the exact commit you reviewed. Another fork can use the same branch name, so don't select runs by branch:
 
   ```bash
-  SHA=$(gh pr view N --json headRefOid --jq .headRefOid)    # the commit whose diff you just read
-  for RID in $(gh run list --commit "$SHA" --status action_required --json databaseId --jq '.[].databaseId'); do
+  # REVIEWED_SHA is the head recorded in step 1, next to the diff you read. Don't re-query it here.
+  [ "$(gh pr view N --json headRefOid --jq .headRefOid)" = "$REVIEWED_SHA" ] || { echo "head moved: review the new commits first"; exit 1; }
+  for RID in $(gh run list --commit "$REVIEWED_SHA" --status action_required --json databaseId --jq '.[].databaseId'); do
     gh api -X POST repos/allamiro/grafana-network-weathermap-ng/actions/runs/$RID/approve
   done
   ```
 
-  If the head moved since you read the diff, review the new commits before approving.
+  The runs are pinned to the commit you reviewed, so a push that lands after you checked still waits for its own approval.
 - **"Check Grafana API compatibility (latest)" fails with `Resource not accessible by integration`:** that's the Levitate sticky-comment step being denied a fork token, not an incompatibility. #379 fixed it on `main`, so a branch based before #379 shows it. Bring the branch up to date with `gh pr update-branch N` (needs `maintainerCanModify`), then approve the new runs.
 - **The Grafana 11.0.0 / 12.0.0 / 13.1.0 API checks** are real and blocking: the plugin supports `>=11.0.0`. Read the Levitate output, don't bypass it.
 - To wait without polling: `gh pr checks N --watch --interval 20` in the background.

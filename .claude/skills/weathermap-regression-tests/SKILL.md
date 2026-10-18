@@ -19,7 +19,12 @@ npm run typecheck && npm run lint
 npx prettier --check <files you changed>         # whole-tree check has pre-existing drift; only gate your files
 ```
 
-`jest-environment-jsdom cannot be found` means `node_modules` isn't installed. Some existing suites print Grafana/React `act(...)` warnings. Don't let a new test add any: run it on its own (`npx jest <file> 2>&1 | grep -c "not wrapped in act"`). If one appears, wrap the update in `act` or await it, because an unawaited update can make the assertion pass or fail by timing.
+`jest-environment-jsdom cannot be found` means `node_modules` isn't installed. Some existing suites print Grafana/React `act(...)` warnings. Don't let a new test add any. Run it on its own, keeping jest's exit status separate from the count:
+
+```bash
+OUT=$(mktemp); npx jest <file> >"$OUT" 2>&1; echo "jest exit: $?"
+echo "act warnings: $(grep -c 'not wrapped in act' "$OUT" || true)"   # grep -c exits 1 on zero matches
+``` If one appears, wrap the update in `act` or await it, because an unawaited update can make the assertion pass or fail by timing.
 
 ## 1. Reproduce before fixing
 
