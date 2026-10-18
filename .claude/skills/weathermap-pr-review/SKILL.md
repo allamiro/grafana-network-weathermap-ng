@@ -58,7 +58,9 @@ A test that passes on both is not a regression test. Say so in the review. The `
 
   ```bash
   # REVIEWED_SHA is the head recorded in step 1, next to the diff you read. Don't re-query it here.
-  [ "$(gh pr view N --json headRefOid --jq .headRefOid)" = "$REVIEWED_SHA" ] || { echo "head moved: review the new commits first"; exit 1; }
+  [[ "$REVIEWED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "no reviewed SHA recorded"; exit 1; }
+  CURRENT=$(gh pr view N --json headRefOid --jq .headRefOid) || { echo "could not read the PR head"; exit 1; }
+  [ "$CURRENT" = "$REVIEWED_SHA" ] || { echo "head moved: review the new commits first"; exit 1; }
   for RID in $(gh run list --commit "$REVIEWED_SHA" --status action_required --json databaseId --jq '.[].databaseId'); do
     gh api -X POST repos/allamiro/grafana-network-weathermap-ng/actions/runs/$RID/approve
   done

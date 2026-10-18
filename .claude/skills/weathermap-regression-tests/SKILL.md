@@ -24,7 +24,9 @@ npx prettier --check <files you changed>         # whole-tree check has pre-exis
 ```bash
 OUT=$(mktemp); npx jest <file> >"$OUT" 2>&1; echo "jest exit: $?"
 echo "act warnings: $(grep -c 'not wrapped in act' "$OUT" || true)"   # grep -c exits 1 on zero matches
-``` If one appears, wrap the update in `act` or await it, because an unawaited update can make the assertion pass or fail by timing.
+```
+
+If one appears, wrap the update in `act` or await it, because an unawaited update can make the assertion pass or fail by timing.
 
 ## 1. Reproduce before fixing
 
