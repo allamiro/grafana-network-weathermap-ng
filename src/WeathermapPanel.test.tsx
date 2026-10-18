@@ -1619,3 +1619,170 @@ describe.each([false, true])('extra metric missing values (scrubbing=%s)', (scru
     }
   );
 });
+
+describe('link rendering regressions (audit)', () => {
+  const firstPoint = (polyline: Element) => {
+    const [x, y] = polyline.getAttribute('points')!.trim().split(/\s+/)[0].split(',').map(Number);
+    return { x, y };
+  };
+  const gradientEnds = (container: HTMLElement, id: string) => {
+    const g = container.querySelector(`#${id}`)!;
+    expect(g).not.toBeNull();
+    return {
+      start: { x: Number(g.getAttribute('x1')), y: Number(g.getAttribute('y1')) },
+      end: { x: Number(g.getAttribute('x2')), y: Number(g.getAttribute('y2')) },
+    };
+  };
+  const valueFrame = (name: string, v: number) =>
+    toDataFrame({
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'Value', values: [v, v], config: { displayNameFromDS: name } },
+      ],
+    });
+
+  test('both link gradients span the whole link from the A node to the Z node (#283)', () => {
+    // #283 (207b00c): the A and Z halves (and both arrow heads) must sample one
+    // continuous A->Z gradient. A gradient spanning only its own half put a
+    // color break at the arrow tips.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.settings.link.gradientColor = true;
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    const polylines = screen.getByTestId('link').querySelectorAll('polyline');
+    // The A half starts at the A node; the Z half is drawn from the Z node.
+    const a = firstPoint(polylines[0]);
+    const z = firstPoint(polylines[1]);
+    expect(a).not.toEqual(z);
+    for (const id of ['grad-a-nw-link-0', 'grad-z-nw-link-0']) {
+      const { start, end } = gradientEnds(container, id);
+      expect(start).toEqual(a);
+      expect(end).toEqual(z);
+    }
+  });
+
+  test('a Z-side port label never renders at a VIA, only at the real Z node (#317, #318)', () => {
+    // #317/#318 (ae4ebb7): segment 0 ends at the VIA C0, so its Z port label
+    // would sit on the bend. Only the last segment's Z label (at node B) shows.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    weathermap.links[0].sides.Z.portLabel = 'GE-Z-VIA';
+    weathermap.links[1].sides.Z.portLabel = 'GE-Z-END';
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    render(<WeathermapPanel {...testProps} />);
+
+    expect(screen.queryAllByText('GE-Z-VIA')).toHaveLength(0);
+    expect(screen.getAllByText('GE-Z-END')).toHaveLength(1);
+  });
+
+  test('a blinking down link uses scoped keyframes, not a global <style> (#357)', () => {
+    // #357 (fbf3992): a global `@keyframes link-blink` in an inline <style>
+    // leaked across panels and collided with other plugins. Emotion's
+    // keyframes() yields a hashed `animation-<hash>` name instead.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    // A status query with no matching series resolves the link as down.
+    weathermap.links[0].statusQuery = 'STATUS';
+    weathermap.links[0].statusBlink = true;
+    testProps.options = { weathermap };
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = () => {};
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    const polylines = Array.from(screen.getByTestId('link').querySelectorAll('polyline'));
+    expect(polylines).toHaveLength(2);
+    polylines.forEach((p) => expect(p.style.animation).toMatch(/^animation-\w+ 1s ease-in-out infinite$/));
+    expect(container.querySelector('style')).toBeNull();
+  });
+
+  test('flow animation uses scoped keyframes, not a global <style> (#357)', () => {
+    // #357 (fbf3992): same as the blink case, for `@keyframes link-flow-forward`.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.settings.link.flowAnimation = { enabled: true, speed: 2 };
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    const polylines = Array.from(screen.getByTestId('link').querySelectorAll('polyline'));
+    expect(polylines).toHaveLength(2);
+    polylines.forEach((p) => expect(p.style.animation).toMatch(/^animation-\w+ 2s linear infinite$/));
+    expect(container.querySelector('style')).toBeNull();
+  });
+
+  test('the data notice z-index comes from the theme tooltip token (#357)', () => {
+    // #357 (fbf3992): the notice used a literal 9999, which sat above Grafana's
+    // own overlays. theme.zIndex.tooltip (1040 in the default theme) keeps it
+    // above the map but below portal tooltips.
+    const { createTheme } = jest.requireActual<typeof import('@grafana/data')>('@grafana/data');
+    const testProps = { ...mPanelProps };
+    testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+    testProps.data = {
+      state: LoadingState.Error,
+      series: [],
+      error: { message: 'boom' },
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = () => {};
+
+    render(<WeathermapPanel {...testProps} />);
+
+    const zIndex = getComputedStyle(screen.getByTestId('weathermap-data-notice')).zIndex;
+    expect(zIndex).toBe(String(createTheme().zIndex.tooltip));
+    expect(zIndex).toBe('1040');
+  });
+
+  test('hovering a VIA segment does not rewrite the drawn link gradient (#201)', () => {
+    // #201 (0260441): the hover merge of the origin side onto a VIA segment
+    // must build a new link, not write into the drawn link's sides. Segment 0
+    // is bound on A (100) and segment 1 on Z (222); hovering segment 0 merges
+    // the chain's Z side in. Written in place, the drawn segment 0 picks up
+    // Z=222 and its gradient's Z-end stop turns red on the next render.
+    // Value-mode thresholds black at 0 and red at 200: 100 and an unbound side
+    // stay black, only the leaked 222 turns a stop red.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    weathermap.links[0].sides.A.query = 'a1-series';
+    weathermap.links[1].sides.Z.query = 'z2-series';
+    weathermap.settings.link.gradientColor = true;
+    weathermap.settings.colorScaleMode = 'value';
+    weathermap.scale = [
+      { percent: 0, color: '#000000' },
+      { percent: 200, color: '#ff0000' },
+    ];
+    testProps.options = { weathermap };
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [valueFrame('a1-series', 100), valueFrame('z2-series', 222)],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = jest.fn();
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+    const stops = () =>
+      Array.from(container.querySelectorAll(`#grad-a-${weathermap.links[0].id} stop`)).map((s) =>
+        s.getAttribute('stop-color')
+      );
+    const before = stops();
+    // Segment 0 has no Z binding of its own, so its Z end is the scale's 0 color.
+    expect(before[before.length - 1]).toBe('#000000');
+
+    const segment = screen.getAllByTestId('link')[0].firstChild!;
+    fireEvent.mouseMove(segment);
+    fireEvent.mouseLeave(segment);
+
+    expect(stops()).toEqual(before);
+  });
+});
