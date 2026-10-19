@@ -18,7 +18,7 @@ import {
 } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps } from '@grafana/data';
 import { v4 as uuidv4 } from 'uuid';
-import { Weathermap, Node, NodeStatusValueMapping, NodeTooltipMetric } from 'types';
+import { Anchor, Weathermap, Node, NodeStatusValueMapping, NodeTooltipMetric } from 'types';
 import {
   CiscoIcons,
   NetworkingIcons,
@@ -253,13 +253,31 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
 
   const removeNode = (i: number) => {
     let weathermap: Weathermap = structuredClone(value);
+    const removedId = weathermap.nodes[i].id;
     weathermap.links = weathermap.links.filter((link) => {
-      for (const node of link.nodes) {
-        if (node.id === weathermap.nodes[i].id) {
-          return false;
-        }
+      // Hand-edited or partially provisioned maps can carry links with a
+      // missing endpoint or side. Read them defensively so removing a node
+      // still works, and keep links that never referenced the removed node.
+      const aId = link.nodes?.[0]?.id;
+      const zId = link.nodes?.[1]?.id;
+      if (aId !== removedId && zId !== removedId) {
+        return true;
       }
-      return true;
+      // The link goes with the node: release the anchor slot it held on the
+      // endpoint that survives, as LinkForm's removeLink does (#390). Clamp at
+      // 0 so already-drifted saved maps cannot go negative.
+      const release = (nodeId: string | undefined, anchor: Anchor | undefined) => {
+        if (nodeId === undefined || nodeId === removedId || anchor === undefined) {
+          return;
+        }
+        const slot = weathermap.nodes.find((n) => n.id === nodeId)?.anchors?.[anchor];
+        if (slot) {
+          slot.numLinks = Math.max(0, slot.numLinks - 1);
+        }
+      };
+      release(aId, link.sides?.A?.anchor);
+      release(zId, link.sides?.Z?.anchor);
+      return false;
     });
     weathermap.nodes.splice(i, 1);
     onChange(weathermap);
