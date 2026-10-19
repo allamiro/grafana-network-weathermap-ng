@@ -679,6 +679,7 @@ export const NodeForm = ({ value, onChange, context }: Props) => {
                         variant="destructive"
                         icon="trash-alt"
                         size="sm"
+                        aria-label="Remove status mapping"
                         onClick={() => {
                           let weathermap: Weathermap = structuredClone(value);
                           weathermap.nodes[i].statusValueMappings!.splice(mi, 1);

@@ -116,6 +116,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               size="md"
               icon="trash-alt"
               data-testid="bg-image-remove"
+              aria-label="Remove background image"
               onClick={() => {
                 if (!confirm('Are you sure you want remove the background image?')) {
                   return;
@@ -140,6 +141,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
               }}
               icon="plus"
               data-testid="bg-image-add"
+              aria-label="Add background image"
               style={{ justifyContent: 'center' }}
             ></Button>
           )}
@@ -469,6 +471,7 @@ export const PanelForm = ({ value, onChange }: Props) => {
             variant="destructive"
             size="md"
             icon="trash-alt"
+            aria-label="Reset all link units"
             onClick={() => {
               if (!confirm('Are you sure you want to reset all link units?')) {
                 return;
