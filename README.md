@@ -218,7 +218,7 @@ This fork treats reliability as a feature. Beyond unit coverage, the suite is bu
 
 - **Hostile-data safe** — malformed or partial saved options, links pointing at deleted nodes, empty data frames, overlapping nodes: the panel renders instead of crashing, guaranteed by tests.
 - **Immutable by construction** — every editor interaction delivers new state; the test harnesses deep-freeze the options object so any in-place mutation fails CI instantly.
-- **Playwright E2E** on real Grafana (declared minimum *and* latest) — weekly, on demand, and on every PR that touches the E2E surface.
+- **Playwright E2E** on real Grafana (declared minimum *and* latest), including link and node tooltip hovers — weekly, on demand, and on every PR that changes the plugin source, its dependencies, or the E2E suite.
 - **Release discipline** — packaging layout checks on PRs, type-check and API-compatibility gates against Grafana 11, 12 and 13, signed artifacts with checksums and provenance attestation.
 
 ### 🔄 What was modernized from the original
