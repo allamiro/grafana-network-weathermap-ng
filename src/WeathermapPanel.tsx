@@ -40,6 +40,7 @@ import {
   needsMigration,
   getValueSeries,
   formatValueText,
+  isDrawableLink,
   handleVersionedStateUpdates,
   resolveLinkChain,
   spreadLabels,
@@ -417,6 +418,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     // Math.max(...[]) returns -Infinity for empty arrays, which corrupts
     // coordinates — default to 0 so positions stay finite.
     const anchorStrokes = wm.links
+      .filter(isDrawableLink)
       .filter((l) => l.nodes[0].id === d.id || l.nodes[1].id === d.id)
       .filter((l) => side.anchor === l.sides.A.anchor || l.sides.Z.anchor === side.anchor)
       .map((l) => l.stroke);
@@ -473,15 +475,35 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }
 
   // Calculate link positions / text / colors / etc.
-  // Build the drawable links, skipping any whose endpoint nodes are missing.
+  // Build the drawable links, skipping partial saved links (#392) and any
+  // whose endpoint nodes are missing (#198).
   function generateDrawnLinks(linkList: Link[], frameMap: Map<string, number>): DrawnLink[] {
-    return linkList.flatMap((d, i) => {
+    // Reset the per-anchor fill counters once per pass. Resetting inside
+    // generateDrawnLink at index 0 was skipped whenever the first saved link
+    // could not be drawn, so the counters kept growing across renders and
+    // bundled links drifted further apart on every redraw.
+    tempNodes = tempNodes.map((n) => {
+      n.anchors = {
+        0: { numLinks: n.anchors[0].numLinks, numFilledLinks: 0 },
+        1: { numLinks: n.anchors[1].numLinks, numFilledLinks: 0 },
+        2: { numLinks: n.anchors[2].numLinks, numFilledLinks: 0 },
+        3: { numLinks: n.anchors[3].numLinks, numFilledLinks: 0 },
+        4: { numLinks: n.anchors[4].numLinks, numFilledLinks: 0 },
+      };
+      return n;
+    });
+    return linkList.filter(isDrawableLink).flatMap((d, i) => {
       const drawn = generateDrawnLink(d, i, frameMap);
       return drawn ? [drawn] : [];
     });
   }
 
   function generateDrawnLink(d: Link, i: number, frameMap: Map<string, number>): DrawnLink | null {
+    // Callers pass drawable links only; keep the guard so a partial saved
+    // link (#392) can never reach the dereferences below.
+    if (!isDrawableLink(d)) {
+      return null;
+    }
     let toReturn: DrawnLink = { ...d, sides: { A: { ...d.sides.A }, Z: { ...d.sides.Z } } } as DrawnLink;
     toReturn.index = i;
 
@@ -564,19 +586,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
 
     // Calculate positions for links and arrow polygons. Not included above to help with typing.
-    if (i === 0) {
-      tempNodes = tempNodes.map((n) => {
-        n.anchors = {
-          0: { numLinks: n.anchors[0].numLinks, numFilledLinks: 0 },
-          1: { numLinks: n.anchors[1].numLinks, numFilledLinks: 0 },
-          2: { numLinks: n.anchors[2].numLinks, numFilledLinks: 0 },
-          3: { numLinks: n.anchors[3].numLinks, numFilledLinks: 0 },
-          4: { numLinks: n.anchors[4].numLinks, numFilledLinks: 0 },
-        };
-        return n;
-      });
-    }
-
+    // (Fill counters are reset once per pass in generateDrawnLinks.)
     toReturn.lineStartA = getMultiLinkPosition(tempNodes[toReturn.source.index], toReturn.sides.A);
     toReturn.lineStartZ = getMultiLinkPosition(tempNodes[toReturn.target.index], toReturn.sides.Z);
 
@@ -1170,11 +1180,12 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     const expectsData = Boolean(
       wm?.links?.some(
         (l) =>
-          l.sides.A.query ||
-          l.sides.Z.query ||
-          l.sides.A.bandwidthQuery ||
-          l.sides.Z.bandwidthQuery ||
-          l.statusQuery
+          // Optional reads: partial saved links (#392) may lack a side.
+          l?.sides?.A?.query ||
+          l?.sides?.Z?.query ||
+          l?.sides?.A?.bandwidthQuery ||
+          l?.sides?.Z?.bandwidthQuery ||
+          l?.statusQuery
       ) || wm?.nodes?.some((n) => n.statusQuery)
     );
     if (expectsData && data.series.length === 0 && data.state !== LoadingState.Loading) {

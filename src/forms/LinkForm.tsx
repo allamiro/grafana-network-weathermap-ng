@@ -57,30 +57,43 @@ export const LinkForm = (props: Props) => {
 
   const handleAnchorChange = (anchor: number, i: number, side: 'A' | 'Z') => {
     let weathermap: Weathermap = structuredClone(value);
-    const nodeIndex = findNodeIndex(weathermap.links[i].nodes[side === 'A' ? 0 : 1]);
+    // A partial saved link (#392) may have no endpoint on this side yet; the
+    // anchor is still stored, there is just no node slot to move.
+    const endpoint = weathermap.links[i].nodes?.[side === 'A' ? 0 : 1];
+    const node = endpoint ? weathermap.nodes[findNodeIndex(endpoint)] : undefined;
 
     // remove from old
-    weathermap.nodes[nodeIndex].anchors[weathermap.links[i].sides[side].anchor].numLinks--;
+    const oldSlot = node?.anchors?.[weathermap.links[i].sides[side].anchor];
+    if (oldSlot) {
+      oldSlot.numLinks--;
+    }
     weathermap.links[i].sides[side].anchor = anchor;
     // add to new
-    weathermap.nodes[nodeIndex].anchors[weathermap.links[i].sides[side].anchor].numLinks++;
+    const newSlot = node?.anchors?.[weathermap.links[i].sides[side].anchor];
+    if (newSlot) {
+      newSlot.numLinks++;
+    }
     onChange(weathermap);
   };
 
   const handleNodeChange = (node: Node, side: 'A' | 'Z', i: number) => {
     let weathermap: Weathermap = structuredClone(value);
+    const link = weathermap.links[i];
+    const slot = side === 'A' ? 0 : 1;
+    const anchor = link.sides[side].anchor;
     const nodeIndex = findNodeIndex(node);
 
-    weathermap.nodes[nodeIndex].anchors[weathermap.links[i].sides[side].anchor].numLinks++;
-    if (side === 'A') {
-      const n2 = findNodeIndex(weathermap.links[i].nodes[0]);
-      weathermap.nodes[n2].anchors[weathermap.links[i].sides[side].anchor].numLinks--;
-      weathermap.links[i].nodes[0] = weathermap.nodes[nodeIndex];
-    } else if (side === 'Z') {
-      const n2 = findNodeIndex(weathermap.links[i].nodes[1]);
-      weathermap.nodes[n2].anchors[weathermap.links[i].sides[side].anchor].numLinks--;
-      weathermap.links[i].nodes[1] = weathermap.nodes[nodeIndex];
+    weathermap.nodes[nodeIndex].anchors[anchor].numLinks++;
+    // A partial saved link (#392) may have no nodes array or no endpoint on
+    // this side yet: picking one repairs it, and there is no old slot to free.
+    const endpoints = Array.isArray(link.nodes) ? [...link.nodes] : [];
+    const old = endpoints[slot];
+    const oldSlot = old ? weathermap.nodes[findNodeIndex(old)]?.anchors?.[anchor] : undefined;
+    if (oldSlot) {
+      oldSlot.numLinks--;
     }
+    endpoints[slot] = weathermap.nodes[nodeIndex];
+    link.nodes = endpoints as [Node, Node];
     onChange(weathermap);
   };
 
@@ -152,12 +165,14 @@ export const LinkForm = (props: Props) => {
       // A and Z endpoints are the same node (addNewLink incremented its
       // anchor by 2), so an else-if here would leave the count drifted.
       // Clamp at 0 so already-drifted saved maps cannot go negative.
-      if (node.id === toRemove.nodes[0].id) {
-        const anchorA = node.anchors[toRemove.sides.A.anchor];
+      // A partial saved link (#392) may lack an endpoint, a side, or a valid
+      // anchor; release only the slots that actually resolve.
+      const anchorA = node.id === toRemove.nodes?.[0]?.id ? node.anchors?.[toRemove.sides?.A?.anchor] : undefined;
+      if (anchorA) {
         anchorA.numLinks = Math.max(0, anchorA.numLinks - 1);
       }
-      if (node.id === toRemove.nodes[1].id) {
-        const anchorZ = node.anchors[toRemove.sides.Z.anchor];
+      const anchorZ = node.id === toRemove.nodes?.[1]?.id ? node.anchors?.[toRemove.sides?.Z?.anchor] : undefined;
+      if (anchorZ) {
         anchorZ.numLinks = Math.max(0, anchorZ.numLinks - 1);
       }
     }
@@ -186,10 +201,11 @@ export const LinkForm = (props: Props) => {
   let usedConnectionSourceNodes: string[] = [];
   let usedConnectionTargetNodes: string[] = [];
   for (let link of value.links) {
-    if (link.nodes[0].isConnection) {
+    // Partial saved links (#392) may lack an endpoint.
+    if (link.nodes?.[0]?.isConnection) {
       usedConnectionSourceNodes.push(link.nodes[0].id);
     }
-    if (link.nodes[1].isConnection) {
+    if (link.nodes?.[1]?.isConnection) {
       usedConnectionTargetNodes.push(link.nodes[1].id);
     }
   }
@@ -220,7 +236,7 @@ export const LinkForm = (props: Props) => {
         }}
         value={currentLink}
         options={value.links}
-        getOptionLabel={(link) => (link.nodes.length > 0 ? `${link.nodes[0]?.label} <> ${link.nodes[1]?.label}` : '')}
+        getOptionLabel={(link) => (link.nodes?.length > 0 ? `${link.nodes[0]?.label} <> ${link.nodes[1]?.label}` : '')}
         getOptionValue={(link) => link.id}
         className={styles.nodeSelect}
         placeholder={'Select a link'}
@@ -245,18 +261,18 @@ export const LinkForm = (props: Props) => {
                         onChange={(v) => {
                           handleNodeChange(v as unknown as Node, sName, i);
                         }}
-                        value={link.nodes[sideIndex]?.label || 'No label'}
+                        value={link.nodes?.[sideIndex]?.label || 'No label'}
                         options={availableNodes as unknown as Array<SelectableValue<String>>}
                         getOptionLabel={(node) => node?.label || 'No label'}
                         getOptionValue={(node) => node.id}
                         className={styles.nodeSelect}
                         placeholder={`Select ${sName} Side`}
-                        defaultValue={link.nodes[sideIndex]}
+                        defaultValue={link.nodes?.[sideIndex]}
                       ></Select>
                     </InlineField>
-                    {(link.nodes[1].isConnection && sName === 'Z') ||
-                    (link.nodes[0].isConnection && sName === 'A') ||
-                    (link.nodes[0].isConnection && link.nodes[1].isConnection) ? (
+                    {(link.nodes?.[1]?.isConnection && sName === 'Z') ||
+                    (link.nodes?.[0]?.isConnection && sName === 'A') ||
+                    (link.nodes?.[0]?.isConnection && link.nodes?.[1]?.isConnection) ? (
                       ''
                     ) : (
                       <InlineField grow label={`${sName} Side Query`} labelWidth={'auto'}>
@@ -273,9 +289,9 @@ export const LinkForm = (props: Props) => {
                         ></Select>
                       </InlineField>
                     )}
-                    {(link.nodes[1].isConnection && sName === 'Z') ||
-                    (link.nodes[0].isConnection && sName === 'A') ||
-                    (link.nodes[0].isConnection && link.nodes[1].isConnection) ? (
+                    {(link.nodes?.[1]?.isConnection && sName === 'Z') ||
+                    (link.nodes?.[0]?.isConnection && sName === 'A') ||
+                    (link.nodes?.[0]?.isConnection && link.nodes?.[1]?.isConnection) ? (
                       ''
                     ) : (
                       <React.Fragment>
@@ -636,7 +652,7 @@ export const LinkForm = (props: Props) => {
                     }}
                   />
                 </InlineField>
-                {link.nodes[1].isConnection ? (
+                {link.nodes?.[1]?.isConnection ? (
                   ''
                 ) : (
                   <React.Fragment>

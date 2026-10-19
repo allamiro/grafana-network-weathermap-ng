@@ -26,7 +26,6 @@ const MULTI_SERIES = [
   promFrame('A', 'wm_link_bps{device="rtr-2", direction="tx", interface="ge-0/0/1", job="wm", site="atl"}'),
 ];
 
-
 // Deep-freeze the value handed to the form: any residual in-place mutation of
 // props.value throws immediately (#233). Handlers must clone before writing.
 const deepFreeze = <T,>(o: T): T => {
@@ -37,7 +36,15 @@ const deepFreeze = <T,>(o: T): T => {
   return o;
 };
 
-const Harness = ({ initial, onChangeSpy, frames }: { initial: Weathermap; onChangeSpy: jest.Mock; frames: unknown[] }) => {
+const Harness = ({
+  initial,
+  onChangeSpy,
+  frames,
+}: {
+  initial: Weathermap;
+  onChangeSpy: jest.Mock;
+  frames: unknown[];
+}) => {
   const [wm, setWm] = useState(initial);
   const props = {
     value: deepFreeze(wm),
@@ -310,4 +317,96 @@ test('an unsafe link dashboard URL is refused (#133)', async () => {
 
   fireEvent.change(input, { target: { value: 'https://grafana.example/d/x' } });
   expect(lastValue().links[0].sides.A.dashboardLink).toBe('https://grafana.example/d/x');
+});
+
+// #392: hand-edited or partially provisioned dashboards can carry links with
+// a missing endpoint. The editor must still render, let the link be picked,
+// and remove it, so the dashboard can be repaired from the UI.
+describe('partial saved links (#392)', () => {
+  const withPartialLinks = () => {
+    const wm = getData(theme);
+    const base = wm.links[0];
+    const partial = (id: string, nodes: unknown[]) =>
+      ({ ...JSON.parse(JSON.stringify(base)), id, nodes } as Weathermap['links'][number]);
+    wm.links.push(partial('no-endpoints', []), partial('one-endpoint', [wm.nodes[0]]));
+    return wm;
+  };
+
+  test('the editor renders with partial links in the map', () => {
+    render(<Harness initial={withPartialLinks()} onChangeSpy={jest.fn()} frames={[]} />);
+    expect(screen.getByRole('button', { name: /Add Link/ })).toBeInTheDocument();
+  });
+
+  test('a one-endpoint link can be selected and removed', async () => {
+    const spy = jest.fn();
+    render(<Harness initial={withPartialLinks()} onChangeSpy={spy} frames={[]} />);
+    openSelectShowing('Select a link');
+    fireEvent.click(await screen.findByText('Node A <> undefined'));
+    fireEvent.click(screen.getByRole('button', { name: /Remove Link/ }));
+
+    const next: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    expect(next.links.map((l) => l.id)).toEqual([getData(theme).links[0].id, 'no-endpoints']);
+  });
+
+  const lastValue = (spy: jest.Mock): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+  // Open the react-select that currently shows `text` (value or placeholder).
+  const openSelectAt = (text: string) => {
+    let control: HTMLElement | null = screen.getByText(text).parentElement;
+    while (control && !control.querySelector('[role="combobox"]')) {
+      control = control.parentElement;
+    }
+    fireEvent.keyDown(control!.querySelector('[role="combobox"]')!, { key: 'ArrowDown' });
+  };
+
+  test('a one-endpoint link is repaired by picking its missing Z endpoint', async () => {
+    const spy = jest.fn();
+    const initial = withPartialLinks();
+    const zAnchor = initial.links[0].sides.Z.anchor;
+    const before = initial.nodes[1].anchors[zAnchor].numLinks;
+    render(<Harness initial={initial} onChangeSpy={spy} frames={[]} />);
+    openSelectShowing('Select a link');
+    fireEvent.click(await screen.findByText('Node A <> undefined'));
+    // The missing Z endpoint shows the side picker's placeholder.
+    openSelectAt('Select Z Side');
+    fireEvent.click((await screen.findAllByRole('option')).find((o) => o.textContent === 'Node B')!);
+
+    const repaired = lastValue(spy).links.find((l) => l.id === 'one-endpoint')!;
+    expect(repaired.nodes.map((n) => n.label)).toEqual(['Node A', 'Node B']);
+    expect(lastValue(spy).nodes[1].anchors[zAnchor].numLinks).toBe(before + 1);
+  });
+
+  test('a link with no nodes array can be selected and given an endpoint', async () => {
+    const spy = jest.fn();
+    const initial = getData(theme);
+    const noNodes = { ...JSON.parse(JSON.stringify(initial.links[0])), id: 'no-nodes' };
+    delete noNodes.nodes;
+    initial.links.push(noNodes);
+    const aAnchor = initial.links[0].sides.A.anchor;
+    const before = initial.nodes[0].anchors[aAnchor].numLinks;
+    render(<Harness initial={initial} onChangeSpy={spy} frames={[]} />);
+    openSelectShowing('Select a link');
+    // Its picker label is empty: it has no endpoints to name.
+    fireEvent.click((await screen.findAllByRole('option')).find((o) => o.textContent === '')!);
+    openSelectAt('Select A Side');
+    fireEvent.click((await screen.findAllByRole('option')).find((o) => o.textContent === 'Node A')!);
+
+    const repaired = lastValue(spy).links.find((l) => l.id === 'no-nodes')!;
+    expect(repaired.nodes.map((n) => n?.label)).toEqual(['Node A']);
+    expect(lastValue(spy).nodes[0].anchors[aAnchor].numLinks).toBe(before + 1);
+  });
+
+  test('removing a link whose anchor is out of range does not crash', async () => {
+    const spy = jest.fn();
+    const initial = getData(theme);
+    const bad = { ...JSON.parse(JSON.stringify(initial.links[0])), id: 'bad-anchor' };
+    bad.nodes = [initial.nodes[1], initial.nodes[0]]; // "Node B <> Node A"
+    bad.sides.A.anchor = 99;
+    initial.links.push(bad);
+    render(<Harness initial={initial} onChangeSpy={spy} frames={[]} />);
+    openSelectShowing('Select a link');
+    fireEvent.click(await screen.findByText('Node B <> Node A'));
+    fireEvent.click(screen.getByRole('button', { name: /Remove Link/ }));
+
+    expect(lastValue(spy).links.map((l) => l.id)).toEqual([initial.links[0].id]);
+  });
 });

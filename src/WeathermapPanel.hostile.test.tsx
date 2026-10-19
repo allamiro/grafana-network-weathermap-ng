@@ -6,7 +6,8 @@ import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toD
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
 import { Anchor, SimpleOptions, Weathermap } from 'types';
-import { getData, theme } from 'testData';
+import { getData, getData2, theme } from 'testData';
+import { handleVersionedStateUpdates } from 'utils';
 
 const renderPanel = (
   series: unknown[],
@@ -134,6 +135,34 @@ describe('malformed links and geometry (#198)', () => {
     });
     // Only the one valid link renders; the three malformed ones are skipped.
     expect(screen.getAllByTestId('link')).toHaveLength(1);
+  });
+
+  // A hand-edited or partially provisioned link can lack endpoints entirely,
+  // not just point at a deleted node (#392). Each shape is tested on its own
+  // so one crash cannot hide another.
+  test.each([
+    ['no nodes array', (l: Record<string, unknown>) => delete l.nodes],
+    ['empty nodes array', (l: Record<string, unknown>) => (l.nodes = [])],
+    ['only one endpoint', (l: Record<string, unknown>) => (l.nodes = (l.nodes as unknown[]).slice(0, 1))],
+    ['a null endpoint', (l: Record<string, unknown>) => (l.nodes = [(l.nodes as unknown[])[0], null])],
+  ])('skips a link with %s and renders the valid one', (_shape, breakLink) => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      const partial = { ...JSON.parse(JSON.stringify(wm.links[0])), id: 'partial' };
+      breakLink(partial);
+      wm.links.unshift(partial);
+    });
+    expect(screen.getAllByTestId('link')).toHaveLength(1);
+  });
+
+  test('a link missing a side is repaired by migration and drawn (control)', () => {
+    // needsMigration checks every renderer-required leaf (#232), so a missing
+    // side is filled in rather than skipped; this passed before #392 too.
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      const partial = { ...JSON.parse(JSON.stringify(wm.links[0])), id: 'no-z-side' };
+      delete partial.sides.Z;
+      wm.links.unshift(partial);
+    });
+    expect(screen.getAllByTestId('link')).toHaveLength(2);
   });
 
   test('overlapping nodes do not emit NaN geometry', () => {
@@ -292,5 +321,96 @@ describe('unsafe URLs never reach the browser (#133)', () => {
     const images = document.querySelectorAll('image');
     expect(images).toHaveLength(1);
     expect(images[0].getAttribute('href')).toBe(src);
+  });
+});
+
+// #392 on a current-version map: migration does not repair partial links there
+// (needsMigration is false), so the panel itself must cope.
+describe('partial saved links on a current-version map (#392)', () => {
+  const renderCurrent = (mutate: (wm: Weathermap) => void, build = getData) => {
+    const wm = handleVersionedStateUpdates(build(theme), theme);
+    mutate(wm);
+    const props = {
+      id: 1,
+      data: { state: LoadingState.Done, series: [goodFrame('A QUERY')], timeRange: getDefaultRelativeTimeRange() },
+      timeRange: getDefaultRelativeTimeRange(),
+      timeZone: getTimeZone(),
+      options: { weathermap: wm },
+      width: 600,
+      height: 400,
+      onOptionsChange: () => {},
+    } as unknown as PanelProps<SimpleOptions>;
+    return { wm, props, ...render(<WeathermapPanel {...props} />) };
+  };
+  const partialOf = (wm: Weathermap, id: string, breakLink: (l: Record<string, any>) => void) => {
+    const l = { ...JSON.parse(JSON.stringify(wm.links[0])), id };
+    breakLink(l);
+    return l as Weathermap['links'][number];
+  };
+
+  test.each([
+    ['no Z side', (l: Record<string, any>) => delete l.sides.Z],
+    ['an empty Z side', (l: Record<string, any>) => (l.sides.Z = {})],
+    ['an out-of-range anchor', (l: Record<string, any>) => (l.sides.A.anchor = 99)],
+    ['no nodes array', (l: Record<string, any>) => delete l.nodes],
+  ])('skips a link with %s and draws the valid one', (_shape, breakLink) => {
+    renderCurrent((wm) => wm.links.unshift(partialOf(wm, 'partial', breakLink)));
+    expect(screen.getAllByTestId('link')).toHaveLength(1);
+  });
+
+  test('hover highlighting ignores partial links instead of crashing', () => {
+    renderCurrent((wm) => {
+      wm.settings.link.hoverHighlight = true;
+      wm.links.push(partialOf(wm, 'no-nodes', (l) => delete l.nodes));
+    });
+    fireEvent.mouseMove(screen.getAllByTestId('link')[0].firstChild!, { clientX: 100, clientY: 150 });
+    expect(screen.getByText(/^Usage - /)).toBeInTheDocument();
+  });
+
+  test('an undrawable first link does not shift the valid links', () => {
+    // Two valid A->B links share both anchors, so their positions depend on
+    // the per-anchor fill counters. The panel builds the drawn links twice per
+    // render (initial state and the data effect); if the counter reset is
+    // skipped because the first saved link cannot be drawn, the second pass
+    // starts from the first pass's counts and every valid link shifts.
+    const sharedAnchors = (wm: Weathermap) => {
+      wm.nodes[0].anchors[Anchor.Right].numLinks = 2;
+      wm.nodes[1].anchors[Anchor.Left].numLinks = 2;
+    };
+    const points = () => screen.getAllByTestId('link').map((g) => g.querySelector('polyline')?.getAttribute('points'));
+
+    const clean = renderCurrent(sharedAnchors, getData2);
+    const expected = points();
+    expect(expected).toHaveLength(2);
+    clean.unmount();
+
+    const { props, rerender } = renderCurrent((wm) => {
+      sharedAnchors(wm);
+      wm.links.unshift(partialOf(wm, 'no-nodes', (l) => delete l.nodes));
+    }, getData2);
+    expect(points()).toEqual(expected);
+    rerender(<WeathermapPanel {...props} width={601} />);
+    expect(points()).toEqual(expected);
+  });
+
+  test('a partial link does not change node sizing', () => {
+    const sizeOfNodeA = () => {
+      const rect = screen.getByText('Node A').closest('g')!.querySelector('rect')!;
+      return [rect.getAttribute('width'), rect.getAttribute('height')];
+    };
+    const baseline = renderCurrent(() => {});
+    const expected = sizeOfNodeA();
+    baseline.unmount();
+    // A thick partial link on Node A's Top and Right anchors (one endpoint).
+    renderCurrent((wm) =>
+      wm.links.push(
+        partialOf(wm, 'thick-partial', (l) => {
+          l.nodes = [l.nodes[0]];
+          l.stroke = 80;
+          l.sides.A.anchor = Anchor.Top;
+        })
+      )
+    );
+    expect(sizeOfNodeA()).toEqual(expected);
   });
 });
