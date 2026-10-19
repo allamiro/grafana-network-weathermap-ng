@@ -5,20 +5,11 @@ import { NodeForm } from './NodeForm';
 import { Anchor, Weathermap } from 'types';
 import { generateBasicLink, generateBasicNode } from 'utils';
 import { getData, theme } from '../testData';
+import { deepFreeze } from '../test/deepFreeze';
+import { openSections, pickOption, richMap, sweepEditor } from '../test/editorSweep';
 
 // Stateful harness: the editor only re-renders when onChange delivers a new
 // options object, which is exactly the behavior under test (#162).
-
-// Deep-freeze the value handed to the form: any residual in-place mutation of
-// props.value throws immediately (#233). Handlers must clone before writing.
-const deepFreeze = <T,>(o: T): T => {
-  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-    Object.freeze(o);
-  }
-  return o;
-};
-
 const Harness = ({
   initial,
   onChangeSpy,
@@ -30,6 +21,8 @@ const Harness = ({
 }) => {
   const [wm, setWm] = useState(initial);
   const props = {
+    // Frozen: any in-place mutation of props.value throws (#233); handlers
+    // must deliver new state.
     value: deepFreeze(wm),
     onChange: (v: Weathermap) => {
       onChangeSpy(v);
@@ -462,3 +455,86 @@ describe('Remove Node releases anchor slots on the surviving nodes (#390)', () =
     expect(counts(next)).toEqual({ 'Node A': [0, 1], 'Node B': [1, 0] });
   });
 });
+
+// Remove Node and Clear All rebuild both the node and the link lists. The
+// harness freezes props.value, so a write into it throws, and the frozen
+// original must come out unchanged.
+describe('removing nodes', () => {
+  // Node A links to B and to C; the B-C link does not touch A.
+  const threeNodeMap = () => {
+    const wm = getData(theme);
+    const [a, b] = wm.nodes;
+    const c = generateBasicNode('Node C', [300, 450], theme);
+    wm.nodes.push(c);
+    wm.links.push({ ...generateBasicLink([b, c]), id: 'link-b-c' }, { ...generateBasicLink([a, c]), id: 'link-a-c' });
+    return wm;
+  };
+  const lastValue = (spy: jest.Mock): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+
+  test('Remove Node deletes the node and only the links attached to it', async () => {
+    const initial = threeNodeMap();
+    const spy = jest.fn();
+    render(<Harness initial={initial} onChangeSpy={spy} />);
+    fireEvent.keyDown(screen.getAllByRole('combobox')[0], { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByText('Node A'));
+
+    fireEvent.click(screen.getByRole('button', { name: /Remove Node/ }));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const updated = lastValue(spy);
+    expect(updated).not.toBe(initial);
+    expect(updated.nodes.map((n) => n.label)).toEqual(['Node B', 'Node C']);
+    expect(updated.links.map((l) => l.id)).toEqual(['link-b-c']);
+    // The frozen original still holds every node and link.
+    expect(initial.nodes.map((n) => n.label)).toEqual(['Node A', 'Node B', 'Node C']);
+    expect(initial.links.map((l) => l.id)).toEqual(['nw-link-0', 'link-b-c', 'link-a-c']);
+  });
+
+  test('Clear All removes every node and link', () => {
+    const initial = threeNodeMap();
+    const spy = jest.fn();
+    render(<Harness initial={initial} onChangeSpy={spy} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Clear All/ }));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const updated = lastValue(spy);
+    expect(updated).not.toBe(initial);
+    expect(updated.nodes).toEqual([]);
+    expect(updated.links).toEqual([]);
+    expect(updated.settings).toEqual(initial.settings);
+    expect(initial.nodes).toHaveLength(3);
+    expect(initial.links).toHaveLength(3);
+  });
+});
+
+// Every control in the form, driven once against a deep-frozen value: none may
+// throw, and each onChange must carry a new object that differs from the one
+// it replaced (#225, #233). The count is how many controls must deliver a
+// change, so a handler that stops calling onChange fails too. See
+// src/test/editorSweep.tsx.
+test('every NodeForm control delivers new state without mutating props.value', async () => {
+  const { problems, changed, silent } = await sweepEditor({
+    Form: NodeForm,
+    initial: richMap,
+    setup: async () => {
+      await pickOption('Select a node', 'Node A');
+      openSections('Icon', 'Padding', 'Status', 'Tooltip', 'Advanced', 'Colors');
+    },
+  });
+  expect(problems).toEqual([]);
+  // Pinned exactly: a control that stops delivering moves into `silent`, a
+  // removed one lowers the count, and a new one has to be classified here.
+  // The node picker only chooses which node to edit, the section buttons only expand, and Lock Aspect Ratio is local UI state.
+  expect(silent).toEqual([
+    'select "nwm-node-picker"',
+    'button "Icon"',
+    'toggle "Lock Aspect Ratio"',
+    'button "Padding"',
+    'button "Status"',
+    'button "Tooltip"',
+    'button "Advanced"',
+    'button "Colors"',
+  ]);
+  expect(changed).toHaveLength(45);
+}, 30000);

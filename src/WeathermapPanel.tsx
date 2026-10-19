@@ -2360,8 +2360,9 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                       } else if (!isEditMode && clicked.dashboardLink) {
                         openDashboardLink(clicked.dashboardLink, clicked.openInSameTab);
                       }
-                      // Force an update
-                      onOptionsChange(options);
+                      // No options write here: a click changes nothing that is
+                      // saved. Drops are persisted by onStop, and selection
+                      // re-renders through its own state.
                     },
                     onMouseMove: (e) => handleNodeHover(d, e),
                     onMouseLeave: (e) => handleNodeHoverLoss(e),

@@ -6,6 +6,7 @@ import { WeathermapPanel } from 'WeathermapPanel';
 import { SimpleOptions } from 'types';
 import { handleVersionedStateUpdates } from 'utils';
 import { getConnectedLinkData, getData, theme } from 'testData';
+import { deepFreeze } from './test/deepFreeze';
 
 const mPanelProps = {
   id: 1,
@@ -1181,13 +1182,6 @@ test('duplicate display names resolve deterministically to the first frame (#204
 // Deep-freeze makes any in-place write throw, and the persisted payload must
 // be a new object carrying the change.
 test('pan persistence delivers a new object without mutating options (#225)', () => {
-  const deepFreeze = (o: unknown): unknown => {
-    if (o && typeof o === 'object') {
-      Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-      Object.freeze(o);
-    }
-    return o;
-  };
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);
   deepFreeze(weathermap);
   const spy = jest.fn();
@@ -1213,13 +1207,6 @@ test('pan persistence delivers a new object without mutating options (#225)', ()
 // mutate their argument by design, so the panel must hand them a clone.
 // Deep-freezing makes any residual in-place write throw.
 test('VIA insert and remove leave the rendered options untouched (#238)', () => {
-  const deepFreeze = (o: unknown): unknown => {
-    if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-      Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-      Object.freeze(o);
-    }
-    return o;
-  };
   getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
   const weathermap = handleVersionedStateUpdates(getData(theme), theme);
   deepFreeze(weathermap);
@@ -1238,13 +1225,6 @@ test('VIA insert and remove leave the rendered options untouched (#238)', () => 
 });
 
 test('VIA remove leaves the rendered options untouched (#238)', () => {
-  const deepFreeze = (o: unknown): unknown => {
-    if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-      Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-      Object.freeze(o);
-    }
-    return o;
-  };
   getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
   // Start from a map that already has a VIA (connection node between two links).
   const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
@@ -1789,14 +1769,6 @@ describe('link rendering regressions (audit)', () => {
 describe('interaction and persistence regressions (audit)', () => {
   const editMode = () => {
     getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
-  };
-  const deepFreeze = <T,>(o: T): T => {
-    Object.values(o as object).forEach((v) => {
-      if (v && typeof v === 'object' && !Object.isFrozen(v)) {
-        deepFreeze(v);
-      }
-    });
-    return Object.freeze(o);
   };
   const lastWeathermap = (fn: jest.Mock) => fn.mock.calls[fn.mock.calls.length - 1][0].weathermap;
 

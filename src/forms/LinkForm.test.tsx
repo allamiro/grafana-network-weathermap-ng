@@ -8,6 +8,8 @@ import { StandardEditorProps, toDataFrame } from '@grafana/data';
 import { LinkForm } from './LinkForm';
 import { Anchor, Weathermap } from 'types';
 import { getData, theme } from '../testData';
+import { deepFreeze } from '../test/deepFreeze';
+import { openSections, pickOption, richMap, sweepEditor } from '../test/editorSweep';
 
 const promFrame = (refId: string, displayName: string, fieldName = 'Value') =>
   toDataFrame({
@@ -26,16 +28,6 @@ const MULTI_SERIES = [
   promFrame('A', 'wm_link_bps{device="rtr-2", direction="tx", interface="ge-0/0/1", job="wm", site="atl"}'),
 ];
 
-// Deep-freeze the value handed to the form: any residual in-place mutation of
-// props.value throws immediately (#233). Handlers must clone before writing.
-const deepFreeze = <T,>(o: T): T => {
-  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-    Object.freeze(o);
-  }
-  return o;
-};
-
 const Harness = ({
   initial,
   onChangeSpy,
@@ -47,6 +39,8 @@ const Harness = ({
 }) => {
   const [wm, setWm] = useState(initial);
   const props = {
+    // Frozen: any in-place mutation of props.value throws (#233); handlers
+    // must deliver new state.
     value: deepFreeze(wm),
     onChange: (v: Weathermap) => {
       onChangeSpy(v);
@@ -410,3 +404,25 @@ describe('partial saved links (#392)', () => {
     expect(lastValue(spy).links.map((l) => l.id)).toEqual([initial.links[0].id]);
   });
 });
+
+// Every control in the form, driven once against a deep-frozen value: none may
+// throw, and each onChange must carry a new object that differs from the one
+// it replaced (#225, #233). The count is how many controls must deliver a
+// change, so a handler that stops calling onChange fails too. See
+// src/test/editorSweep.tsx.
+test('every LinkForm control delivers new state without mutating props.value', async () => {
+  const { problems, changed, silent } = await sweepEditor({
+    Form: LinkForm,
+    initial: richMap,
+    setup: async () => {
+      await pickOption('Select a link', /Node A <> Node B/);
+      openSections('Stroke and Arrow');
+    },
+  });
+  expect(problems).toEqual([]);
+  // Pinned exactly: a control that stops delivering moves into `silent`, a
+  // removed one lowers the count, and a new one has to be classified here.
+  // The link picker only chooses which link to edit; the section button only expands.
+  expect(silent).toEqual(['select "nwm-link-picker"', 'button "Stroke and Arrow"']);
+  expect(changed).toHaveLength(52);
+}, 30000);
