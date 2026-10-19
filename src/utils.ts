@@ -111,12 +111,29 @@ export function nearestMultiple(input: number, grid: number): number {
   return Math.ceil(input / grid) * grid;
 }
 
+const LINK_ANCHORS: Anchor[] = [Anchor.Center, Anchor.Top, Anchor.Bottom, Anchor.Left, Anchor.Right];
+
+/**
+ * A link the panel can draw and lay out: both endpoints with an id and both
+ * sides with a valid anchor. Hand-edited or partially provisioned dashboards
+ * can save links missing any of these (#392); drawing, sizing and hover
+ * chains use only drawable links, while the saved options keep them so the
+ * link editor can repair or remove them.
+ */
+export const isDrawableLink = (l: Link | null | undefined): l is Link =>
+  !!l &&
+  !!l.nodes?.[0]?.id &&
+  !!l.nodes?.[1]?.id &&
+  LINK_ANCHORS.includes(l.sides?.A?.anchor as Anchor) &&
+  LINK_ANCHORS.includes(l.sides?.Z?.anchor as Anchor);
+
 // Calculate the automatically determined widths for nodes with multiple links.
 export function calculateRectangleAutoWidth(d: DrawnNode, wm: Weathermap): number {
   const widerSideLinks = Math.max(d.anchors[Anchor.Top].numLinks, d.anchors[Anchor.Bottom].numLinks);
   // Gets the maximum width of any link associated with this node.
   const maxLinkHeight = Math.max(
     ...wm.links
+      .filter(isDrawableLink)
       .filter((l) => l.nodes[0].id === d.id || l.nodes[1].id === d.id)
       .filter(
         (l) =>
@@ -159,6 +176,7 @@ export function calculateRectangleAutoHeight(d: DrawnNode, wm: Weathermap): numb
   // Gets the maximum height of any link associated with this node.
   const maxLinkHeight = Math.max(
     ...wm.links
+      .filter(isDrawableLink)
       .filter((l) => l.nodes[0].id === d.id || l.nodes[1].id === d.id)
       .filter(
         (l) =>
@@ -1163,8 +1181,11 @@ export function aggregateFieldValues(
  * connection-node targets, collecting every segment of the logical link.
  * Returns the set of link ids in the chain (always includes the given link).
  */
-export function resolveLinkChain(links: Link[], linkId: string): Set<string> {
+export function resolveLinkChain(allLinks: Link[], linkId: string): Set<string> {
   const chain = new Set<string>([linkId]);
+  // The walk reads only endpoints; a partial saved link (#392) without both
+  // of them cannot be part of a chain.
+  const links = allLinks.filter((l) => !!l?.nodes?.[0]?.id && !!l?.nodes?.[1]?.id);
   const byId = new Map(links.map((l) => [l.id, l]));
   const start = byId.get(linkId);
   if (!start) {
