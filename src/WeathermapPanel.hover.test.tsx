@@ -1,5 +1,5 @@
 import React from 'react';
-import { dateTime, FieldType, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
+import { createTheme, dateTime, FieldType, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
 import { TimeSeries } from '@grafana/ui';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from './WeathermapPanel';
@@ -214,4 +214,65 @@ test.each([
   fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
   const graph = chartProps();
   expect(graph.tweakAxis!({ scaleKey: 'y', theme }, graph.frames[0].fields[1]).formatValue!(40)).toBe(shown);
+});
+
+describe('link tooltip regressions', () => {
+  // #43 (6c7845c): the tooltip was anchored exactly on the cursor, so the
+  // pointer covered its corner. It must sit 14px right of and 10px above the
+  // pointer. (100, 150) is below the top-flip zone (y < 120) and left of the
+  // right-flip zone (x > 65% of the width), so it grows up and to the right.
+  test('the link tooltip is offset from the cursor', () => {
+    render(<WeathermapPanel {...panelProps()} />);
+    fireEvent.mouseMove(screen.getByTestId('link').firstChild!, { clientX: 100, clientY: 150 });
+    const tooltip = screen.getByText(/Usage -/).parentElement!;
+    expect(tooltip.style.left).toBe('114px');
+    expect(tooltip.style.top).toBe('140px');
+    expect(tooltip.style.transform).toBe('translate(0%, -100%)');
+  });
+
+  // #55 (7d2a000): tweakScale/tweakAxis applied to every field, so the time
+  // (x) axis got softMin 0, softMax = bandwidth and the value formatter.
+  // scaleToBandwidth with a bandwidth makes softMax observable.
+  test('the graph scale and axis tweaks apply to the value axis only', () => {
+    const props = panelProps();
+    props.options.weathermap.links[0].sides.A.bandwidth = 1000;
+    props.options.weathermap.settings.tooltip.scaleToBandwidth = true;
+    render(<WeathermapPanel {...props} />);
+    fireEvent.mouseMove(screen.getByTestId('link').firstChild!);
+    const g = chartProps();
+    const [timeField, valueField] = g.frames[0].fields;
+    expect(timeField.type).toBe(FieldType.time);
+    expect(valueField.type).toBe(FieldType.number);
+
+    const timeScale = g.tweakScale!({ scaleKey: 'x', orientation: 0, direction: 1 }, timeField);
+    expect(timeScale.softMin).toBeUndefined();
+    expect(timeScale.softMax).toBeUndefined();
+    expect(g.tweakAxis!({ scaleKey: 'x', theme: createTheme() }, timeField).formatValue).toBeUndefined();
+
+    const valueScale = g.tweakScale!({ scaleKey: 'y', orientation: 1, direction: 1 }, valueField);
+    expect(valueScale.softMin).toBe(0);
+    expect(valueScale.softMax).toBe(1000);
+    expect(g.tweakAxis!({ scaleKey: 'y', theme: createTheme() }, valueField).formatValue).toBeDefined();
+  });
+
+  // #357 (fbf3992): tooltips used literal z-index 10000 and a 4px radius
+  // instead of Grafana's theme tokens, so they stacked above Grafana's own
+  // portals and ignored the theme's corner radius.
+  test('the link and node tooltips use the theme z-index and radius tokens', () => {
+    const gt = createTheme();
+    const props = panelProps();
+    render(<WeathermapPanel {...props} />);
+    const link = screen.getByTestId('link').firstChild!;
+    fireEvent.mouseMove(link, { clientX: 100, clientY: 150 });
+    const linkTooltip = screen.getByText(/Usage -/).parentElement!;
+    expect(getComputedStyle(linkTooltip).zIndex).toBe(String(gt.zIndex.portal));
+    expect(getComputedStyle(linkTooltip).borderRadius).toBe(gt.shape.radius.default);
+    fireEvent.mouseLeave(link);
+
+    const node = screen.getByText(props.options.weathermap.nodes[0].label!).closest('g')!;
+    fireEvent.mouseMove(node, { clientX: 100, clientY: 150 });
+    const nodeTooltip = screen.getByTestId('weathermap-node-tooltip');
+    expect(getComputedStyle(nodeTooltip).zIndex).toBe(String(gt.zIndex.portal));
+    expect(getComputedStyle(nodeTooltip).borderRadius).toBe(gt.shape.radius.default);
+  });
 });

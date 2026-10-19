@@ -1,3 +1,4 @@
+import { createTheme } from '@grafana/data';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { getData, theme } from 'testData';
@@ -140,4 +141,36 @@ test('value mode with a bps scale unit formats labels with automatic prefixes', 
   // 500000000 bps -> "500 Mb/s", 750000000 bps -> "750 Mb/s".
   expect(screen.getByText('500 Mb/s – 750 Mb/s')).not.toBeNull();
   expect(screen.getByText('750 Mb/s+')).not.toBeNull();
+});
+
+// #44: the threshold labels had line-height 0px, so they collapsed onto the
+// colour boxes and overlapped each other in a tall scale. nowrap keeps a
+// "10% - 20%" range on one line next to its box.
+test('threshold labels keep a readable line height on one line (#44)', () => {
+  render(
+    <ColorScale
+      thresholds={[
+        { color: '#73BF69', percent: 0 },
+        { color: '#F2495C', percent: 50 },
+      ]}
+      settings={getData(theme).settings}
+    />
+  );
+  const label = screen.getByText('0% - 50%');
+  expect(getComputedStyle(label).lineHeight).toBe('normal');
+  expect(getComputedStyle(label).whiteSpace).toBe('nowrap');
+});
+
+// #357: the scale's text colour and box border are theme tokens, so they
+// follow light/dark switching. Hard-coded black text was unreadable on the
+// dark theme.
+test('the scale box uses theme tokens for text and border (#357)', () => {
+  const gt = createTheme();
+  const settings = structuredClone(getData(theme).settings);
+  settings.scale.backgroundColor = 'rgb(24, 27, 31)';
+  render(<ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />);
+  // toHaveStyle normalizes both sides, so a token written as hex or rgb compares equal.
+  const box = screen.getByTestId('color-scale');
+  expect(box).toHaveStyle({ color: gt.colors.text.primary });
+  expect(box).toHaveStyle(`border: 1px solid ${gt.colors.border.weak}`);
 });

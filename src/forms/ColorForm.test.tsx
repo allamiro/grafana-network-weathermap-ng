@@ -144,7 +144,29 @@ test('clearing a threshold renders an empty field without React NaN warnings (#2
   fireEvent.change(threshold, { target: { value: '' } });
 
   expect(threshold.value).toBe('');
+  // The rendered attribute is the reliable check. jsdom sanitizes the value
+  // property of a number input to '' either way, and React logs the NaN
+  // warning only once per process: after the #200 test above blanks a
+  // threshold, this test saw no warning even with the bug back.
+  expect(threshold.getAttribute('value')).toBe('');
   const nanWarnings = errorSpy.mock.calls.filter((c) => String(c[0]).includes('Received NaN'));
   errorSpy.mockRestore();
   expect(nanWarnings).toEqual([]);
+});
+
+// #233 (d96e5a6): the threshold color handler wrote into the frozen
+// props.value, which throws in the harness and never reaches onChange.
+test('threshold color change delivers a new weathermap (#233)', async () => {
+  const initial = getData(theme);
+  initial.scale = [{ percent: 10, color: '#111111' }];
+  const spy = jest.fn();
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  // The swatch opens Grafana's real ColorPicker popover; pick a named color.
+  fireEvent.click(screen.getByRole('button', { name: '#111111 color' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'red color' }));
+
+  expect(spy).toHaveBeenCalledTimes(1);
+  expect(spy.mock.calls[0][0]).not.toBe(initial);
+  expect(spy.mock.calls[0][0].scale[0].color).toBe('#F2495C');
 });

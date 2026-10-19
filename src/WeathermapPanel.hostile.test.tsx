@@ -3,9 +3,9 @@
 // dashboards. The panel must render — degraded, never thrown.
 import React from 'react';
 import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps, toDataFrame } from '@grafana/data';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { WeathermapPanel } from 'WeathermapPanel';
-import { SimpleOptions, Weathermap } from 'types';
+import { Anchor, SimpleOptions, Weathermap } from 'types';
 import { getData, theme } from 'testData';
 
 const renderPanel = (
@@ -144,6 +144,22 @@ describe('malformed links and geometry (#198)', () => {
     expect(document.body.innerHTML).not.toContain('NaN');
   });
 
+  // #198 (dc59251): with both link ends anchored at Center on overlapping
+  // nodes, the arrow's direction vector has length 0. Without the guard,
+  // normalising divides 0/0 and both arrow polygons get NaN points. The
+  // default Right/Left anchors keep the ends apart, so Center is what makes
+  // the length exactly 0.
+  test('a zero-length link does not emit NaN arrow polygons', () => {
+    renderPanel([], (wm) => {
+      wm.nodes[1].position = [...wm.nodes[0].position] as [number, number];
+      wm.links[0].sides.A.anchor = Anchor.Center;
+      wm.links[0].sides.Z.anchor = Anchor.Center;
+    });
+    const polygons = document.querySelectorAll('polygon');
+    expect(polygons).toHaveLength(2);
+    polygons.forEach((p) => expect(p.getAttribute('points')).not.toContain('NaN'));
+  });
+
   // #339: every one of these came from a real failure mode. `null` and a
   // missing key threw and took down the WHOLE panel; the rest rendered NaN
   // into link points, arrow polygons and gradient axes with no error shown.
@@ -199,5 +215,82 @@ describe('malformed links and geometry (#198)', () => {
     for (const [saved] of onOptionsChange.mock.calls) {
       expect((saved as { weathermap: Weathermap }).weathermap.nodes[1].position).toBeNull();
     }
+  });
+});
+
+// #133 review (d8a582d): dashboard links and icon srcs are user data (and may
+// come from template-variable substitution), so unsafe schemes must be dropped
+// at the point of use. The fixtures set them directly in saved options, which
+// is how a hand-edited or provisioned dashboard would deliver them.
+describe('unsafe URLs never reach the browser (#133)', () => {
+  let openSpy: jest.SpyInstance;
+  beforeEach(() => {
+    openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+  });
+  afterEach(() => {
+    openSpy.mockRestore();
+  });
+
+  // View mode: no editPanel in the URL, so a click opens the dashboard link.
+  test('a javascript: node dashboard link is never passed to window.open', () => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      wm.nodes[0].dashboardLink = 'javascript:alert(1)';
+    });
+    fireEvent.click(screen.getByText('Node A').closest('g')!);
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  test('a safe node dashboard link opens in a new tab (control)', () => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      wm.nodes[0].dashboardLink = '/d/abc';
+    });
+    fireEvent.click(screen.getByText('Node A').closest('g')!);
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    expect(openSpy).toHaveBeenCalledWith('/d/abc', '_blank', 'noopener,noreferrer');
+  });
+
+  // Link clicks go through the same openDashboardLink; firstChild is the
+  // A-side polyline.
+  test('a javascript: link dashboard link is never passed to window.open', () => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      wm.links[0].sides.A.dashboardLink = 'javascript:alert(1)';
+    });
+    fireEvent.click(screen.getAllByTestId('link')[0].firstChild!);
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  test('a safe link dashboard link opens in a new tab (control)', () => {
+    renderPanel([goodFrame('A QUERY')], (wm) => {
+      wm.links[0].sides.A.dashboardLink = '/d/abc';
+    });
+    fireEvent.click(screen.getAllByTestId('link')[0].firstChild!);
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    expect(openSpy).toHaveBeenCalledWith('/d/abc', '_blank', 'noopener,noreferrer');
+  });
+
+  const iconWithSrc = (src: string) => (wm: Weathermap) => {
+    wm.nodes[0].nodeIcon = {
+      src,
+      name: 'custom_icon',
+      size: { width: 40, height: 40 },
+      padding: { vertical: 0, horizontal: 0 },
+      drawInside: false,
+    };
+  };
+
+  // No background image is configured, so any <image> must be a node icon.
+  test('a javascript: node icon src renders no image', () => {
+    renderPanel([goodFrame('A QUERY')], iconWithSrc('javascript:alert(1)'));
+    expectRendered();
+    expect(document.querySelector('image[href^="javascript:"]')).toBeNull();
+    expect(document.querySelectorAll('image')).toHaveLength(0);
+  });
+
+  test('a bundled node icon src renders its image (control)', () => {
+    const src = 'public/plugins/tamirsuliman-weathermap-panel/icons/x.svg';
+    renderPanel([goodFrame('A QUERY')], iconWithSrc(src));
+    const images = document.querySelectorAll('image');
+    expect(images).toHaveLength(1);
+    expect(images[0].getAttribute('href')).toBe(src);
   });
 });

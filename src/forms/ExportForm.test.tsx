@@ -18,13 +18,29 @@ test('SVG export does not crash when the SVG element is missing', async () => {
   const props = { value, onChange } as unknown as StandardEditorProps<Weathermap>;
   render(<ExportForm {...props} />);
 
-  const button = screen.getByText('Export SVG');
-  // Should not throw and should bail out before attempting to build a blob.
-  expect(() => fireEvent.click(button)).not.toThrow();
-  // Allow the async handler to settle.
-  await Promise.resolve();
+  // #133 (d8a582d): the click handler is async, so a TypeError on the missing
+  // element surfaces as a rejected promise, not a throw from the click. Collect
+  // unhandled rejections and console errors so the failure lands in this test
+  // instead of whichever test happens to run next.
+  const rejections: unknown[] = [];
+  const onRejection = (reason: unknown) => rejections.push(reason);
+  process.on('unhandledRejection', onRejection);
+  const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-  expect(createObjectURL).not.toHaveBeenCalled();
+  try {
+    const button = screen.getByText('Export SVG');
+    // Should not throw and should bail out before attempting to build a blob.
+    expect(() => fireEvent.click(button)).not.toThrow();
+    // Let the async handler settle and Node report any unhandled rejection.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(rejections).toEqual([]);
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(createObjectURL).not.toHaveBeenCalled();
+  } finally {
+    process.off('unhandledRejection', onRejection);
+    errorSpy.mockRestore();
+  }
 });
 
 test('the download anchor is owned by React and no stray node is left in the document', async () => {

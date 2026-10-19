@@ -1619,3 +1619,313 @@ describe.each([false, true])('extra metric missing values (scrubbing=%s)', (scru
     }
   );
 });
+
+describe('link rendering regressions (audit)', () => {
+  const firstPoint = (polyline: Element) => {
+    const [x, y] = polyline.getAttribute('points')!.trim().split(/\s+/)[0].split(',').map(Number);
+    return { x, y };
+  };
+  const gradientEnds = (container: HTMLElement, id: string) => {
+    const g = container.querySelector(`#${id}`)!;
+    expect(g).not.toBeNull();
+    return {
+      start: { x: Number(g.getAttribute('x1')), y: Number(g.getAttribute('y1')) },
+      end: { x: Number(g.getAttribute('x2')), y: Number(g.getAttribute('y2')) },
+    };
+  };
+  const valueFrame = (name: string, v: number) =>
+    toDataFrame({
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'Value', values: [v, v], config: { displayNameFromDS: name } },
+      ],
+    });
+
+  test('both link gradients span the whole link from the A node to the Z node (#283)', () => {
+    // #283 (207b00c): the A and Z halves (and both arrow heads) must sample one
+    // continuous A->Z gradient. A gradient spanning only its own half put a
+    // color break at the arrow tips.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.settings.link.gradientColor = true;
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    const polylines = screen.getByTestId('link').querySelectorAll('polyline');
+    // The A half starts at the A node; the Z half is drawn from the Z node.
+    const a = firstPoint(polylines[0]);
+    const z = firstPoint(polylines[1]);
+    expect(a).not.toEqual(z);
+    for (const id of ['grad-a-nw-link-0', 'grad-z-nw-link-0']) {
+      const { start, end } = gradientEnds(container, id);
+      expect(start).toEqual(a);
+      expect(end).toEqual(z);
+    }
+  });
+
+  test('a Z-side port label never renders at a VIA, only at the real Z node (#317, #318)', () => {
+    // #317/#318 (ae4ebb7): segment 0 ends at the VIA C0, so its Z port label
+    // would sit on the bend. Only the last segment's Z label (at node B) shows.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    weathermap.links[0].sides.Z.portLabel = 'GE-Z-VIA';
+    weathermap.links[1].sides.Z.portLabel = 'GE-Z-END';
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    render(<WeathermapPanel {...testProps} />);
+
+    expect(screen.queryAllByText('GE-Z-VIA')).toHaveLength(0);
+    expect(screen.getAllByText('GE-Z-END')).toHaveLength(1);
+  });
+
+  test('a blinking down link uses scoped keyframes, not a global <style> (#357)', () => {
+    // #357 (fbf3992): a global `@keyframes link-blink` in an inline <style>
+    // leaked across panels and collided with other plugins. Emotion's
+    // keyframes() yields a hashed `animation-<hash>` name instead.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    // A status query with no matching series resolves the link as down.
+    weathermap.links[0].statusQuery = 'STATUS';
+    weathermap.links[0].statusBlink = true;
+    testProps.options = { weathermap };
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = () => {};
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    const polylines = Array.from(screen.getByTestId('link').querySelectorAll('polyline'));
+    expect(polylines).toHaveLength(2);
+    polylines.forEach((p) => expect(p.style.animation).toMatch(/^animation-\w+ 1s ease-in-out infinite$/));
+    expect(container.querySelector('style')).toBeNull();
+  });
+
+  test('flow animation uses scoped keyframes, not a global <style> (#357)', () => {
+    // #357 (fbf3992): same as the blink case, for `@keyframes link-flow-forward`.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+    weathermap.settings.link.flowAnimation = { enabled: true, speed: 2 };
+    testProps.options = { weathermap };
+    testProps.onOptionsChange = () => {};
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+
+    const polylines = Array.from(screen.getByTestId('link').querySelectorAll('polyline'));
+    expect(polylines).toHaveLength(2);
+    polylines.forEach((p) => expect(p.style.animation).toMatch(/^animation-\w+ 2s linear infinite$/));
+    expect(container.querySelector('style')).toBeNull();
+  });
+
+  test('the data notice z-index comes from the theme tooltip token (#357)', () => {
+    // #357 (fbf3992): the notice used a literal 9999, which sat above Grafana's
+    // own overlays. theme.zIndex.tooltip (1040 in the default theme) keeps it
+    // above the map but below portal tooltips.
+    const { createTheme } = jest.requireActual<typeof import('@grafana/data')>('@grafana/data');
+    const testProps = { ...mPanelProps };
+    testProps.options = { weathermap: handleVersionedStateUpdates(getData(theme), theme) };
+    testProps.data = {
+      state: LoadingState.Error,
+      series: [],
+      error: { message: 'boom' },
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = () => {};
+
+    render(<WeathermapPanel {...testProps} />);
+
+    const zIndex = getComputedStyle(screen.getByTestId('weathermap-data-notice')).zIndex;
+    expect(zIndex).toBe(String(createTheme().zIndex.tooltip));
+  });
+
+  test('hovering a VIA segment does not rewrite the drawn link gradient (#201)', () => {
+    // #201 (0260441): the hover merge of the origin side onto a VIA segment
+    // must build a new link, not write into the drawn link's sides. Segment 0
+    // is bound on A (100) and segment 1 on Z (222); hovering segment 0 merges
+    // the chain's Z side in. Written in place, the drawn segment 0 picks up
+    // Z=222 and its gradient's Z-end stop turns red on the next render.
+    // Value-mode thresholds black at 0 and red at 200: 100 and an unbound side
+    // stay black, only the leaked 222 turns a stop red.
+    const testProps = { ...mPanelProps };
+    const weathermap = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    weathermap.links[0].sides.A.query = 'a1-series';
+    weathermap.links[1].sides.Z.query = 'z2-series';
+    weathermap.settings.link.gradientColor = true;
+    weathermap.settings.colorScaleMode = 'value';
+    weathermap.scale = [
+      { percent: 0, color: '#000000' },
+      { percent: 200, color: '#ff0000' },
+    ];
+    testProps.options = { weathermap };
+    testProps.data = {
+      state: LoadingState.Done,
+      series: [valueFrame('a1-series', 100), valueFrame('z2-series', 222)],
+      timeRange: getDefaultRelativeTimeRange(),
+    } as unknown as PanelProps<SimpleOptions>['data'];
+    testProps.onOptionsChange = jest.fn();
+
+    const { container } = render(<WeathermapPanel {...testProps} />);
+    const stops = () =>
+      Array.from(container.querySelectorAll(`#grad-a-${weathermap.links[0].id} stop`)).map((s) =>
+        s.getAttribute('stop-color')
+      );
+    const before = stops();
+    // Segment 0 has no Z binding of its own, so its Z end is the scale's 0 color.
+    expect(before[before.length - 1]).toBe('#000000');
+
+    const segment = screen.getAllByTestId('link')[0].firstChild!;
+    fireEvent.mouseMove(segment);
+    fireEvent.mouseLeave(segment);
+
+    expect(stops()).toEqual(before);
+  });
+});
+
+describe('interaction and persistence regressions (audit)', () => {
+  const editMode = () => {
+    getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
+  };
+  const deepFreeze = <T,>(o: T): T => {
+    Object.values(o as object).forEach((v) => {
+      if (v && typeof v === 'object' && !Object.isFrozen(v)) {
+        deepFreeze(v);
+      }
+    });
+    return Object.freeze(o);
+  };
+  const lastWeathermap = (fn: jest.Mock) => fn.mock.calls[fn.mock.calls.length - 1][0].weathermap;
+
+  // #224 (19c1eff): a map already at CURRENT_VERSION but missing settings.panel
+  // is repaired for render; the repair must also be persisted. A version-only
+  // check ("version !== CURRENT_VERSION") never writes it back.
+  test('#224 persists the repair of an incomplete current-version map', () => {
+    const wm = handleVersionedStateUpdates(getData(theme), theme);
+    delete (wm.settings as unknown as Record<string, unknown>).panel;
+    const onOptionsChange = jest.fn();
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap: wm }, onOptionsChange }} />);
+
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    expect(onOptionsChange.mock.calls[0][0].weathermap.settings.panel.panelSize).toEqual({ width: 600, height: 600 });
+  });
+
+  // #225 (d398da3): dropping a dragged node must persist a NEW weathermap with
+  // the moved position, never write into the saved options. The input is
+  // deep-frozen so an in-place write either throws or is caught below.
+  test('#225 node drag persists a new weathermap without mutating options', () => {
+    editMode();
+    const weathermap = deepFreeze(handleVersionedStateUpdates(getData(theme), theme));
+    const originalPosition = [...weathermap.nodes[0].position];
+    const spy = jest.fn();
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: spy }} />);
+    const nodeA = screen.getByText('Node A').closest('g')!;
+    // react-draggable listens for move/up on the document once the drag starts.
+    fireEvent.mouseDown(nodeA, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 130 });
+    fireEvent.mouseUp(document, { clientX: 140, clientY: 130 });
+
+    expect(spy).toHaveBeenCalled();
+    const persisted = lastWeathermap(spy);
+    expect(persisted).not.toBe(weathermap);
+    expect(persisted.nodes[0].position).not.toEqual(originalPosition);
+    expect(weathermap.nodes[0].position).toEqual(originalPosition);
+  });
+
+  // #225 (d398da3): ctrl-click selection must hand React a new array; mutating
+  // and returning the same one makes React skip the re-render, so the node
+  // never shows its selected (font-coloured) border.
+  test('#225 ctrl-click toggles the selected node border', () => {
+    editMode();
+    const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+
+    render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: jest.fn() }} />);
+    const nodeA = screen.getByText('Node A').closest('g')!;
+    const rect = () => nodeA.querySelector('rect')!;
+    // Unselected: node.colors.border; selected: node.colors.font.
+    expect(rect()).toHaveAttribute('stroke', '#CCCCCC');
+
+    fireEvent.click(nodeA, { ctrlKey: true });
+    expect(rect()).toHaveAttribute('stroke', '#FFFFFF');
+
+    fireEvent.click(nodeA, { ctrlKey: true });
+    expect(rect()).toHaveAttribute('stroke', '#CCCCCC');
+  });
+
+  // #45/#50 (7519e0b): wheel zoom must persist a new zoomScale without
+  // writing it into the saved options object.
+  test('#45/#50 wheel zoom does not mutate the saved options', () => {
+    editMode();
+    const wm = handleVersionedStateUpdates(getConnectedLinkData(theme), theme);
+    const onOptionsChange = jest.fn();
+
+    const { container } = render(
+      <WeathermapPanel {...{ ...mPanelProps, options: { weathermap: wm }, onOptionsChange }} />
+    );
+    fireEvent.wheel(container.querySelector('#nw-testing_')!, { deltaY: 1 });
+
+    expect(wm.settings.panel.zoomScale).toBe(0);
+    expect(onOptionsChange).toHaveBeenCalledTimes(1);
+    expect(onOptionsChange.mock.calls[0][0].weathermap.settings.panel.zoomScale).toBe(1);
+  });
+
+  // #331 (36b4b88): links saved against the legacy name of a table frame
+  // (the first non-time field's display name) are rebound to the value
+  // field's name in the panel, and the rebind is persisted only once the
+  // query result is complete.
+  describe('#331 legacy query-name rebind', () => {
+    // 'Interface A' is the legacy name (first non-time field, a string);
+    // 'Throughput A' is the value field the link should actually read.
+    const frame = toDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', values: [1, 2] },
+        { name: 'iface', type: FieldType.string, values: ['a', 'b'], config: { displayNameFromDS: 'Interface A' } },
+        { name: 'bps', values: [777, 777], config: { displayNameFromDS: 'Throughput A' } },
+      ],
+    });
+    const renderLegacy = (state: LoadingState, extra: Record<string, unknown> = {}) => {
+      const weathermap = handleVersionedStateUpdates(getData(theme), theme);
+      weathermap.links[0].sides.A.query = 'Interface A';
+      const onOptionsChange = jest.fn();
+      const data = { state, series: [frame], timeRange: getDefaultRelativeTimeRange(), ...extra };
+      const r = render(
+        <WeathermapPanel
+          {...({
+            ...mPanelProps,
+            options: { weathermap },
+            onOptionsChange,
+            data,
+          } as unknown as PanelProps<SimpleOptions>)}
+        />
+      );
+      return { ...r, onOptionsChange };
+    };
+
+    test('renders the value of the rebound series', () => {
+      const { container } = renderLegacy(LoadingState.Done);
+      expect(container.textContent).toContain('777');
+    });
+
+    test('persists the rebound query name', () => {
+      const { onOptionsChange } = renderLegacy(LoadingState.Done);
+      expect(onOptionsChange).toHaveBeenCalled();
+      expect(lastWeathermap(onOptionsChange).links[0].sides.A.query).toBe('Throughput A');
+    });
+
+    // A partial result can make a colliding legacy alias look safe, so no
+    // rebind may be written while loading or when the query reported errors.
+    test.each([
+      ['loading', LoadingState.Loading, {}],
+      ['done with errors', LoadingState.Done, { errors: [{ message: 'x' }] }],
+    ])('does not persist a rebind when %s', (_name, state, extra) => {
+      const { onOptionsChange } = renderLegacy(state as LoadingState, extra);
+      expect(onOptionsChange).not.toHaveBeenCalled();
+    });
+  });
+});

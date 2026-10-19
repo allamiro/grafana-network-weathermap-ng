@@ -260,4 +260,37 @@ describe('background image upload (#344)', () => {
     expect(field.value).toBe('https://example.com/bg.png');
     expect(field.readOnly).toBe(false);
   });
+
+  // #133 (d8a582d): a javascript: URL typed into the image source is dropped
+  // at input; a safe URL is stored verbatim.
+  test('a typed unsafe URL is refused and a safe one is stored', () => {
+    const spy = jest.fn();
+    render(<Harness initial={withBackground()} onChangeSpy={spy} />);
+    const field = document.querySelector('input[name="bgImageURL"]')!;
+
+    fireEvent.change(field, { target: { value: 'javascript:alert(1)' } });
+    expect(lastValue(spy).settings.panel.backgroundImage!.url).toBe('');
+
+    fireEvent.change(field, { target: { value: 'https://grafana.example/bg.png' } });
+    expect(lastValue(spy).settings.panel.backgroundImage!.url).toBe('https://grafana.example/bg.png');
+  });
+});
+
+// #233 (d96e5a6): the Display Timestamp switch wrote into the frozen
+// props.value, which throws in the harness and never reaches onChange.
+test('display timestamp toggle delivers a new weathermap (#233)', () => {
+  const initial = getData(theme);
+  const start = initial.settings.panel.showTimestamp;
+  const spy = jest.fn();
+  render(<Harness initial={initial} onChangeSpy={spy} />);
+
+  let el: HTMLElement | null = screen.getByText('Display Timestamp');
+  while (el && !el.querySelector('input[type="checkbox"]')) {
+    el = el.parentElement;
+  }
+  fireEvent.click(el!.querySelector('input[type="checkbox"]')!);
+
+  expect(spy).toHaveBeenCalledTimes(1);
+  expect(lastValue(spy)).not.toBe(initial);
+  expect(lastValue(spy).settings.panel.showTimestamp).toBe(!start);
 });

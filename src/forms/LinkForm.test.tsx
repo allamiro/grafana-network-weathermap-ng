@@ -9,12 +9,12 @@ import { LinkForm } from './LinkForm';
 import { Anchor, Weathermap } from 'types';
 import { getData, theme } from '../testData';
 
-const promFrame = (refId: string, displayName: string) =>
+const promFrame = (refId: string, displayName: string, fieldName = 'Value') =>
   toDataFrame({
     refId,
     fields: [
       { name: 'Time', values: [1, 2] },
-      { name: 'Value', values: [10, 20], config: { displayNameFromDS: displayName } },
+      { name: fieldName, values: [10, 20], config: { displayNameFromDS: displayName } },
     ],
   });
 
@@ -222,4 +222,92 @@ test('link status controls are available for every link (#273)', async () => {
   expect(screen.getByText('Select query (value < 1 = down)')).not.toBeNull();
   expect(screen.getByText('Down Color:')).not.toBeNull();
   expect(screen.getByText('Blink when down')).not.toBeNull();
+});
+
+// #49 (8992c88): long Prometheus display names are shown as "refId: metric"
+// rather than the full label set. Both names are over the 60-char verbatim
+// limit and the field names carry the metric, so the concise form is unique.
+test('query dropdown shows the concise refId: metric label for long names (#49)', async () => {
+  const frames = [
+    promFrame('A', 'node_cpu_seconds_total{mode="idle",instance="host-1:9100",job="node"}', 'node_cpu_seconds_total'),
+    promFrame(
+      'B',
+      'node_network_transmit_bytes_total{device="eth0",instance="host-1:9100"}',
+      'node_network_transmit_bytes_total'
+    ),
+  ];
+  render(<Harness initial={getData(theme)} onChangeSpy={jest.fn()} frames={frames} />);
+  await selectFirstLink();
+
+  openSelectShowing('Select A Side Query');
+  const options = await screen.findAllByRole('option');
+  expect(options.map((o) => o.textContent)).toEqual([
+    'A: node_cpu_seconds_total',
+    'B: node_network_transmit_bytes_total',
+  ]);
+});
+
+// #42/#46 (da46e76): the query and bandwidth menus render in a portal on
+// document.body. Rendered inline they were clipped by the options pane.
+// Grafana UI 11.6 already defaults menuShouldPortal to true, so dropping the
+// prop alone passes today; this fails if portalling is turned off
+// (menuShouldPortal={false}) or Grafana's default changes.
+test.each(['Select A Side Query', 'Select Bandwidth'])(
+  'the "%s" menu portals out of the form (#42, #46)',
+  async (placeholder) => {
+    const { container } = render(<Harness initial={getData(theme)} onChangeSpy={jest.fn()} frames={MULTI_SERIES} />);
+    await selectFirstLink();
+
+    // Both sides show a 'Select Bandwidth' placeholder; open the A side's.
+    const shown = screen.getAllByText(placeholder)[0];
+    let control: HTMLElement | null = shown.parentElement;
+    while (control && !control.querySelector('[role="combobox"]')) {
+      control = control.parentElement;
+    }
+    fireEvent.keyDown(control!.querySelector('[role="combobox"]')!, { key: 'ArrowDown' });
+    const options = await screen.findAllByRole('option');
+
+    expect(options).toHaveLength(MULTI_SERIES.length);
+    expect(container.contains(options[0])).toBe(false);
+    expect(document.body.contains(options[0])).toBe(true);
+  }
+);
+
+// #233 (d96e5a6): changing an anchor must clone before writing. The Harness
+// deep-freezes props.value, so an in-place write throws and nothing is saved.
+test('changing the A-side anchor updates the link and moves the anchor count (#233)', async () => {
+  const initial = getData(theme);
+  // getData: link 0 runs from Node A's Right anchor (1 link) to Node B's Left.
+  expect(initial.links[0].sides.A.anchor).toBe(Anchor.Right);
+  expect(initial.nodes[0].anchors[Anchor.Right].numLinks).toBe(1);
+  expect(initial.nodes[0].anchors[Anchor.Top].numLinks).toBe(0);
+  const spy = jest.fn();
+  render(<Harness initial={initial} onChangeSpy={spy} frames={[]} />);
+  await selectFirstLink();
+
+  // The A side's anchor Select shows 'Right' (the Z side's shows 'Left').
+  openSelectShowing('Right');
+  fireEvent.click(await screen.findByRole('option', { name: 'Top' }));
+
+  expect(spy).toHaveBeenCalledTimes(1);
+  const updated: Weathermap = spy.mock.calls[0][0];
+  expect(updated.links[0].sides.A.anchor).toBe(Anchor.Top);
+  expect(updated.nodes[0].anchors[Anchor.Right].numLinks).toBe(0);
+  expect(updated.nodes[0].anchors[Anchor.Top].numLinks).toBe(1);
+});
+
+// #133 (d8a582d): a link's dashboard URL is a navigation target, so an unsafe
+// scheme is refused (stored as '') while a normal https URL is kept verbatim.
+test('an unsafe link dashboard URL is refused (#133)', async () => {
+  const spy = jest.fn();
+  const { container } = render(<Harness initial={getData(theme)} onChangeSpy={spy} frames={[]} />);
+  await selectFirstLink();
+  const lastValue = (): Weathermap => spy.mock.calls[spy.mock.calls.length - 1][0];
+
+  const input = container.querySelector('input[name="AdashboardLink"]')!;
+  fireEvent.change(input, { target: { value: 'javascript:alert(1)' } });
+  expect(lastValue().links[0].sides.A.dashboardLink).toBe('');
+
+  fireEvent.change(input, { target: { value: 'https://grafana.example/d/x' } });
+  expect(lastValue().links[0].sides.A.dashboardLink).toBe('https://grafana.example/d/x');
 });

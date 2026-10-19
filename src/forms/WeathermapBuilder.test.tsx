@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { StandardEditorProps } from '@grafana/data';
 import { WeathermapBuilder } from './WeathermapBuilder';
 import { Weathermap } from 'types';
-import { CURRENT_VERSION } from 'utils';
+import { CURRENT_VERSION, handleVersionedStateUpdates } from 'utils';
 import { getData, legacyWeathermap, theme } from 'testData';
 
 const renderBuilder = (value: Weathermap | undefined) => {
@@ -113,6 +113,15 @@ describe('render purity (#199)', () => {
     expect(renderPhaseErrors).toEqual([]);
     // The editor settles on the migrated value.
     expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
+  });
+
+  // #199 (fa842f1): a map that is already current needs no migration, so the
+  // editor must not write anything back. An unconditional persist effect
+  // would dirty the dashboard every time the editor opens.
+  test('opening the editor on a current-version map writes nothing', () => {
+    const onChange = renderBuilder(handleVersionedStateUpdates(getData(theme), theme));
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
 
