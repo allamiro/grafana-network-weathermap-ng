@@ -5,6 +5,7 @@ import { WeathermapBuilder } from './WeathermapBuilder';
 import { Weathermap } from 'types';
 import { CURRENT_VERSION, handleVersionedStateUpdates } from 'utils';
 import { getData, legacyWeathermap, theme } from 'testData';
+import { deepFreeze } from '../test/deepFreeze';
 
 const renderBuilder = (value: Weathermap | undefined) => {
   const onChange = jest.fn();
@@ -122,6 +123,29 @@ describe('render purity (#199)', () => {
     const onChange = renderBuilder(handleVersionedStateUpdates(getData(theme), theme));
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  // The snapshot test above only notices a write that changes a value. A
+  // frozen input makes ANY write throw, including one that writes the same
+  // value back, and the persisted map must be a new object.
+  test('migrating a deep-frozen pre-v14 map persists a new, migrated weathermap', () => {
+    const value = deepFreeze(JSON.parse(JSON.stringify(legacyWeathermap)) as Weathermap);
+    const onChange = renderBuilder(value);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const migrated: Weathermap = onChange.mock.calls[0][0];
+    expect(migrated).not.toBe(value);
+    expect(migrated.version).toBe(CURRENT_VERSION);
+    expect(migrated.settings.tooltip).toBeDefined();
+    expect(value.version).toBeUndefined();
+  });
+
+  test('a deep-frozen current-version map renders every form and writes nothing', () => {
+    const onChange = renderBuilder(deepFreeze(handleVersionedStateUpdates(getData(theme), theme)));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Tooltip Font Size')).toBeInTheDocument();
+    expect(screen.getByText('Scale Title')).toBeInTheDocument();
   });
 });
 

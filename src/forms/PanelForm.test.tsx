@@ -7,21 +7,14 @@ import { StandardEditorProps } from '@grafana/data';
 import { PanelForm } from './PanelForm';
 import { Weathermap } from 'types';
 import { getData, theme } from '../testData';
-
-
-// Deep-freeze the value handed to the form: any residual in-place mutation of
-// props.value throws immediately (#233). Handlers must clone before writing.
-const deepFreeze = <T,>(o: T): T => {
-  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-    Object.freeze(o);
-  }
-  return o;
-};
+import { deepFreeze } from '../test/deepFreeze';
+import { richMap, sweepEditor } from '../test/editorSweep';
 
 const Harness = ({ initial, onChangeSpy }: { initial: Weathermap; onChangeSpy: jest.Mock }) => {
   const [wm, setWm] = useState(initial);
   const props = {
+    // Frozen: any in-place mutation of props.value throws (#233); handlers
+    // must deliver new state.
     value: deepFreeze(wm),
     onChange: (v: Weathermap) => {
       onChangeSpy(v);
@@ -293,4 +286,43 @@ test('display timestamp toggle delivers a new weathermap (#233)', () => {
   expect(spy).toHaveBeenCalledTimes(1);
   expect(lastValue(spy)).not.toBe(initial);
   expect(lastValue(spy).settings.panel.showTimestamp).toBe(!start);
+});
+
+// Every control in the form, driven once against a deep-frozen value: none may
+// throw, and each onChange must carry a new object that differs from the one
+// it replaced (#225, #233). The count is how many controls must deliver a
+// change, so a handler that stops calling onChange fails too. See
+// src/test/editorSweep.tsx.
+describe('every PanelForm control delivers new state without mutating props.value', () => {
+  test('default sections', async () => {
+    const { problems, changed, silent } = await sweepEditor({ Form: PanelForm, initial: richMap });
+    expect(problems).toEqual([]);
+    // Pinned exactly: a control that stops delivering moves into `silent`, a
+    // removed one lowers the count, and a new one has to be classified here.
+    expect(silent).toEqual([]);
+    expect(changed).toHaveLength(52);
+  }, 30000);
+
+  // Sections PanelForm only shows once their feature is in use.
+  test('every optional section shown', async () => {
+    const { problems, changed, silent } = await sweepEditor({
+      Form: PanelForm,
+      initial: () => {
+        const wm = richMap();
+        const { settings } = wm;
+        settings.panel.backgroundImage = { url: 'https://example.com/bg.png', fit: 'contain' };
+        settings.panel.grid = { ...settings.panel.grid, enabled: true };
+        settings.link.flowAnimation = { enabled: true, speed: 2 };
+        settings.link.dynamicStroke = { enabled: true, minWidth: 1, maxWidth: 10 };
+        settings.statusLegend = { enabled: true, position: { x: 1, y: 1 }, items: [{ color: '#73BF69', label: 'up' }] };
+        settings.scale = { ...settings.scale, fontColor: '#FFFFFF', backgroundColor: '#000000' };
+        return wm;
+      },
+    });
+    expect(problems).toEqual([]);
+    // Pinned exactly: a control that stops delivering moves into `silent`, a
+    // removed one lowers the count, and a new one has to be classified here.
+    expect(silent).toEqual([]);
+    expect(changed).toHaveLength(68);
+  }, 30000);
 });

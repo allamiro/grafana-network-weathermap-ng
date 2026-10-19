@@ -4,23 +4,32 @@ import { StandardEditorProps } from '@grafana/data';
 import { ColorForm } from './ColorForm';
 import { Weathermap } from 'types';
 import { getData, theme } from '../testData';
+import { deepFreeze } from '../test/deepFreeze';
+import { richMap, sweepEditor } from '../test/editorSweep';
+
+// The shared react-inlinesvg mock (.config/jest/mocks) drops every prop but
+// src, so the threshold trash <Icon onClick> cannot be clicked in jsdom. Keep
+// the handler and mark the icon, so the sweep below drives it like a button.
+jest.mock('react-inlinesvg', () => {
+  const { createElement } = jest.requireActual('react');
+  return {
+    __esModule: true,
+    default: ({ src, onClick }: { src: string; onClick?: () => void }) =>
+      createElement('svg', {
+        'data-testid': src.replace(/(.+)\/(.+)\.svg$/, '$2'),
+        'data-clickable': onClick ? 'true' : undefined,
+        onClick,
+      }),
+  };
+});
 
 // Stateful harness: the editor only re-renders when onChange delivers a new
 // options object, which is exactly the behavior under test (#162).
-
-// Deep-freeze the value handed to the form: any residual in-place mutation of
-// props.value throws immediately (#233). Handlers must clone before writing.
-const deepFreeze = <T,>(o: T): T => {
-  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
-    Object.values(o as Record<string, unknown>).forEach(deepFreeze);
-    Object.freeze(o);
-  }
-  return o;
-};
-
 const Harness = ({ initial, onChangeSpy }: { initial: Weathermap; onChangeSpy: jest.Mock }) => {
   const [wm, setWm] = useState(initial);
   const props = {
+    // Frozen: any in-place mutation of props.value throws (#233); handlers
+    // must deliver new state.
     value: deepFreeze(wm),
     onChange: (v: Weathermap) => {
       onChangeSpy(v);
@@ -169,4 +178,37 @@ test('threshold color change delivers a new weathermap (#233)', async () => {
   expect(spy).toHaveBeenCalledTimes(1);
   expect(spy.mock.calls[0][0]).not.toBe(initial);
   expect(spy.mock.calls[0][0].scale[0].color).toBe('#F2495C');
+});
+
+// Every control in the form, driven once against a deep-frozen value: none may
+// throw, and each onChange must carry a new object that differs from the one
+// it replaced (#225, #233). The count is how many controls must deliver a
+// change, so a handler that stops calling onChange fails too. See
+// src/test/editorSweep.tsx.
+describe('every ColorForm control delivers new state without mutating props.value', () => {
+  test('percentage mode', async () => {
+    const { problems, changed, silent } = await sweepEditor({ Form: ColorForm, initial: richMap });
+    expect(problems).toEqual([]);
+    // Pinned exactly: a control that stops delivering moves into `silent`, a
+    // removed one lowers the count, and a new one has to be classified here.
+    expect(silent).toEqual([]);
+    expect(changed).toHaveLength(9);
+  }, 30000);
+
+  // Absolute value mode adds the scale unit picker.
+  test('absolute value mode', async () => {
+    const { problems, changed, silent } = await sweepEditor({
+      Form: ColorForm,
+      initial: () => {
+        const wm = richMap();
+        wm.settings.colorScaleMode = 'value';
+        return wm;
+      },
+    });
+    expect(problems).toEqual([]);
+    // Pinned exactly: a control that stops delivering moves into `silent`, a
+    // removed one lowers the count, and a new one has to be classified here.
+    expect(silent).toEqual([]);
+    expect(changed).toHaveLength(10);
+  }, 30000);
 });
