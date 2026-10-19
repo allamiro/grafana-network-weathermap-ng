@@ -93,6 +93,7 @@ set -euo pipefail
 V=X.Y.Z; D=$(mktemp -d)
 gh release download "v$V" -D "$D"
 [ "$(cut -d' ' -f1 "$D"/*.sha1)" = "$(shasum "$D"/*.zip | cut -d' ' -f1)" ]       || { echo "checksum mismatch"; exit 1; }
+(cd "$D" && shasum -a 256 -c *.zip.sha256)                                         || { echo "sha256 mismatch"; exit 1; }
 [ "$(unzip -p "$D"/*.zip '*/plugin.json' | jq -r .info.version)" = "$V" ]          || { echo "wrong version"; exit 1; }
 # read the manifest first: piping into grep -q under pipefail fails on SIGPIPE even when it matches
 M=$(unzip -p "$D"/*.zip '*/MANIFEST.txt')

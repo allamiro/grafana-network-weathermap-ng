@@ -191,7 +191,7 @@ unzip tamirsuliman-weathermap-panel-*.zip -d /var/lib/grafana/plugins/
 systemctl restart grafana-server
 ```
 
-Every release ships a `.zip.sha1` checksum, a community signature (`MANIFEST.txt`), and a GitHub build-provenance attestation.
+Every release ships `.zip.sha256` and `.zip.sha1` checksums, a community signature (`MANIFEST.txt`), and a GitHub build-provenance attestation. To verify a download, run this in the folder that holds both the zip and its `.sha256` file: `sha256sum -c tamirsuliman-weathermap-panel-*.zip.sha256` (on macOS: `shasum -a 256 -c tamirsuliman-weathermap-panel-*.zip.sha256`).
 
 ### 🐳 Local environments — know which one you want
 

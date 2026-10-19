@@ -99,6 +99,20 @@ jobs:
           fi
           echo "Community signature verified in $ARCHIVE"
 
+      # build-plugin only attaches a SHA1. Add a SHA-256 next to it, in
+      # `sha256sum -c` format, so users can verify the zip with a current hash.
+      - name: Attach a SHA-256 checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          ARCHIVE: ${{ steps.build.outputs.archive }}
+        run: |
+          set -euo pipefail
+          dir=$(dirname "$ARCHIVE")
+          name=$(basename "$ARCHIVE")
+          (cd "$dir" && sha256sum "$name" > "$name.sha256" && sha256sum -c "$name.sha256")
+          gh release upload "$TAG" "$dir/$name.sha256" --clobber
+
       # build-plugin creates the draft with generic submission boilerplate and
       # GitHub's auto-generated commit list, discarding the notes we write by
       # hand. Put the CHANGELOG entry for this version back on top, keeping the
