@@ -50,12 +50,17 @@ jobs:
           comment-pr: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'yes' || 'no' }}
           fail-if-incompatible: 'no'
 
-  # Job 2: BLOCKING — levitate exits non-zero on incompatibility with the
-  # supported Grafana versions, failing the job and gating the PR.
-  # Matrix check — verify the plugin TypeScript compiles cleanly
-  # against each supported Grafana SDK version (11.x, 12.x, 13.x — the
-  # plugin's grafanaDependency is >=11.0.0, so 10.x is not checked).
-  # Uses --no-save so the installed test versions don't modify package.json.
+  # Job 2: BLOCKING — matrix check against each supported Grafana SDK version
+  # (11.0.0, 12.0.0, 13.1.0 — the plugin's grafanaDependency is >=11.0.0, so
+  # 10.x is not checked). Each leg overlays that version's @grafana/data, ui
+  # and runtime (--no-save, so package.json is untouched), then:
+  #   1. type-checks src/ (minus tests) with tsc against the overlaid SDK typings — this is
+  #      what catches an API used by the plugin that is missing or has a
+  #      different signature in that version (skipLibCheck is already on via
+  #      @grafana/tsconfig, so only our code is checked, not Grafana's .d.ts);
+  #   2. runs levitate, which compares the overlaid version's exported API
+  #      with the latest npm release.
+  # Either step exiting non-zero fails the leg and gates the PR.
   compatibility-matrix:
     name: Grafana ${{ matrix.grafana-version }} API check
     runs-on: ubuntu-latest
@@ -84,6 +89,24 @@ jobs:
             @grafana/data@${{ matrix.grafana-version }} \
             @grafana/ui@${{ matrix.grafana-version }} \
             @grafana/runtime@${{ matrix.grafana-version }}
+
+      # Prints the resolved versions so the log proves which SDK was checked.
+      # Checks what ships: src/ without tests. Test files type jest mocks of
+      # Grafana components, whose inferred types shift between SDK versions
+      # (implicit-any noise on 11.0.0); they are type-checked on the default
+      # install by `npm run typecheck` in the Test workflow.
+      - name: Type-check plugin against Grafana ${{ matrix.grafana-version }} SDK
+        run: |
+          for p in data ui runtime; do
+            echo "@grafana/$p $(node -p "require('@grafana/$p/package.json').version")"
+          done
+          cat > tsconfig.sdk-check.json <<'EOF'
+          {
+            "extends": "./tsconfig.json",
+            "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__mocks__/**", "src/test/**"]
+          }
+          EOF
+          npx tsc --noEmit -p tsconfig.sdk-check.json
 
       - name: Check API compatibility (levitate)
         run: |
