@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DataFrame, FieldType, StandardEditorProps, toDataFrame } from '@grafana/data';
 import { NodeForm } from './NodeForm';
-import { Weathermap } from 'types';
+import { Anchor, Weathermap } from 'types';
+import { generateBasicLink, generateBasicNode } from 'utils';
 import { getData, theme } from '../testData';
 
 // Stateful harness: the editor only re-renders when onChange delivers a new
@@ -272,9 +273,7 @@ test('node padding sliders allow values above the old 50 cap (#279)', async () =
 
   // Both padding sliders advertise the raised bound, so typed values up to
   // 200 no longer snap back to 50.
-  const sliders = screen
-    .getAllByRole('slider')
-    .filter((el) => el.getAttribute('aria-valuemax') !== null);
+  const sliders = screen.getAllByRole('slider').filter((el) => el.getAttribute('aria-valuemax') !== null);
   const maxes = sliders.map((el) => el.getAttribute('aria-valuemax'));
   expect(maxes).toEqual(expect.arrayContaining(['200']));
   expect(maxes).not.toContain('50');
@@ -361,7 +360,9 @@ test('the status query dropdown offers the frame-prefixed names the map binds (#
         { name: 'value', type: FieldType.number, values: [1] },
       ],
     });
-  render(<Harness initial={getData(theme)} onChangeSpy={jest.fn()} data={[frame('Prometheus'), frame('ClickHouse')]} />);
+  render(
+    <Harness initial={getData(theme)} onChangeSpy={jest.fn()} data={[frame('Prometheus'), frame('ClickHouse')]} />
+  );
   await openStatusSection();
 
   let control: HTMLElement | null = screen.getByText('Select query');
@@ -372,4 +373,92 @@ test('the status query dropdown offers the frame-prefixed names the map binds (#
 
   const options = (await screen.findAllByRole('option')).map((o) => o.textContent);
   expect(options).toEqual(['Prometheus value', 'ClickHouse value']);
+});
+
+// #390: Remove Node deletes the links attached to the node, and must release
+// the anchor slots those links held on the nodes that survive, the same way
+// LinkForm's removeLink does. Links are spread across an anchor by numLinks,
+// so a stale count keeps the old spacing.
+describe('Remove Node releases anchor slots on the surviving nodes (#390)', () => {
+  // A, B and C with links A-B, A-C and B-C. generateBasicLink puts side A on
+  // the Right anchor and side Z on the Left anchor.
+  const triangle = () => {
+    const wm = getData(theme); // A-B, with A.Right = 1 and B.Left = 1
+    const [a, b] = wm.nodes;
+    const c = generateBasicNode('Node C', [300, 450], theme);
+    wm.nodes.push(c);
+    wm.links.push(generateBasicLink([a, c]), generateBasicLink([b, c]));
+    a.anchors[Anchor.Right].numLinks = 2; // A-B, A-C
+    b.anchors[Anchor.Right].numLinks = 1; // B-C
+    c.anchors[Anchor.Left].numLinks = 2; // A-C, B-C
+    return wm;
+  };
+
+  const removeNode = async (label: string) => {
+    const picker = screen.getAllByRole('combobox')[0];
+    fireEvent.keyDown(picker, { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByText(label));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Node' }));
+  };
+
+  const counts = (wm: Weathermap) =>
+    Object.fromEntries(wm.nodes.map((n) => [n.label, [Anchor.Left, Anchor.Right].map((k) => n.anchors[k].numLinks)]));
+
+  test('removing C decrements the anchors its links used on A and B', async () => {
+    const spy = jest.fn();
+    render(<Harness initial={triangle()} onChangeSpy={spy} />);
+    await removeNode('Node C');
+
+    const next: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    expect(next.nodes.map((n) => n.label)).toEqual(['Node A', 'Node B']);
+    expect(next.links.map((l) => l.nodes.map((n) => n.label))).toEqual([['Node A', 'Node B']]);
+    // [Left, Right]: A keeps only A-B on its Right; B keeps A-B on its Left
+    // and loses B-C on its Right.
+    expect(counts(next)).toEqual({ 'Node A': [0, 1], 'Node B': [1, 0] });
+  });
+
+  test('a saved map missing an anchor entry still removes the node', async () => {
+    const spy = jest.fn();
+    const wm = triangle();
+    // Hand-edited / partial saved maps must not crash the editor.
+    delete (wm.nodes[0].anchors as Partial<(typeof wm.nodes)[0]['anchors']>)[Anchor.Right];
+    render(<Harness initial={wm} onChangeSpy={spy} />);
+    await removeNode('Node C');
+
+    const next: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    expect(next.nodes.map((n) => n.label)).toEqual(['Node A', 'Node B']);
+    expect(next.nodes[1].anchors[Anchor.Right].numLinks).toBe(0);
+  });
+
+  test('partial saved links (missing endpoints or a side) do not crash removal', async () => {
+    const spy = jest.fn();
+    const wm = triangle();
+    const [a, , c] = wm.nodes;
+    type SavedLink = Weathermap['links'][number];
+    const noEndpoints = { ...generateBasicLink([a, c]), id: 'no-endpoints', nodes: [] } as unknown as SavedLink;
+    const onlyC = { ...generateBasicLink([a, c]), id: 'only-c', nodes: [c] } as unknown as SavedLink;
+    const noZSide = generateBasicLink([a, c]);
+    noZSide.id = 'no-z-side';
+    delete (noZSide.sides as Partial<SavedLink['sides']>).Z;
+    wm.links.push(noEndpoints, onlyC, noZSide);
+    a.anchors[Anchor.Right].numLinks = 3; // A-B, A-C, and the A side of no-z-side
+    render(<Harness initial={wm} onChangeSpy={spy} />);
+    await removeNode('Node C');
+
+    const next: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    // The endpoint-less link never touched C, so it stays; the other two go.
+    expect(next.links.map((l) => l.id)).toEqual(['nw-link-0', 'no-endpoints']);
+    expect(counts(next)).toEqual({ 'Node A': [0, 1], 'Node B': [1, 0] });
+  });
+
+  test('an already-drifted count stays at 0 instead of going negative', async () => {
+    const spy = jest.fn();
+    const wm = triangle();
+    wm.nodes[1].anchors[Anchor.Right].numLinks = 0; // B: B-C not counted
+    render(<Harness initial={wm} onChangeSpy={spy} />);
+    await removeNode('Node C');
+
+    const next: Weathermap = spy.mock.calls[spy.mock.calls.length - 1][0];
+    expect(counts(next)).toEqual({ 'Node A': [0, 1], 'Node B': [1, 0] });
+  });
 });
