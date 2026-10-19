@@ -1,0 +1,359 @@
+{
+  "uid": "wm-e2e-tooltip",
+  "title": "WM E2E Tooltip",
+  "schemaVersion": 39,
+  "time": {
+    "from": "2026-01-01T00:00:00.000Z",
+    "to": "2026-01-01T01:00:00.000Z"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "tamirsuliman-weathermap-panel",
+      "title": "Tooltip",
+      "gridPos": {
+        "h": 20,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "wm-e2e-testdata"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "wm-e2e-testdata"
+          },
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"name\": \"Traffic\", \"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767229200000]}, {\"name\": \"value\", \"type\": \"number\", \"labels\": {\"metric\": \"router-a: 10104\"}, \"values\": [40, 40]}, {\"name\": \"value\", \"type\": \"number\", \"labels\": {\"metric\": \"router-a: 10105\"}, \"values\": [10, 10]}]}, {\"name\": \"Link Status\", \"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767229200000]}, {\"name\": \"value\", \"type\": \"number\", \"labels\": {\"metric\": \"status\"}, \"values\": [1, 1]}]}]"
+        }
+      ],
+      "options": {
+        "weathermap": {
+          "version": 14,
+          "id": "testing",
+          "nodes": [
+            {
+              "id": "0a904eb4-5921-4aa6-b7f6-1176a457c76e",
+              "position": [200, 300],
+              "label": "Node A",
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 4,
+                "horizontal": 10
+              },
+              "colors": {
+                "font": "#FFFFFF",
+                "background": "#000000",
+                "border": "#CCCCCC",
+                "statusDown": "#ff0000"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "tooltipMetrics": [
+                {
+                  "label": "Status",
+                  "query": "Link Status value status"
+                }
+              ]
+            },
+            {
+              "id": "4de32c21-ea8a-4cd6-bbcd-124d1cb6cb27",
+              "position": [400, 300],
+              "label": "Node B",
+              "anchors": {
+                "0": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "1": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "2": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                },
+                "3": {
+                  "numLinks": 1,
+                  "numFilledLinks": 0
+                },
+                "4": {
+                  "numLinks": 0,
+                  "numFilledLinks": 0
+                }
+              },
+              "useConstantSpacing": false,
+              "compactVerticalLinks": false,
+              "padding": {
+                "vertical": 4,
+                "horizontal": 10
+              },
+              "colors": {
+                "font": "#FFFFFF",
+                "background": "#000000",
+                "border": "#CCCCCC",
+                "statusDown": "#ff0000"
+              },
+              "nodeIcon": {
+                "src": "",
+                "name": "",
+                "size": {
+                  "width": 0,
+                  "height": 0
+                },
+                "padding": {
+                  "vertical": 0,
+                  "horizontal": 0
+                },
+                "drawInside": false
+              },
+              "isConnection": false,
+              "statusQuery": "Traffic value router-a: 10105"
+            }
+          ],
+          "links": [
+            {
+              "id": "nw-link-0",
+              "nodes": [
+                {
+                  "id": "0a904eb4-5921-4aa6-b7f6-1176a457c76e",
+                  "position": [200, 300],
+                  "label": "Node A",
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 4,
+                    "horizontal": 10
+                  },
+                  "colors": {
+                    "font": "#FFFFFF",
+                    "background": "#000000",
+                    "border": "#CCCCCC",
+                    "statusDown": "#ff0000"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false
+                },
+                {
+                  "id": "4de32c21-ea8a-4cd6-bbcd-124d1cb6cb27",
+                  "position": [400, 300],
+                  "label": "Node B",
+                  "anchors": {
+                    "0": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "1": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "2": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    },
+                    "3": {
+                      "numLinks": 1,
+                      "numFilledLinks": 0
+                    },
+                    "4": {
+                      "numLinks": 0,
+                      "numFilledLinks": 0
+                    }
+                  },
+                  "useConstantSpacing": false,
+                  "compactVerticalLinks": false,
+                  "padding": {
+                    "vertical": 4,
+                    "horizontal": 10
+                  },
+                  "colors": {
+                    "font": "#FFFFFF",
+                    "background": "#000000",
+                    "border": "#CCCCCC",
+                    "statusDown": "#ff0000"
+                  },
+                  "nodeIcon": {
+                    "src": "",
+                    "name": "",
+                    "size": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "padding": {
+                      "vertical": 0,
+                      "horizontal": 0
+                    },
+                    "drawInside": false
+                  },
+                  "isConnection": false
+                }
+              ],
+              "sides": {
+                "A": {
+                  "bandwidth": 0,
+                  "labelOffset": 55,
+                  "anchor": 4,
+                  "dashboardLink": "",
+                  "query": "Traffic value router-a: 10105"
+                },
+                "Z": {
+                  "bandwidth": 0,
+                  "labelOffset": 55,
+                  "anchor": 3,
+                  "dashboardLink": "",
+                  "query": "Traffic value router-a: 10104"
+                }
+              },
+              "arrows": {
+                "width": 8,
+                "height": 10,
+                "offset": 2
+              },
+              "stroke": 8,
+              "showThroughputPercentage": false,
+              "units": "bps"
+            }
+          ],
+          "scale": [],
+          "settings": {
+            "link": {
+              "spacing": {
+                "horizontal": 10,
+                "vertical": 5
+              },
+              "stroke": {
+                "color": "#000000"
+              },
+              "label": {
+                "background": "#000000",
+                "border": "#CCCCCC",
+                "font": "#FFFFFF"
+              },
+              "showAllWithPercentage": false,
+              "valueMappingMode": "last"
+            },
+            "fontSizing": {
+              "node": 10,
+              "link": 7
+            },
+            "panel": {
+              "backgroundColor": "#FFFFFF",
+              "showTimestamp": true,
+              "panelSize": {
+                "width": 600,
+                "height": 600
+              },
+              "zoomScale": 0,
+              "offset": {
+                "x": 0,
+                "y": 0
+              },
+              "grid": {
+                "enabled": false,
+                "size": 10,
+                "guidesEnabled": false
+              }
+            },
+            "tooltip": {
+              "fontSize": 8,
+              "textColor": "white",
+              "backgroundColor": "black",
+              "inboundColor": "#00cf00",
+              "outboundColor": "#fade2a",
+              "scaleToBandwidth": false
+            },
+            "scale": {
+              "position": {
+                "x": 0,
+                "y": 0
+              },
+              "size": {
+                "width": 50,
+                "height": 200
+              },
+              "title": "Traffic Load",
+              "fontSizing": {
+                "title": 16,
+                "threshold": 12
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

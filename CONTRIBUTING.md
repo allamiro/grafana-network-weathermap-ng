@@ -69,7 +69,7 @@ npm run e2e:local                        # seeds anonymous auth, runs the suite
 GRAFANA_URL=http://localhost:3000 npm run e2e
 ```
 
-`PW_CHANNEL=chrome` reuses your system Chrome instead of downloading Playwright's bundled browser. In CI, the E2E workflow runs weekly, on demand, and on PRs touching `tests/**` or the Playwright config.
+`PW_CHANNEL=chrome` reuses your system Chrome instead of downloading Playwright's bundled browser. In CI, the E2E workflow runs weekly, on demand, and on PRs touching `src/**`, the build config (`.config/**`), `tsconfig.json`, `package.json`/`package-lock.json`, `patches/**`, `vendor/**`, `tests/**` or the Playwright config.
 
 ## Submitting changes
 

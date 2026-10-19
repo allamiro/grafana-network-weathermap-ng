@@ -309,10 +309,10 @@ test.describe('Polyline waypoints', () => {
     const moved = await center(handle);
     const rel = { x: moved.x - svg.x, y: moved.y - svg.y };
 
-    // Leave panel edit first (button naming differs: "Back to dashboard" on
-    // newer Grafana, "Apply" on 11.x), then save from the dashboard toolbar —
-    // the one flow that behaves identically across the support matrix.
-    const backBtn = page.getByRole('button', { name: /back to dashboard/i }).first();
+    // Leave panel edit first (button naming differs: "Apply" on 11.x, "Back to
+    // dashboard" on 12.x, plain "Back" from 13.2), then save from the dashboard
+    // toolbar — the one flow that behaves identically across the support matrix.
+    const backBtn = page.getByRole('button', { name: /^back( to dashboard)?$/i }).first();
     if (await backBtn.isVisible().catch(() => false)) {
       await backBtn.click();
     } else {
