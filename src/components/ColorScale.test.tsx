@@ -169,7 +169,8 @@ test('the scale box uses theme tokens for text and border (#357)', () => {
   const settings = structuredClone(getData(theme).settings);
   settings.scale.backgroundColor = 'rgb(24, 27, 31)';
   render(<ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />);
-  const box = getComputedStyle(screen.getByTestId('color-scale'));
-  expect(box.color).toBe(gt.colors.text.primary);
-  expect(box.border).toContain(gt.colors.border.weak);
+  // toHaveStyle normalizes both sides, so a token written as hex or rgb compares equal.
+  const box = screen.getByTestId('color-scale');
+  expect(box).toHaveStyle({ color: gt.colors.text.primary });
+  expect(box).toHaveStyle(`border: 1px solid ${gt.colors.border.weak}`);
 });

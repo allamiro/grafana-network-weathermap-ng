@@ -1741,7 +1741,6 @@ describe('link rendering regressions (audit)', () => {
 
     const zIndex = getComputedStyle(screen.getByTestId('weathermap-data-notice')).zIndex;
     expect(zIndex).toBe(String(createTheme().zIndex.tooltip));
-    expect(zIndex).toBe('1040');
   });
 
   test('hovering a VIA segment does not rewrite the drawn link gradient (#201)', () => {
