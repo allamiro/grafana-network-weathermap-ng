@@ -98,7 +98,7 @@
   "packageManager": "npm@9.6.6",
   "overrides": {
     "serialize-javascript": "7.0.5",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.17",
     "moment": "2.31.0",
     "js-cookie": "3.0.8",
     "form-data": "4.0.6",
