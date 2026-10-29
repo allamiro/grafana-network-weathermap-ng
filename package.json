@@ -117,7 +117,7 @@
     "postcss-selector-parser": "7.1.6",
     "braces": "$braces",
     "browserslist": "^4.28.9",
-    "qs": "^6.16.0",
+    "qs": "^6.17.0",
     "react-router-dom-v5-compat": {
       "react-router": "^7.18.0"
     }
