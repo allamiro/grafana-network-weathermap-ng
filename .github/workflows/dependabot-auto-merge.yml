@@ -5,7 +5,10 @@ name: Dependabot auto-merge
 # Grafana API checks and E2E result. Nothing merges on a red or missing check,
 # and the merge is a squash authored by Dependabot.
 #
-# Major updates are left open with a comment for a maintainer to review.
+# Major updates of development tools (lint, test, build, types) auto-merge too:
+# lint, typecheck, the unit tests, the production build and E2E exercise them
+# fully, so a green run is the review. Majors of packages that ship in the
+# plugin, and of GitHub Actions, are left open with a comment.
 on: pull_request
 
 permissions:
@@ -28,17 +31,23 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Auto-merge patch and minor updates when checks pass
-        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        if: >-
+          steps.meta.outputs.update-type != 'version-update:semver-major' ||
+          (steps.meta.outputs.package-ecosystem == 'npm_and_yarn' &&
+           steps.meta.outputs.dependency-type == 'direct:development')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
 
-      - name: Leave major updates for review
-        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+      - name: Leave other major updates for review
+        if: >-
+          steps.meta.outputs.update-type == 'version-update:semver-major' &&
+          !(steps.meta.outputs.package-ecosystem == 'npm_and_yarn' &&
+            steps.meta.outputs.dependency-type == 'direct:development')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           DEPS: ${{ steps.meta.outputs.dependency-names }}
         run: |
-          gh pr comment "$PR_URL" --body "Major version update ($DEPS): not merged automatically. Check the release notes for breaking changes, then merge by hand."
+          gh pr comment "$PR_URL" --body "Major version update ($DEPS) of a shipped dependency or GitHub Action: not merged automatically. Check the release notes for breaking changes, then merge by hand."
