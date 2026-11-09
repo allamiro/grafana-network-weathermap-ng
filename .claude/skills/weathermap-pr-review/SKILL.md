@@ -132,11 +132,11 @@ Two side effects to know:
 
 ## 8. Dependabot PRs
 
-`main` auto-merges Dependabot updates once every required check passes (`.github/workflows/dependabot-auto-merge.yml`). Patch, minor and security updates qualify, and so do npm **development-dependency** majors. Majors of shipped dependencies and of GitHub Actions get a comment and wait. Required checks come from the `main` ruleset: Test, the Grafana 11.0.0/12.0.0/13.1.0 API checks, and **E2E result**.
+`main` auto-merges Dependabot updates once every required check passes (`.github/workflows/dependabot-auto-merge.yml`). Patch and minor updates, security fixes included, qualify, and so do npm **direct-development-dependency** majors. Every other major gets a comment and waits, including a security fix that needs a major: shipped npm dependencies, Go exporter modules and GitHub Actions. Required checks come from the `main` ruleset: Test, the Grafana 11.0.0/12.0.0/13.1.0 API checks, and **E2E result**.
 
 When many Dependabot PRs pile up, especially majors that need code changes, don't merge them one by one. Each merge makes the others rebase and re-run CI, about 5 minutes each in sequence. Instead:
 
-1. Collect the target versions: `git diff origin/main...origin/<branch> -- package.json` for each PR.
+1. Collect the target versions: `git fetch origin <branch> && git diff origin/main...origin/<branch> -- package.json` for each PR (a fresh clone doesn't have new Dependabot branches yet).
 2. Apply them all on one branch, fix what breaks, and run CI once.
 3. Dependabot closes its own PRs once `main` has those versions, so nothing needs closing by hand. Closing them via `gh pr close` may be blocked by the permission checks anyway.
 

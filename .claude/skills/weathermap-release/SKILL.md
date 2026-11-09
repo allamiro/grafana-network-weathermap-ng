@@ -143,7 +143,7 @@ The user submits the release to the Grafana plugin catalog by hand at `grafana.c
 
 **After submitting, read the validator report** the user pastes back. Warnings don't block review ("can be reviewed"), but they show on every submission:
 
-- `react-19-dep-defaultProps` / `react-19-dep-propTypes` flag any bundled package that assigns those. The validator scans the bundle and source map, so the fix is to stop bundling the package, not to configure it. That's why `react-draggable` was replaced by `src/components/useNodeDrag.ts` in 1.6.23. Before adding a UI dependency, check its bundle for `propTypes =` / `defaultProps =`, and check `dist/module.js` for those strings after building.
+- `react-19-dep-defaultProps` / `react-19-dep-propTypes` flag any bundled package that assigns those. The validator scans the bundle and source map, so the fix is to stop bundling the package, not to configure it. That's why `react-draggable` was replaced by `src/components/useNodeDrag.ts` in 1.6.23 ([PR #419](https://github.com/allamiro/grafana-network-weathermap-ng/pull/419)). Before adding a UI dependency, check its bundle for `propTypes =` / `defaultProps =`, and check `dist/module.js` for those strings after building.
 - Confirm a fix in the bundle, not just the source: `grep -o 'propTypes\|defaultProps' dist/module.js` and the `sources` list in `dist/module.js.map`.
 
 ## Before reporting done

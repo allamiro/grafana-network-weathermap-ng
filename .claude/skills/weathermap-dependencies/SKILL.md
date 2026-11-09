@@ -12,7 +12,7 @@ Repo: `allamiro/grafana-network-weathermap-ng`. Never add `Co-Authored-By: Claud
 ```bash
 R=repos/allamiro/grafana-network-weathermap-ng
 gh api "$R/dependabot/alerts?state=open" --jq '.[]|"\(.number) \(.security_advisory.severity) \(.dependency.package.name) \(.security_vulnerability.vulnerable_version_range) -> \(.security_vulnerability.first_patched_version.identifier // "none") \(.dependency.scope)"'
-gh api "$R/code-scanning/alerts?state=open" --jq length
+gh api --paginate "$R/code-scanning/alerts?state=open" --jq '.[]' | jq -s length   # --paginate: the API returns 30 per page
 npm audit --json | jq -r '.vulnerabilities[]|.via[]|select(type=="object")|"\(.name) \(.severity) \(.range) \(.url)"' | sort -u
 gh pr list --author app/dependabot
 ```
@@ -61,8 +61,8 @@ npm audit                  # must say "found 0 vulnerabilities"
 
 The setup lives in three files:
 - **`.github/dependabot.yml`:** weekly npm updates (minor/patch grouped into one PR), GitHub Actions, and the test exporter's Go module.
-- **`dependabot-auto-merge.yml`:** auto-merges patch, minor, security and npm dev-dependency majors once every required check passes. Majors of shipped dependencies and of Actions get a comment and wait.
-- **`dependency-audit.yml`:** a weekly `npm audit` that fails, which emails the maintainer, on any finding Dependabot can't fix.
+- **`dependabot-auto-merge.yml`:** auto-merges patch and minor updates (security fixes included) and npm direct-development-dependency majors once every required check passes. Every other major, including a security fix that needs one, gets a comment and waits: shipped npm dependencies, GitHub Actions and the Go exporter modules.
+- **`dependency-audit.yml`:** a weekly `npm audit --audit-level=low` that fails, and so emails the maintainer, on any finding at all. It mainly catches what Dependabot can't fix on its own, such as a package held by an override or one with no patched release, but it doesn't filter for those.
 
 Deliberate pins in the `ignore` list (keep them):
 
@@ -84,13 +84,13 @@ When Dependabot opens many PRs at once, apply them on one branch and run CI once
 
 ## 6. Node versions
 
-`engines` is `^22.22.2 || >=24.15.0 <25`. Tools set the floor: eslint-plugin-jsdoc 65 needs `^22.22.2 || >=24.15.0`, and webpack-cli 7 needs `>=22.15`. When a dependency raises its Node floor, update `engines`, README, CONTRIBUTING and the changelog together, and state the upper bound too. Release signing needs Node ≥ 24.5 (`weathermap-release`). The E2E job runs on `ubuntu-24.04`: Playwright 1.58 couldn't install Chromium on `ubuntu-latest`, which is now 26.04.
+`engines` is `^22.22.2 || >=24.15.0 <25`. Tools set the floor: eslint-plugin-jsdoc 65 needs `^22.22.2 || >=24.15.0`, and webpack-cli 7's `rechoir` 1.0.0 dependency needs `>=22.15` (webpack-cli itself declares `>=20.9.0`; check transitive `engines` with `npm view <pkg>@<ver> engines`). When a dependency raises its Node floor, update `engines`, README, CONTRIBUTING and the changelog together, and state the upper bound too. Release signing needs Node ≥ 24.5 (`weathermap-release`). The E2E job runs on `ubuntu-24.04`: Playwright 1.58 couldn't install Chromium on `ubuntu-latest`, which is now 26.04.
 
 ## 7. Packages that ship in the plugin
 
 A dependency that ends up in `dist/module.js` is scanned by the Grafana catalog validator. React 19 warnings (`react-19-dep-defaultProps`, `react-19-dep-propTypes`) flag any bundled package that assigns `propTypes`/`defaultProps`, even class components where nothing breaks. Before adding a UI library:
 - check its build output for those assignments;
-- prefer a small local hook over a heavy dependency, as `useNodeDrag` replaced `react-draggable` in 1.6.23;
+- prefer a small local hook over a heavy dependency, as `src/components/useNodeDrag.ts` replaced `react-draggable` in 1.6.23 ([PR #419](https://github.com/allamiro/grafana-network-weathermap-ng/pull/419));
 - after building, confirm with `grep -o 'propTypes\|defaultProps' dist/module.js` and the `sources` list in `dist/module.js.map`.
 
 ## Before reporting done
