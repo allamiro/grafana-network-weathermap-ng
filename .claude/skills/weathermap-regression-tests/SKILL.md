@@ -64,12 +64,25 @@ Most bugs here only show for particular frame shapes. Test the shape from the re
 
 Assert exact rendered text where formatting is involved (`'1  b/s'`, `'Latency: 5'`). "Contains `1`" let `1 undefined` pass for months.
 
+**Assert on DOM properties, not serialized HTML.** jsdom 26, which came with `jest-environment-jsdom` 30, serializes CSS differently from jsdom 20: `url("…")` instead of `url(…)`, and an unset background as `rgba(0, 0, 0, 0)` instead of `''`. Assertions on `innerHTML` substrings or exact computed-style strings broke on the upgrade. Read the property (`el.style.backgroundImage`) and normalize it (strip quotes, or accept `''`/`transparent`/`rgba(0, 0, 0, 0)`) so the test checks behaviour on any jsdom version.
+
+**Pointer and touch input** (`src/components/useNodeDrag.ts` and its test are the model). Touch drag code must:
+
+- record the `identifier` of the touch that started the drag (from `changedTouches` on `touchstart`);
+- report moves only when that touch is in the `touchmove`'s `changedTouches`;
+- end only when it appears in a `touchend`/`touchcancel`'s `changedTouches`;
+- ignore further `touchstart`s while a drag runs;
+- call `preventDefault()` on **every** `touchmove` during the drag, before filtering by identifier, so no finger scrolls or pinch-zooms the page.
+
+Each of those needs a test that fails when the rule is broken. Real browsers give each finger a stable `identifier`. `changedTouches` lists the fingers that changed in an event and `touches` lists every finger on the screen, so fixtures must provide both. A one-finger test can't catch "followed the wrong finger" bugs: add a second finger that is `touches[0]`, moves, and lifts. `fireEvent.*` returns `false` when the default was prevented, which is how to assert that a touch drag doesn't scroll the page. React registers touch listeners as passive, so code that needs `preventDefault` must bind natively with `{ passive: false }`.
+
 ## 4. Prove the test, then prove the guard
 
 Run the new tests against the unfixed code. **Commit the fix first.** Both this check and the mutation check below overwrite the fixed file and restore it from `HEAD`, so uncommitted work would be lost:
 
 ```bash
 git diff --quiet HEAD -- src/path/Fixed.tsx || { echo "commit the fix first"; exit 1; }   # HEAD: staged-only changes count too
+git fetch origin main                                    # origin/main may be stale; test against the current base
 git checkout origin/main -- src/path/Fixed.tsx
 npx jest <new test files>        # these must FAIL (a control case may pass, and say which)
 git checkout HEAD -- src/path/Fixed.tsx
@@ -82,6 +95,11 @@ If the bug is one of a class ("something mutates shared state", "a formatter dro
 - a snapshot of everything a bug could plausibly write (names/state, config, display processor, values).
 
 Then mutation-test it: temporarily reintroduce one or two related bugs (e.g. drop `state: undefined` in `LinkTooltipGraph.tsx`, mutate `f.config` in place, retype the original time field), run, check the invariant fails, and restore with `git checkout HEAD -- <file>` (safe only because the fix is committed). Record the result.
+
+Two mutation-check traps, both hit in practice:
+
+- **Confirm the mutation actually changed the file.** A `sed` written against the source you remember silently does nothing once Prettier has reflowed the line, and then "the test still passes" looks like a test gap. Print a count after each mutation (`grep -c '<mutated text>' <file>` must be 1) or diff against a backup.
+- **A mutation that survives may be a real gap.** When the guard was dropped from `useNodeDrag`, a second touch started a parallel drag, but the test only moved the first finger, so it couldn't notice. Make the test exercise the path the mutation opens (move and lift the second finger), then re-run the mutation.
 
 ## 5. Comments, commits, PR
 

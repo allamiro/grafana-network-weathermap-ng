@@ -75,6 +75,14 @@ scripts/release.sh tag X.Y.Z
 
 Pass `--body` explicitly: without it GitHub copies every branch commit's `Co-authored-by` trailer into the squash commit. `release.sh tag` refuses if `origin/main` isn't on X.Y.Z. That error means the release PR isn't merged yet, not that something is broken.
 
+When checking a merge commit for AI attribution, match AI names only. GitHub also adds `Co-authored-by: <maintainer> <other email>` when the branch has commits from the maintainer's second git identity (e.g. `ghost-m5@Mac.lan`); that's the maintainer, not an AI:
+
+```bash
+git log -1 --format=%B | grep -qiE 'co-authored-by:.*(claude|anthropic|codex|openai|copilot)|generated with \[claude' && echo "AI attribution"
+```
+
+**Chaining the steps.** Waiting on CI is most of a release's wall time (each PR run ≈ 5 min, E2E included). Rather than stopping between steps, enable auto-merge on the release PR (`gh pr merge N --auto --squash --subject … --body …`) and run one background job that waits for the merge, tags, watches the release run, verifies and publishes (sections 4–5), stopping on the first failed check. Handle any cubic/Codex threads before enabling auto-merge: auto-merge doesn't wait for review threads.
+
 ## 5. Verify the build, then publish
 
 Find the run for *this* tag. The tag push starts it asynchronously, so it can take a few seconds to appear, and the newest release run may be an older tag's:
@@ -82,7 +90,13 @@ Find the run for *this* tag. The tag push starts it asynchronously, so it can ta
 ```bash
 V=X.Y.Z
 TAG_SHA=$(git rev-parse "v$V^{commit}")
-until RID=$(gh run list --workflow release.yml --branch "v$V" --commit "$TAG_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty') && [ -n "$RID" ]; do sleep 5; done
+RID=
+for i in $(seq 1 60); do   # up to ~5 minutes for the tag push to register a run
+  RID=$(gh run list --workflow release.yml --branch "v$V" --commit "$TAG_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty' || true)
+  [ -n "$RID" ] && break
+  sleep 5
+done
+[ -n "$RID" ] || { echo "no release run appeared for v$V; check the Actions tab"; exit 1; }
 gh run watch "$RID" --exit-status   # run in the background; non-zero means stop here
 ```
 
@@ -105,6 +119,11 @@ The workflow already checks the signature. Downloading the asset confirms that w
 
 If the release workflow fails after the tag is pushed, stop and tell the user. Don't delete or move a pushed tag on your own. The repo's past practice is to fix forward with the next patch version, as 1.6.19 did after 1.6.17 and 1.6.18 failed validation.
 
+- **A tag can only be re-pointed if no release was created from it,** and only with the user's go-ahead (v1.6.21 was re-pointed after its signing step failed, before any draft existed). A **published** release is never replaced: someone may have downloaded it or submitted its zip and SHA1 to Grafana. Ship a new patch version instead (v1.6.22 carried the dependency updates rather than rebuilding 1.6.21).
+- **Re-running a failed release run doesn't help** after fixing `release.yml` on `main`: a tag-triggered run uses the workflow file from the tagged commit.
+- **Signing needs Node ≥ 24.5.** `npm run sign` runs `npx @grafana/sign-plugin@latest`, and sign-plugin 4.0.0 (2026-10-22) exits with `Node.js >=24.5.0 is required`. Both release jobs pin `node-version: '>=24.5.0 <25'`; if a future sign-plugin raises the floor again, raise this range (keep both jobs on the same Node).
+- **build-plugin** is at 2.0.0 (default Node 22, but the explicit `node-version` wins). Check its release notes before bumping its major: only a real tag exercises it.
+
 ## 6. Close the loop on issues
 
 Convention: an issue fixed for a release gets a comment with the release link once the signed release is published, and is closed then if `Closes #N` didn't already close it.
@@ -114,6 +133,25 @@ gh issue comment <N> --body "Released in [vX.Y.Z](https://github.com/allamiro/gr
 gh issue close <N>   # only if still open
 ```
 
+## 7. Grafana catalog submission
+
+The user submits the release to the Grafana plugin catalog by hand at `grafana.com/orgs/tamirsuliman/plugins/tamirsuliman-weathermap-panel/update-plugin`. There's no browser access from here, so hand over the values ready to paste:
+
+| Form field | Value |
+| --- | --- |
+| Plugin (zip file) → Paste a URL | `https://github.com/allamiro/grafana-network-weathermap-ng/releases/download/vX.Y.Z/tamirsuliman-weathermap-panel-X.Y.Z.zip` (use this form, not the signed `release-assets.githubusercontent.com` redirect, which expires) |
+| MD5 or SHA1 | the 40-character SHA1 from the verify step |
+| Source code → Paste a URL | `https://github.com/allamiro/grafana-network-weathermap-ng/tree/vX.Y.Z` |
+| Testing guidance | plain text, written for a Grafana reviewer (below) |
+| Provisioning provided for test environment | Yes |
+
+**Testing guidance** covers: what kind of release it is and that nothing needs credentials; the test stack (`git clone --branch vX.Y.Z …`, `npm ci && npm run build`, `cd testing && docker compose up --build grafana prometheus exporter`, Grafana on `http://localhost:3101` with anonymous Admin; the full stack only for the InfluxDB/MySQL/Postgres/Elasticsearch/Zabbix dashboards); the Node version needed to build; numbered steps to check each change, with the expected result; and the security/build facts (audit result, signing, checksums, which automated checks ran). Check `testing/grafana/Dockerfile` and `testing/docker-compose.yml` before writing it, and write repro steps that actually show the change (e.g. a three-node panel to show anchor re-centring, not a dashboard where removing a node removes every link).
+
+**After submitting, read the validator report** the user pastes back. Warnings don't block review ("can be reviewed"), but they show on every submission:
+
+- `react-19-dep-defaultProps` / `react-19-dep-propTypes` flag any bundled package that assigns those. The validator scans the bundle and source map, so the fix is to stop bundling the package, not to configure it. That's why `react-draggable` was replaced by `src/components/useNodeDrag.ts` in 1.6.23 ([PR #419](https://github.com/allamiro/grafana-network-weathermap-ng/pull/419)). Before adding a UI dependency, check its bundle for `propTypes =` / `defaultProps =`, and check `dist/module.js` for those strings after building.
+- Confirm a fix in the bundle, not just the source: `grep -o 'propTypes\|defaultProps' dist/module.js` and the `sources` list in `dist/module.js.map`.
+
 ## Before reporting done
 
-Report the release URL, what shipped (issue → PR), the checksum/version/signature results, and which issues were commented on or closed. If any step was skipped or failed, say which one.
+Report the release URL, what shipped (issue → PR), the checksum/version/signature results, which issues were commented on or closed, and the catalog form values with the testing guidance. If any step was skipped or failed, say which one.
