@@ -2,6 +2,7 @@
 // GHSA-gcqx-w48m-w2h4 / CVE-2026-93753, for which no upstream release exists.
 // These tests fail if the override stops pointing at the patched copy or the
 // guard is lost when the copy is updated.
+import path from 'path';
 import deepmerge from 'deepmerge';
 
 // JSON.parse is how the attack arrives: it creates an own "__proto__" key,
@@ -10,10 +11,17 @@ const poisoned = () => JSON.parse('{"__proto__": {"isAdmin": true}}');
 
 describe('vendored deepmerge (GHSA-gcqx-w48m-w2h4)', () => {
   test('every copy resolves to the patched vendor/deepmerge', () => {
-    expect(require.resolve('deepmerge')).toContain('vendor/deepmerge');
-    // jest-config is the real consumer; it must get the patched copy too.
-    const fromJestConfig = require.resolve('deepmerge', { paths: [require.resolve('jest-config')] });
-    expect(fromJestConfig).toContain('vendor/deepmerge');
+    // Both real consumers must get the patched copy, not a nested 4.3.1.
+    const resolvedFrom = (consumer?: string) =>
+      (consumer
+        ? require.resolve('deepmerge', { paths: [path.dirname(require.resolve(consumer))] })
+        : require.resolve('deepmerge')
+      )
+        .split(path.sep)
+        .join('/');
+    expect(resolvedFrom()).toContain('vendor/deepmerge');
+    expect(resolvedFrom('jest-config')).toContain('vendor/deepmerge');
+    expect(resolvedFrom('fork-ts-checker-webpack-plugin')).toContain('vendor/deepmerge');
   });
 
   test('a null-prototype target does not let a __proto__ key set the result prototype', () => {
