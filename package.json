@@ -49,6 +49,7 @@
     "braces": "file:vendor/braces",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.3",
+    "deepmerge": "file:vendor/deepmerge",
     "eslint": "^8.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^50.0.0",
@@ -123,6 +124,7 @@
     },
     "@typescript-eslint/typescript-estree": {
       "minimatch": "^11.0.5"
-    }
+    },
+    "deepmerge": "$deepmerge"
   }
 }

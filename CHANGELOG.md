@@ -15,7 +15,7 @@ No dashboard migration or new setting is needed.
 
 * **DOMPurify 3.4.17** ([PR #394](https://github.com/allamiro/grafana-network-weathermap-ng/pull/394)): fixes `IN_PLACE` sanitization edge cases and hardens several smaller ones.
 * **serialize-javascript 7.1.4** (GHSA-m5mm-p8h7-m29v), **glob 14.0.4** (GHSA-3g3m-2fjr-6pw4) and **minimatch 11.0.5** (GHSA-g3hv-75wg-m249) ([PR #398](https://github.com/allamiro/grafana-network-weathermap-ng/pull/398)): all development-only build and lint tooling, pinned because the plugin catalog review reads the lockfile. Building from source now needs Node 20, or 22 – 24: glob 14 and minimatch 11 don't support Node 21.
-* `npm audit` reports 6 low findings, all from one development-only advisory in `deepmerge` (GHSA-gcqx-w48m-w2h4, via Jest and the webpack type checker), which has no patched release yet.
+* **deepmerge replaced with a patched local 4.3.2** (GHSA-gcqx-w48m-w2h4 / CVE-2026-93753, [PR #401](https://github.com/allamiro/grafana-network-weathermap-ng/pull/401)): every published release through 4.3.1 lets a `__proto__` key give the merged object an attacker-chosen prototype, and there is no fixed release on npm. Jest and the webpack type checker still need the package, so the lockfile now points at `vendor/deepmerge`: the 4.3.1 sources with `mergeObject` skipping the `__proto__` key in both copy loops, as the upstream fix proposals do. It is development-only and never shipped in the plugin. `npm audit` reports no vulnerabilities.
 
 ### Release assets
 
@@ -25,6 +25,7 @@ No dashboard migration or new setting is needed.
 
 * Regression tests for past fixes that no test caught when the fix was undone ([PR #385](https://github.com/allamiro/grafana-network-weathermap-ng/pull/385), [PR #389](https://github.com/allamiro/grafana-network-weathermap-ng/pull/389)), browser tests for tooltips on Grafana latest ([PR #386](https://github.com/allamiro/grafana-network-weathermap-ng/pull/386)), and a type check against each supported Grafana SDK version ([PR #387](https://github.com/allamiro/grafana-network-weathermap-ng/pull/387)).
 * The weekly E2E run works again after GitHub moved `ubuntu-latest` to Ubuntu 26.04, where the Playwright version in use can't install Chromium ([PR #398](https://github.com/allamiro/grafana-network-weathermap-ng/pull/398)).
+* The waypoint save-and-reload browser test no longer flakes when Grafana saves slowly ([PR #400](https://github.com/allamiro/grafana-network-weathermap-ng/pull/400)).
 
 ## [1.6.20](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.20) (2026-10-18)
 
