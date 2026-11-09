@@ -52,7 +52,7 @@
     "deepmerge": "file:vendor/deepmerge",
     "eslint": "^8.0.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jsdoc": "^50.0.0",
+    "eslint-plugin-jsdoc": "^65.4.5",
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-webpack-plugin": "^4.0.1",
