@@ -329,8 +329,14 @@ test.describe('Polyline waypoints', () => {
     // dashboard", and once one attempt has saved, Grafana disables Save on
     // any retry ("A dashboard or a folder with the same name already exists"),
     // so a single slow save used to fail all retries too.
+    // Wait for the field: isVisible() doesn't, and a drawer that renders a
+    // moment late would skip the unique title.
     const title = drawer.getByRole('textbox', { name: /title/i }).first();
-    if (await title.isVisible().catch(() => false)) {
+    const hasTitle = await title
+      .waitFor({ state: 'visible', timeout: 10000 })
+      .then(() => true)
+      .catch(() => false);
+    if (hasTitle) {
       await title.fill(`Polyline waypoints e2e ${Date.now()}-${testInfo.retry}`);
     }
     // Wait for the save request itself, not a URL change: after saving, newer
