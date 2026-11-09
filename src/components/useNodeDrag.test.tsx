@@ -120,11 +120,13 @@ describe('useNodeDrag', () => {
       touches: [finger(1, 600, 650), finger(2, 30, 20)],
       changedTouches: [finger(1, 600, 650), finger(2, 30, 20)],
     });
-    // Only finger 1 moves: the node doesn't.
-    fireEvent.touchMove(document, {
+    // Only finger 1 moves: the node doesn't, and the page doesn't scroll or
+    // pinch-zoom either while the drag runs.
+    const otherOnly = fireEvent.touchMove(document, {
       touches: [finger(1, 700, 700), finger(2, 30, 20)],
       changedTouches: [finger(1, 700, 700)],
     });
+    expect(otherOnly).toBe(false);
     expect(deltas(onDrag)).toEqual([[20, 10]]);
 
     // Finger 1 lifting neither ends nor commits the drag.

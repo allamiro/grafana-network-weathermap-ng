@@ -87,14 +87,16 @@ export function useNodeDrag({ ref, disabled, onDrag, onStop }: Options) {
     body.style.userSelect = 'none';
 
     const move = (e: MouseEvent | TouchEvent) => {
+      // While a touch drag runs, no finger may scroll or pinch-zoom the page,
+      // so cancel every touchmove before deciding whether to report a delta.
+      if ('touches' in e) {
+        e.preventDefault();
+      }
       // Only the dragging finger moves the node, and only when it moved:
       // changedTouches lists the fingers that changed in this event.
       const p = pointOf(e, 'changedTouches');
       if (!p || !last) {
         return;
-      }
-      if ('touches' in e) {
-        e.preventDefault();
       }
       const delta = { deltaX: p.x - last.x, deltaY: p.y - last.y };
       last = p;
