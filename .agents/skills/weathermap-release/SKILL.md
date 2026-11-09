@@ -90,7 +90,13 @@ Find the run for *this* tag. The tag push starts it asynchronously, so it can ta
 ```bash
 V=X.Y.Z
 TAG_SHA=$(git rev-parse "v$V^{commit}")
-until RID=$(gh run list --workflow release.yml --branch "v$V" --commit "$TAG_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty') && [ -n "$RID" ]; do sleep 5; done
+RID=
+for i in $(seq 1 60); do   # up to ~5 minutes for the tag push to register a run
+  RID=$(gh run list --workflow release.yml --branch "v$V" --commit "$TAG_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty' || true)
+  [ -n "$RID" ] && break
+  sleep 5
+done
+[ -n "$RID" ] || { echo "no release run appeared for v$V; check the Actions tab"; exit 1; }
 gh run watch "$RID" --exit-status   # run in the background; non-zero means stop here
 ```
 

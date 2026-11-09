@@ -45,6 +45,8 @@ If jest reports `jest-environment-jsdom cannot be found`, `node_modules` is miss
 For a bug fix, prove the PR's tests catch the bug. Put the old version of the fixed file back and expect failures:
 
 ```bash
+git diff --quiet HEAD -- src/path/Fixed.tsx || { echo "commit or stash changes to it first"; exit 1; }  # staged changes count too
+git fetch origin main                                                      # test against the current base
 git checkout origin/main -- src/path/Fixed.tsx && npx jest <new tests>   # should FAIL
 git checkout HEAD -- src/path/Fixed.tsx                                   # restore
 ```

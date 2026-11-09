@@ -11,7 +11,7 @@ Repo: `allamiro/grafana-network-weathermap-ng`. Never add `Co-Authored-By: Claud
 
 ```bash
 R=repos/allamiro/grafana-network-weathermap-ng
-gh api "$R/dependabot/alerts?state=open" --jq '.[]|"\(.number) \(.security_advisory.severity) \(.dependency.package.name) \(.security_vulnerability.vulnerable_version_range) -> \(.security_vulnerability.first_patched_version.identifier // "none") \(.dependency.scope)"'
+gh api --paginate "$R/dependabot/alerts?state=open" --jq '.[]|"\(.number) \(.security_advisory.severity) \(.dependency.package.name) \(.security_vulnerability.vulnerable_version_range) -> \(.security_vulnerability.first_patched_version.identifier // "none") \(.dependency.scope)"'
 gh api --paginate "$R/code-scanning/alerts?state=open" --jq '.[]' | jq -s length   # --paginate: the API returns 30 per page
 npm audit --json | jq -r '.vulnerabilities[]|.via[]|select(type=="object")|"\(.name) \(.severity) \(.range) \(.url)"' | sort -u
 gh pr list --author app/dependabot
@@ -61,8 +61,8 @@ npm audit                  # must say "found 0 vulnerabilities"
 
 The setup lives in three files:
 - **`.github/dependabot.yml`:** weekly npm updates (minor/patch grouped into one PR), GitHub Actions, and the test exporter's Go module.
-- **`dependabot-auto-merge.yml`:** auto-merges patch and minor updates (security fixes included) and npm direct-development-dependency majors once every required check passes. Every other major, including a security fix that needs one, gets a comment and waits: shipped npm dependencies, GitHub Actions and the Go exporter modules.
-- **`dependency-audit.yml`:** a weekly `npm audit --audit-level=low` that fails, and so emails the maintainer, on any finding at all. It mainly catches what Dependabot can't fix on its own, such as a package held by an override or one with no patched release, but it doesn't filter for those.
+- **`.github/workflows/dependabot-auto-merge.yml`:** auto-merges patch and minor updates (security fixes included) and npm direct-development-dependency majors once every required check passes. Every other major, including a security fix that needs one, gets a comment and waits: shipped npm dependencies, GitHub Actions and the Go exporter modules.
+- **`.github/workflows/dependency-audit.yml`:** a weekly `npm audit --audit-level=low` that fails, and so emails the maintainer, on any finding at all. It mainly catches what Dependabot can't fix on its own, such as a package held by an override or one with no patched release, but it doesn't filter for those.
 
 Deliberate pins in the `ignore` list (keep them):
 
