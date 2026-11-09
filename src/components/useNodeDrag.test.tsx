@@ -71,7 +71,10 @@ describe('useNodeDrag', () => {
     fireEvent.mouseDown(node, { clientX: 0, clientY: 0, button: 0 });
     fireEvent.mouseMove(document, { clientX: 20, clientY: 20 });
     fireEvent.mouseUp(document);
-    fireEvent.touchStart(node, { touches: [{ clientX: 0, clientY: 0 }] });
+    fireEvent.touchStart(node, {
+      touches: [{ identifier: 0, clientX: 0, clientY: 0 }],
+      changedTouches: [{ identifier: 0, clientX: 0, clientY: 0 }],
+    });
     expect(onDrag).not.toHaveBeenCalled();
     expect(onStop).not.toHaveBeenCalled();
   });
@@ -86,17 +89,82 @@ describe('useNodeDrag', () => {
     document.body.style.userSelect = '';
   });
 
+  // A real browser lists the finger that changed in changedTouches and every
+  // finger on the screen in touches, each with a stable identifier.
+  const finger = (identifier: number, clientX: number, clientY: number) => ({ identifier, clientX, clientY });
+
   test('touch drags report deltas and keep the page from scrolling', () => {
     const { onDrag, onStop, node } = setup();
     // Not cancelable means the listener couldn't stop the scroll: React's
     // own touch listeners are passive, so the hook binds touchstart natively.
-    const start = fireEvent.touchStart(node, { touches: [{ clientX: 10, clientY: 10 }] });
+    const f = finger(7, 10, 10);
+    const start = fireEvent.touchStart(node, { touches: [f], changedTouches: [f] });
     expect(start).toBe(false);
-    const move = fireEvent.touchMove(document, { touches: [{ clientX: 25, clientY: 4 }] });
+    const moved = finger(7, 25, 4);
+    const move = fireEvent.touchMove(document, { touches: [moved], changedTouches: [moved] });
     expect(move).toBe(false);
-    fireEvent.touchEnd(document, { changedTouches: [{ clientX: 25, clientY: 4 }] });
+    fireEvent.touchEnd(document, { touches: [], changedTouches: [moved] });
     expect(deltas(onDrag)).toEqual([[15, -6]]);
     expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  test('a touch drag follows only the finger that started it', () => {
+    const { onDrag, onStop, node } = setup();
+    // Finger 1 is already down elsewhere, so it is touches[0]; finger 2 starts
+    // the drag on the node.
+    const other = finger(1, 500, 500);
+    fireEvent.touchStart(node, { touches: [other, finger(2, 10, 10)], changedTouches: [finger(2, 10, 10)] });
+
+    // Both move: the node follows finger 2 only.
+    fireEvent.touchMove(document, {
+      touches: [finger(1, 600, 650), finger(2, 30, 20)],
+      changedTouches: [finger(1, 600, 650), finger(2, 30, 20)],
+    });
+    // Only finger 1 moves: the node doesn't.
+    fireEvent.touchMove(document, {
+      touches: [finger(1, 700, 700), finger(2, 30, 20)],
+      changedTouches: [finger(1, 700, 700)],
+    });
+    expect(deltas(onDrag)).toEqual([[20, 10]]);
+
+    // Finger 1 lifting neither ends nor commits the drag.
+    fireEvent.touchEnd(document, { touches: [finger(2, 30, 20)], changedTouches: [finger(1, 700, 700)] });
+    expect(onStop).not.toHaveBeenCalled();
+
+    fireEvent.touchEnd(document, { touches: [], changedTouches: [finger(2, 30, 20)] });
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  test('a second finger landing on the node does not restart the drag', () => {
+    const { onDrag, onStop, node } = setup();
+    fireEvent.touchStart(node, { touches: [finger(1, 10, 10)], changedTouches: [finger(1, 10, 10)] });
+    fireEvent.touchStart(node, {
+      touches: [finger(1, 10, 10), finger(2, 300, 300)],
+      changedTouches: [finger(2, 300, 300)],
+    });
+
+    // Finger 2 moving or lifting must not drag or commit anything.
+    fireEvent.touchMove(document, {
+      touches: [finger(1, 10, 10), finger(2, 340, 320)],
+      changedTouches: [finger(2, 340, 320)],
+    });
+    fireEvent.touchEnd(document, { touches: [finger(1, 10, 10)], changedTouches: [finger(2, 340, 320)] });
+    expect(onDrag).not.toHaveBeenCalled();
+    expect(onStop).not.toHaveBeenCalled();
+
+    // Finger 1 still drives the drag, measured from its own start.
+    fireEvent.touchMove(document, { touches: [finger(1, 15, 12)], changedTouches: [finger(1, 15, 12)] });
+    expect(deltas(onDrag)).toEqual([[5, 2]]);
+  });
+
+  test('touchcancel ends the drag like a release', () => {
+    const { onDrag, onStop, node } = setup();
+    fireEvent.touchStart(node, { touches: [finger(3, 10, 10)], changedTouches: [finger(3, 10, 10)] });
+    fireEvent.touchCancel(document, { touches: [], changedTouches: [finger(3, 10, 10)] });
+    expect(onStop).toHaveBeenCalledTimes(1);
+
+    fireEvent.touchMove(document, { touches: [finger(3, 40, 40)], changedTouches: [finger(3, 40, 40)] });
+    expect(onDrag).not.toHaveBeenCalled();
   });
 
   test('unmounting mid-drag removes its document listeners and restores selection', () => {

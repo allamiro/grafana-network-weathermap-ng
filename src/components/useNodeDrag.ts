@@ -16,13 +16,10 @@ interface Options {
   onStop: DragHandler;
 }
 
-const point = (e: MouseEvent | TouchEvent): { x: number; y: number } | null => {
-  if ('touches' in e) {
-    const t = e.touches[0] ?? e.changedTouches[0];
-    return t ? { x: t.clientX, y: t.clientY } : null;
-  }
-  return { x: e.clientX, y: e.clientY };
-};
+type Point = { x: number; y: number };
+
+/** The finger that started a touch drag, in a TouchList, or undefined. */
+const findTouch = (list: TouchList, id: number): Touch | undefined => Array.from(list).find((t) => t.identifier === id);
 
 /**
  * Pointer dragging for a map node, replacing react-draggable's DraggableCore
@@ -32,6 +29,9 @@ const point = (e: MouseEvent | TouchEvent): { x: number; y: number } | null => {
  * - a drag starts on a primary-button mousedown or a touchstart, unless disabled;
  * - every move reports the delta since the last event (DraggableCore's
  *   deltaX/deltaY at scale 1), with the native event so Ctrl/⌘ can be read;
+ * - a touch drag follows only the finger that started it: other fingers
+ *   neither move the node nor end the drag, and a second touch on the node
+ *   doesn't restart it (DraggableCore tracked the touch identifier too);
  * - release calls onStop, even when the pointer didn't move;
  * - text selection is suppressed while dragging, and touch drags don't scroll;
  * - no findDOMNode, so nothing here was removed in React 19.
@@ -51,13 +51,28 @@ export function useNodeDrag({ ref, disabled, onDrag, onStop }: Options) {
   useEffect(() => () => cleanup.current?.(), []);
 
   const start = (native: MouseEvent | TouchEvent) => {
-    if (disabled) {
+    // Disabled, or a drag is already running (e.g. a second finger landed on
+    // the node): keep the current drag rather than restarting from a new point.
+    if (disabled || cleanup.current) {
       return;
     }
     if (!('touches' in native) && native.button !== 0) {
       return;
     }
-    let last = point(native);
+    // A touch drag belongs to the finger that started it: the one that just
+    // touched this node, not touches[0], which may be a finger elsewhere.
+    const touchId = 'touches' in native ? native.changedTouches[0]?.identifier : undefined;
+    if ('touches' in native && touchId === undefined) {
+      return;
+    }
+    const pointOf = (e: MouseEvent | TouchEvent, list: 'changedTouches'): Point | null => {
+      if (!('touches' in e)) {
+        return { x: e.clientX, y: e.clientY };
+      }
+      const t = findTouch(e[list], touchId!);
+      return t ? { x: t.clientX, y: t.clientY } : null;
+    };
+    let last = pointOf(native, 'changedTouches');
     if (!last) {
       return;
     }
@@ -65,7 +80,6 @@ export function useNodeDrag({ ref, disabled, onDrag, onStop }: Options) {
       // Stop the page scrolling under a touch drag, as DraggableCore did.
       native.preventDefault();
     }
-    cleanup.current?.();
 
     const doc = (native.target as Node | null)?.ownerDocument ?? document;
     const body = doc.body;
@@ -73,7 +87,9 @@ export function useNodeDrag({ ref, disabled, onDrag, onStop }: Options) {
     body.style.userSelect = 'none';
 
     const move = (e: MouseEvent | TouchEvent) => {
-      const p = point(e);
+      // Only the dragging finger moves the node, and only when it moved:
+      // changedTouches lists the fingers that changed in this event.
+      const p = pointOf(e, 'changedTouches');
       if (!p || !last) {
         return;
       }
@@ -85,6 +101,10 @@ export function useNodeDrag({ ref, disabled, onDrag, onStop }: Options) {
       handlers.current.onDrag(e, delta);
     };
     const end = (e: MouseEvent | TouchEvent) => {
+      // Another finger lifting doesn't end (and commit) this drag.
+      if ('touches' in e && !findTouch(e.changedTouches, touchId!)) {
+        return;
+      }
       remove();
       handlers.current.onStop(e, { deltaX: 0, deltaY: 0 });
     };
