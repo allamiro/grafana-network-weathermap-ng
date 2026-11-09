@@ -44,8 +44,7 @@ Live network weathermaps for Grafana — nodes, links, and color scales driven b
 
 </div>
 
-> A continuation of the archived [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap),
-> rebuilt for modern Grafana — React 18, Grafana 11→13, TypeScript 5, and a hardened, regression-tested core.
+
 
 ---
 
@@ -273,3 +272,7 @@ and if it saved you a weekend, <a href="https://buymeacoffee.com/pcileky2q">buy 
 or <a href="https://github.com/sponsors/allamiro">sponsor on GitHub</a>.</sub>
 
 </div>
+
+
+> A continuation of the archived [knightss27-weathermap-panel](https://github.com/knightss27/grafana-network-weathermap),
+> rebuilt for modern Grafana — React 18, Grafana 11→13, TypeScript 5, and a hardened, regression-tested core.
