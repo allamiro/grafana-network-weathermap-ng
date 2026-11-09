@@ -299,7 +299,7 @@ test.describe('Polyline waypoints', () => {
     }
   });
 
-  test('waypoints persist across dashboard save and reload', async ({ panelEditPage, page }) => {
+  test('waypoints persist across dashboard save and reload', async ({ panelEditPage, page }, testInfo) => {
     await setupPanel(panelEditPage, page);
     const panel = panelEditPage.panel.locator;
     const handle = await addWaypointOnCanvas(page, panel);
@@ -325,16 +325,39 @@ test.describe('Polyline waypoints', () => {
       .first()
       .click();
     const drawer = page.getByRole('dialog').last();
+    // A unique title per attempt. Every new dashboard is called "New
+    // dashboard", and once one attempt has saved, Grafana disables Save on
+    // any retry ("A dashboard or a folder with the same name already exists"),
+    // so a single slow save used to fail all retries too.
+    const title = drawer.getByRole('textbox', { name: /title/i }).first();
+    if (await title.isVisible().catch(() => false)) {
+      await title.fill(`Polyline waypoints e2e ${Date.now()}-${testInfo.retry}`);
+    }
+    // Wait for the save request itself, not a URL change: after saving, newer
+    // Grafana can raise an "Unsaved changes" prompt that blocks the redirect to
+    // /d/<uid> even though the dashboard is already stored. 11.x/12.x save
+    // through /api/dashboards/db; newer versions use the dashboard.grafana.app
+    // API, whose response names the dashboard in metadata.name.
+    const saved = page.waitForResponse(
+      (r) =>
+        ['POST', 'PUT'].includes(r.request().method()) &&
+        /\/api\/dashboards\/db|\/apis\/dashboard\.grafana\.app\//.test(r.url()) &&
+        r.ok(),
+      { timeout: 30000 }
+    );
     // Accessible name is "Save dashboard button" on 11.x, "Save" on newer.
     await drawer
       .getByRole('button', { name: /^(save|save dashboard( button)?)$/i })
       .first()
       .click();
-    await page.waitForURL(/\/d\//, { timeout: 15000 });
+    const body = await (await saved).json();
+    const uid: string | undefined = body.uid ?? body.metadata?.name;
+    expect(uid, 'the save response names the stored dashboard').toBeTruthy();
 
-    // Reload the saved dashboard and re-enter panel edit.
-    const url = new URL(page.url());
-    await page.goto(`${url.origin}${url.pathname}?editPanel=1`, { waitUntil: 'networkidle' });
+    // Reload the saved dashboard by uid and re-enter panel edit. Accept any
+    // "leave page?" prompt: the dashboard is already stored.
+    page.on('dialog', (d) => d.accept().catch(() => {}));
+    await page.goto(`/d/${uid}?editPanel=1`, { waitUntil: 'networkidle' });
     const panel2 = page.locator('svg[id^="nw-"]');
     await expect(panel2).toBeVisible({ timeout: 20000 });
     const handle2 = page.getByTestId('waypoint-handle').first();
