@@ -19,7 +19,7 @@ No dashboard migration or new setting is needed.
 
 ### Release assets
 
-* Releases now include a **SHA-256 checksum** (`.zip.sha256`) alongside the SHA1 ([PR #388](https://github.com/allamiro/grafana-network-weathermap-ng/pull/388)). Verify a download with `sha256sum -c tamirsuliman-weathermap-panel-1.6.21.zip.sha256`.
+* Releases now include a **SHA-256 checksum** (`.zip.sha256`) alongside the SHA1 ([PR #388](https://github.com/allamiro/grafana-network-weathermap-ng/pull/388)). Verify a download from the folder that holds both files with `sha256sum -c tamirsuliman-weathermap-panel-1.6.21.zip.sha256` (on macOS: `shasum -a 256 -c tamirsuliman-weathermap-panel-1.6.21.zip.sha256`).
 
 ### Tests and CI
 
