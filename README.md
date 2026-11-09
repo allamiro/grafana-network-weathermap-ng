@@ -209,7 +209,7 @@ The playground provisions WAN utilization, incident replay, rack boards, the wor
 |  | Requirement | Version |
 |:-:|---|---|
 | 📊 | **Grafana** | **11.0.0+** — tested through 13.x |
-| ⚙️ | **Node.js** *(development only)* | 20, or 22 – 24 (`.nvmrc` pins 24) |
+| ⚙️ | **Node.js** *(development only)* | 22.22.2+ or 24.15+ (`.nvmrc` pins 24) |
 
 ## 🛡️ Built to not break
 

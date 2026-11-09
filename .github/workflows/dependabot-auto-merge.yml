@@ -30,7 +30,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto-merge patch and minor updates when checks pass
+      - name: Auto-merge patch/minor updates and dev-tool majors when checks pass
         if: >-
           steps.meta.outputs.update-type != 'version-update:semver-major' ||
           (steps.meta.outputs.package-ecosystem == 'npm_and_yarn' &&
@@ -50,4 +50,4 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           DEPS: ${{ steps.meta.outputs.dependency-names }}
         run: |
-          gh pr comment "$PR_URL" --body "Major version update ($DEPS) of a shipped dependency or GitHub Action: not merged automatically. Check the release notes for breaking changes, then merge by hand."
+          gh pr comment "$PR_URL" --body "Major version update ($DEPS): not merged automatically, because only npm development-tool majors auto-merge. Check the release notes for breaking changes, then merge by hand."

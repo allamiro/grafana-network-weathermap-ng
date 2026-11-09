@@ -187,6 +187,7 @@ const config = async (env): Promise<Configuration> => ({
       typescript: { configFile: path.join(process.cwd(), 'tsconfig.json') },
     }),
     new ESLintPlugin({
+      configType: 'flat',
       extensions: ['.ts', '.tsx'],
       lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
     }),

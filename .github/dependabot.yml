@@ -26,6 +26,10 @@ updates:
         versions: ['>=12.0.0']
       - dependency-name: '@grafana/ui'
         versions: ['>=12.0.0']
+      # Node types track the oldest supported runtime (engines: Node 22.22.2+),
+      # so tsc rejects APIs that Node 22 doesn't have.
+      - dependency-name: '@types/node'
+        versions: ['>=23.0.0']
       # Grafana provides React at runtime; the panel must stay on 18.
       - dependency-name: react
         versions: ['>=19.0.0']

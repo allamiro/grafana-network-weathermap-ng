@@ -28,9 +28,9 @@ jobs:
     name: Test and verify build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '>=24.5.0 <25'
           cache: 'npm'
@@ -52,7 +52,7 @@ jobs:
       id-token: write        # OIDC for signing the provenance (sigstore)
       attestations: write    # publish the build-provenance attestation
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Grafana's recommended pipeline: npm ci + build, community sign, package
       # the zip, verify the version matches the tag, generate the build
@@ -72,7 +72,7 @@ jobs:
       # branch. This repo writes its changelog by hand.
       - name: Build, sign, and attest plugin
         id: build
-        uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.0
+        uses: grafana/plugin-actions/build-plugin@build-plugin/v2.0.0
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
           attestation: true

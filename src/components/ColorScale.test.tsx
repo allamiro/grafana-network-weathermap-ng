@@ -89,9 +89,10 @@ test('scale background box renders only when configured', () => {
   const { rerender } = render(
     <ColorScale thresholds={[{ color: '#73BF69', percent: 0 }]} settings={settings} />
   );
-  // Default: transparent, no border — exactly the old behavior.
+  // Default: transparent, no border — exactly the old behavior. jsdom 20
+  // reports an unset background as '', jsdom 26 as transparent black.
   const container = screen.getByTestId('color-scale');
-  expect(getComputedStyle(container).background).toBe('');
+  expect(getComputedStyle(container).background).toMatch(/^(|transparent|rgba\(0, 0, 0, 0\))$/);
 
   const boxed = structuredClone(settings);
   boxed.scale.backgroundColor = 'rgb(24, 27, 31)';

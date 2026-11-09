@@ -40,6 +40,11 @@ const withBackground = (url: string, attachToCanvas: boolean) => (wm: Weathermap
   wm.settings.panel.backgroundImage = { url, fit: 'contain', attachToCanvas };
 };
 
+// The CSS (fixed) path sets background-image on the map's <svg>. Read it from
+// the element and drop quotes: jsdom 26 serializes url("..."), jsdom 20 url(...).
+const cssBackground = (container: HTMLElement) =>
+  (container.querySelector('svg[id^="nw-"]') as SVGSVGElement).style.backgroundImage.replace(/["']/g, '');
+
 describe('background image sources (#344)', () => {
   test('an embedded data URI renders on the canvas path', () => {
     const { container } = renderPanel(withBackground(SVG_URI, true));
@@ -50,7 +55,7 @@ describe('background image sources (#344)', () => {
 
   test('an embedded data URI renders on the CSS (fixed) path', () => {
     const { container } = renderPanel(withBackground(PNG, false));
-    expect(container.innerHTML).toContain(`url(${PNG})`);
+    expect(cssBackground(container)).toBe(`url(${PNG})`);
   });
 
   test('a linked URL still works on both paths, unchanged', () => {
@@ -58,7 +63,7 @@ describe('background image sources (#344)', () => {
     const canvas = renderPanel(withBackground(url, true));
     expect(canvas.container.querySelector('svg image')!.getAttribute('href')).toBe(url);
     const fixed = renderPanel(withBackground(url, false));
-    expect(fixed.container.innerHTML).toContain(`url(${url})`);
+    expect(cssBackground(fixed.container)).toBe(`url(${url})`);
   });
 
   test.each([
