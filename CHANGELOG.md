@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.21](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.21) (2026-11-09)
+
+### Fixed
+
+* **a saved link with a missing endpoint no longer crashes the panel or the link editor** ([#392](https://github.com/allamiro/grafana-network-weathermap-ng/issues/392), [PR #393](https://github.com/allamiro/grafana-network-weathermap-ng/pull/393)): hand-edited or partially provisioned dashboards can save links with no endpoints, only one, a `null` one, or a missing or out-of-range anchor side. The panel threw a `TypeError` while drawing them, and the link editor threw on render, so the dashboard couldn't even be repaired from the UI. Such links are now skipped when drawing and sizing nodes, and when an undrawable link came first it no longer shifts the position of every other bundled link. In the editor, picking an endpoint repairs the link. Nothing is removed from the saved options, so the next edit can't silently drop these links.
+* **removing a node no longer leaves the remaining links spaced for links that are gone** ([#390](https://github.com/allamiro/grafana-network-weathermap-ng/issues/390), [PR #391](https://github.com/allamiro/grafana-network-weathermap-ng/pull/391)): **Remove Node** deleted the node's links but kept counting them on the anchors of the nodes at their other ends, and links are spread across an anchor by that count. Removing a node now frees those anchor slots, never going below zero, and maps with missing anchors or partial links can still be edited.
+
+No dashboard migration or new setting is needed.
+
+### Security
+
+* **DOMPurify 3.4.17** ([PR #394](https://github.com/allamiro/grafana-network-weathermap-ng/pull/394)): fixes `IN_PLACE` sanitization edge cases and hardens several smaller ones.
+* **serialize-javascript 7.1.4** (GHSA-m5mm-p8h7-m29v), **glob 14.0.4** (GHSA-3g3m-2fjr-6pw4) and **minimatch 11.0.5** (GHSA-g3hv-75wg-m249) ([PR #398](https://github.com/allamiro/grafana-network-weathermap-ng/pull/398)): all development-only build and lint tooling, pinned because the plugin catalog review reads the lockfile. Building from source now needs Node 20, or 22 – 24: glob 14 and minimatch 11 don't support Node 21.
+* `npm audit` reports 6 low findings, all from one development-only advisory in `deepmerge` (GHSA-gcqx-w48m-w2h4, via Jest and the webpack type checker), which has no patched release yet.
+
+### Release assets
+
+* Releases now include a **SHA-256 checksum** (`.zip.sha256`) alongside the SHA1 ([PR #388](https://github.com/allamiro/grafana-network-weathermap-ng/pull/388)). Verify a download with `sha256sum -c tamirsuliman-weathermap-panel-1.6.21.zip.sha256`.
+
+### Tests and CI
+
+* Regression tests for past fixes that no test caught when the fix was undone ([PR #385](https://github.com/allamiro/grafana-network-weathermap-ng/pull/385), [PR #389](https://github.com/allamiro/grafana-network-weathermap-ng/pull/389)), browser tests for tooltips on Grafana latest ([PR #386](https://github.com/allamiro/grafana-network-weathermap-ng/pull/386)), and a type check against each supported Grafana SDK version ([PR #387](https://github.com/allamiro/grafana-network-weathermap-ng/pull/387)).
+* The weekly E2E run works again after GitHub moved `ubuntu-latest` to Ubuntu 26.04, where the Playwright version in use can't install Chromium ([PR #398](https://github.com/allamiro/grafana-network-weathermap-ng/pull/398)).
+
 ## [1.6.20](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.20) (2026-10-18)
 
 ### Fixed
