@@ -4,7 +4,7 @@ Thank you for your interest in contributing to the Network Weathermap plugin.
 
 ## Prerequisites
 
-- Node.js 22.22.2+ or 24.15+ (`.nvmrc` pins 24; the E2E toolchain caps at 24). Node 20 is end-of-life, and the lint and build tooling (eslint-plugin-jsdoc 65, webpack-cli 7) require these versions.
+- Node.js 22 (22.22.2 or later) or 24 (24.15 or later); Node 25+ isn't supported yet (`.nvmrc` pins 24; the E2E toolchain caps at 24). Node 20 is end-of-life, and the lint and build tooling (eslint-plugin-jsdoc 65, webpack-cli 7) require these versions.
 - npm 9+
 - Docker (for the local Grafana environment)
 
