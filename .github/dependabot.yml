@@ -18,6 +18,11 @@ updates:
       npm-minor-and-patch:
         update-types: [minor, patch]
     ignore:
+      # Major versions are deliberate upgrades that usually need code changes
+      # (new lint rules, dropped type globals), so Dependabot doesn't open
+      # them. Security fixes still arrive through Dependabot security updates.
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
       # The panel builds against the Grafana 11.x SDK (grafanaDependency
       # >= 11.0.0). Moving to the 12/13 SDK is a deliberate upgrade.
       - dependency-name: '@grafana/data'
