@@ -1797,7 +1797,7 @@ describe('interaction and persistence regressions (audit)', () => {
 
     render(<WeathermapPanel {...{ ...mPanelProps, options: { weathermap }, onOptionsChange: spy }} />);
     const nodeA = screen.getByText('Node A').closest('g')!;
-    // react-draggable listens for move/up on the document once the drag starts.
+    // The drag hook listens for move/up on the document once the drag starts.
     fireEvent.mouseDown(nodeA, { clientX: 100, clientY: 100 });
     fireEvent.mouseMove(document, { clientX: 140, clientY: 130 });
     fireEvent.mouseUp(document, { clientX: 140, clientY: 130 });

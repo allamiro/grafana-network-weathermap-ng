@@ -1,10 +1,11 @@
-// #133 review (d8a582d): React 19 removed ReactDOM.findDOMNode. react-draggable's
-// DraggableCore falls back to it (on mount, unmount and every drag event) unless
-// it is given a `nodeRef`, so MapNode passes one. Jest runs React 18, where
+// #133 review (d8a582d): React 19 removed ReactDOM.findDOMNode. Node dragging
+// used react-draggable's DraggableCore, which falls back to it (on mount,
+// unmount and every drag event) without a `nodeRef`; it now uses the local
+// useNodeDrag hook, which never calls it. Jest runs React 18, where
 // findDOMNode still exists, so this file replaces it with a recording stub that
-// throws like React 19 would. react-draggable reaches it through
-// `_interopRequireDefault(require('react-dom')).default.findDOMNode`, and since
-// this mock has no __esModule flag, `.default` is this very object.
+// throws like React 19 would, guarding any future drag code against it. Code
+// reaching it through `_interopRequireDefault(require('react-dom')).default`
+// gets this very object, since the mock has no __esModule flag.
 import React from 'react';
 import { getDefaultRelativeTimeRange, getTimeZone, LoadingState, PanelProps } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
@@ -30,10 +31,10 @@ afterEach(() => {
 });
 
 describe('node dragging without ReactDOM.findDOMNode (#133)', () => {
-  // #133 (d8a582d): dropping MapNode's nodeRef makes DraggableCore call
-  // findDOMNode in componentDidMount, so the render itself throws. The call
-  // count is asserted as well because a throw inside a drag event handler is
-  // reported by jsdom rather than rethrown from fireEvent.
+  // #133 (d8a582d): any drag code that falls back to findDOMNode (as
+  // DraggableCore did without a nodeRef) throws here. The call count is
+  // asserted as well because a throw inside a drag event handler is reported by
+  // jsdom rather than rethrown from fireEvent.
   test('nodes mount, drag and save in edit mode without findDOMNode', () => {
     getSearchSpy = jest.spyOn(locationService, 'getSearch').mockReturnValue(new URLSearchParams('editPanel=1'));
     const wm: Weathermap = handleVersionedStateUpdates(getData(theme), theme);

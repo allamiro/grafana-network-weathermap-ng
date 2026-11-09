@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.23](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.23) (2026-11-10)
+
+### Changed
+
+* **Node dragging no longer uses react-draggable** ([PR #419](https://github.com/allamiro/grafana-network-weathermap-ng/pull/419)): Grafana's plugin validator flagged the library for React 19 because it assigns `propTypes` and `defaultProps`. Those are class components, where React 19 keeps `defaultProps` and silently ignores `propTypes`, so nothing was broken, but the warnings appeared on every submission. Dragging now uses a small local hook, and the library is gone from the bundle. Dragging works the same: primary mouse button or touch, Ctrl/⌘-drag still pans, text selection is blocked while dragging, touch drags don't scroll the page, and multi-node selection and grid snapping are unchanged. The hook never calls `findDOMNode`, which React 19 removed.
+
+No dashboard migration or new setting is needed.
+
+### Tests
+
+* 8 tests pin the drag hook's contract: per-move deltas, the native event for Ctrl/⌘, release with no movement, primary button only, disabled in view mode, text-selection restore, touch dragging without page scroll, and cleanup when a node unmounts mid-drag ([PR #419](https://github.com/allamiro/grafana-network-weathermap-ng/pull/419)).
+
 ## [1.6.22](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.22) (2026-11-09)
 
 A dependency and tooling release. There are no behaviour changes, no dashboard migration, and no new settings.

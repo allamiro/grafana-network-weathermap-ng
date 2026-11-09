@@ -13,7 +13,7 @@ import {
 } from '../utils';
 import { css } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
-import { DraggableCore, DraggableEventHandler } from 'react-draggable';
+import { DragHandler, useNodeDrag } from './useNodeDrag';
 import { PanelData } from '@grafana/data';
 
 interface NodeProps {
@@ -21,8 +21,8 @@ interface NodeProps {
   draggedNode: DrawnNode;
   selectedNodes: DrawnNode[];
   wm: Weathermap;
-  onDrag: DraggableEventHandler;
-  onStop: DraggableEventHandler;
+  onDrag: DragHandler;
+  onStop: DragHandler;
   onClick: React.MouseEventHandler<SVGGElement>;
   onMouseMove?: React.MouseEventHandler<SVGGElement>;
   onMouseLeave?: React.MouseEventHandler<SVGGElement>;
@@ -56,13 +56,27 @@ function calculateRectY(d: DrawnNode, wm: Weathermap) {
 }
 
 const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
-  const { node, draggedNode, selectedNodes, wm, onDrag, onStop, onClick, onMouseMove, onMouseLeave, onContextMenu, disabled, data, scrubTimeMs } =
-    props;
+  const {
+    node,
+    draggedNode,
+    selectedNodes,
+    wm,
+    onDrag,
+    onStop,
+    onClick,
+    onMouseMove,
+    onMouseLeave,
+    onContextMenu,
+    disabled,
+    data,
+    scrubTimeMs,
+  } = props;
   const styles = useStyles2(getStyles);
 
-  // React 19 removed ReactDOM.findDOMNode, which react-draggable falls back to
-  // when no nodeRef is provided. Passing an explicit nodeRef avoids that crash.
+  // Dragging is a small local hook rather than react-draggable, whose
+  // propTypes/defaultProps the Grafana plugin validator flags for React 19.
   const nodeRef = useRef<SVGGElement>(null);
+  const drag = useNodeDrag({ ref: nodeRef, disabled, onDrag, onStop });
 
   const rectX = useMemo(() => calculateRectX(node, wm), [node, wm]);
   const rectY = useMemo(() => calculateRectY(node, wm), [node, wm]);
@@ -122,39 +136,30 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
 
   const colorTarget = node.nodeStatusColorTarget ?? 'border';
   const statusFill =
-    nodeStatusColor !== null && (colorTarget === 'background' || colorTarget === 'both')
-      ? nodeStatusColor
-      : null;
+    nodeStatusColor !== null && (colorTarget === 'background' || colorTarget === 'both') ? nodeStatusColor : null;
   const statusStroke =
-    nodeStatusColor !== null && (colorTarget === 'border' || colorTarget === 'both')
-      ? nodeStatusColor
-      : null;
+    nodeStatusColor !== null && (colorTarget === 'border' || colorTarget === 'both') ? nodeStatusColor : null;
 
   // Check if this node is selected for dragging
   let nodeIsSelected = selectedNodes.find((n) => n.index === node.index);
 
   return (
-    <DraggableCore
-      nodeRef={nodeRef as unknown as React.RefObject<HTMLElement>}
-      disabled={disabled}
-      onDrag={onDrag}
-      onStop={onStop}
-    >
-      <g
-        ref={nodeRef}
-        cursor={disabled ? (node.dashboardLink ? 'pointer' : '') : 'move'}
-        display={node.label !== undefined ? 'inline' : 'none'}
-        onClick={onClick}
-        onMouseMove={onMouseMove}
-        onMouseLeave={onMouseLeave}
-        onContextMenu={onContextMenu}
-        transform={`translate(${
-          wm.settings.panel.grid.enabled &&
-          draggedNode &&
-          (draggedNode.index === node.index || selectedNodes.find((n) => n.index === node.index))
-            ? nearestMultiple(node.x, wm.settings.panel.grid.size)
-            : node.x
-        },
+    <g
+      ref={nodeRef}
+      onMouseDown={drag.onMouseDown}
+      cursor={disabled ? (node.dashboardLink ? 'pointer' : '') : 'move'}
+      display={node.label !== undefined ? 'inline' : 'none'}
+      onClick={onClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      onContextMenu={onContextMenu}
+      transform={`translate(${
+        wm.settings.panel.grid.enabled &&
+        draggedNode &&
+        (draggedNode.index === node.index || selectedNodes.find((n) => n.index === node.index))
+          ? nearestMultiple(node.x, wm.settings.panel.grid.size)
+          : node.x
+      },
                     ${
                       wm.settings.panel.grid.enabled &&
                       draggedNode &&
@@ -162,83 +167,82 @@ const MapNode: React.FC<NodeProps> = (props: NodeProps) => {
                         ? nearestMultiple(node.y, wm.settings.panel.grid.size)
                         : node.y
                     })`}
-      >
-        {node.label !== '' || node.nodeIcon?.drawInside ? (
-          <React.Fragment>
-            <rect
-              x={rectX}
-              y={rectY}
-              width={rectWidth}
-              height={rectHeight}
-              fill={
-                node.isConnection
-                  ? 'transparent'
-                  : getSolidFromAlphaColor(
-                      statusFill !== null ? statusFill : node.colors.background,
-                      wm.settings.panel.backgroundColor
-                    )
-              }
-              stroke={
-                nodeIsSelected
-                  ? getSolidFromAlphaColor(node.colors.font, wm.settings.panel.backgroundColor)
-                  : node.isConnection
-                  ? disabled
-                    ? 'transparent'
-                    : getSolidFromAlphaColor(node.colors.background, wm.settings.panel.backgroundColor)
-                  : getSolidFromAlphaColor(
-                      statusStroke !== null ? statusStroke : node.colors.border,
-                      wm.settings.panel.backgroundColor
-                    )
-              }
-              strokeWidth={node.isConnection ? 2 : 4}
-              rx={6}
-              ry={7}
-              style={{ paintOrder: 'stroke' }}
-            ></rect>
-            {node.showLabel !== false && (
-              <text
-                x={0}
-                y={textY}
-                textAnchor={'middle'}
-                alignmentBaseline={'central'}
-                dominantBaseline={'central'}
-                fill={node.colors.font}
-                className={styles.nodeText}
-                fontSize={node.isConnection ? '6px' : `${node.fontSize ?? wm.settings.fontSizing.node}px`}
-                fontWeight={node.fontBold ? 'bold' : undefined}
-              >
-                {node.label !== undefined && !(node.isConnection && disabled) ? node.label : ''}
-              </text>
-            )}
-          </React.Fragment>
-        ) : (
-          ''
-        )}
-        {node.nodeIcon && sanitizeUrl(node.nodeIcon.src) !== '' ? (
-          <image
-            x={-node.nodeIcon.size.width / 2}
-            y={
-              node.nodeIcon.drawInside
-                ? node.label!.length > 0
-                  ? -(
-                      node.nodeIcon.size.height +
-                      node.nodeIcon.padding.vertical +
-                      measureText(node.label!, node.fontSize ?? wm.settings.fontSizing.node).actualBoundingBoxAscent
-                    ) / 2
-                  : -node.nodeIcon.size.height / 2
-                : node.label!.length > 0
-                ? textY - node.nodeIcon.size.height - rectHeight / 2 - 1 - node.nodeIcon.padding.vertical
-                : -node.nodeIcon.size.height / 2
+    >
+      {node.label !== '' || node.nodeIcon?.drawInside ? (
+        <React.Fragment>
+          <rect
+            x={rectX}
+            y={rectY}
+            width={rectWidth}
+            height={rectHeight}
+            fill={
+              node.isConnection
+                ? 'transparent'
+                : getSolidFromAlphaColor(
+                    statusFill !== null ? statusFill : node.colors.background,
+                    wm.settings.panel.backgroundColor
+                  )
             }
-            width={node.nodeIcon.size.width}
-            height={node.nodeIcon.size.height}
-            href={sanitizeUrl(node.nodeIcon.src)}
-          />
-        ) : (
-          ''
-        )}
-      </g>
-    </DraggableCore>
+            stroke={
+              nodeIsSelected
+                ? getSolidFromAlphaColor(node.colors.font, wm.settings.panel.backgroundColor)
+                : node.isConnection
+                ? disabled
+                  ? 'transparent'
+                  : getSolidFromAlphaColor(node.colors.background, wm.settings.panel.backgroundColor)
+                : getSolidFromAlphaColor(
+                    statusStroke !== null ? statusStroke : node.colors.border,
+                    wm.settings.panel.backgroundColor
+                  )
+            }
+            strokeWidth={node.isConnection ? 2 : 4}
+            rx={6}
+            ry={7}
+            style={{ paintOrder: 'stroke' }}
+          ></rect>
+          {node.showLabel !== false && (
+            <text
+              x={0}
+              y={textY}
+              textAnchor={'middle'}
+              alignmentBaseline={'central'}
+              dominantBaseline={'central'}
+              fill={node.colors.font}
+              className={styles.nodeText}
+              fontSize={node.isConnection ? '6px' : `${node.fontSize ?? wm.settings.fontSizing.node}px`}
+              fontWeight={node.fontBold ? 'bold' : undefined}
+            >
+              {node.label !== undefined && !(node.isConnection && disabled) ? node.label : ''}
+            </text>
+          )}
+        </React.Fragment>
+      ) : (
+        ''
+      )}
+      {node.nodeIcon && sanitizeUrl(node.nodeIcon.src) !== '' ? (
+        <image
+          x={-node.nodeIcon.size.width / 2}
+          y={
+            node.nodeIcon.drawInside
+              ? node.label!.length > 0
+                ? -(
+                    node.nodeIcon.size.height +
+                    node.nodeIcon.padding.vertical +
+                    measureText(node.label!, node.fontSize ?? wm.settings.fontSizing.node).actualBoundingBoxAscent
+                  ) / 2
+                : -node.nodeIcon.size.height / 2
+              : node.label!.length > 0
+              ? textY - node.nodeIcon.size.height - rectHeight / 2 - 1 - node.nodeIcon.padding.vertical
+              : -node.nodeIcon.size.height / 2
+          }
+          width={node.nodeIcon.size.width}
+          height={node.nodeIcon.size.height}
+          href={sanitizeUrl(node.nodeIcon.src)}
+        />
+      ) : (
+        ''
+      )}
+    </g>
   );
 };
 
