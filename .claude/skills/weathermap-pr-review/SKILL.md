@@ -90,6 +90,14 @@ gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"PRRT_..."
 
 After pushing, wait for cubic's re-review on the new head commit: the `cubic · AI code reviewer` check goes from pending to pass, and a review **by `cubic-dev-ai`** appears whose `commit.oid` equals `headRefOid`. Filter by author: every thread reply you post also shows up as a review under the maintainer's name. A "No issues found" review on an older commit says nothing about your latest push. "All reported issues were addressed" or "No issues found" *on the current head* is the signal to continue. Other AI reviewers (e.g. Codex, `codex-code-review-finding` threads) may post too: treat their threads the same way. Re-run the GraphQL query and confirm no unresolved threads remain.
 
+Patterns seen in practice:
+
+- **Reviews often land on an older commit.** A thread about something already fixed gets a reply naming the commit that fixed it, then gets resolved; don't re-fix it.
+- **cubic and Codex frequently flag the same issue.** Fix once and reply on each thread.
+- **Every push re-runs CI (≈5 min) and both reviewers.** Batch every valid fix from a review round into one commit.
+- **When a test is part of the fix, prove it.** Reintroduce the bug the reviewer described and confirm the new test fails (see `weathermap-regression-tests`), then say so in the reply.
+- **The user wants every AI thread handled** (fixed or answered with a reason, replied to, resolved) before merging. Auto-merge doesn't wait for threads, so handle them first.
+
 ## 5. Reviewing a contributor's PR
 
 Thank them, then be concrete:
@@ -113,7 +121,28 @@ gh pr merge N --squash --subject "<PR title> (#N)" --body "<short summary, no co
 - `Closes #N` in the PR body closes the issue on merge. The repo still comments on the issue with the release link once it ships (see `weathermap-release`).
 - Merging is outward-facing: merge only when the user has asked you to land it.
 
-## 7. Stacked PRs
+## 7. Staging and committing safely
+
+Stage files by explicit path, never with `git add -A`/`git add .`, and check `git diff --cached --stat` before committing. A stray directory (the maintainer keeps an untracked `.agents/` copy of these skills for another tool) once slipped into a release commit. When you notice something like that, remove it with a normal commit (`git rm -r --cached <dir>` plus a commit on the branch) rather than force-pushing.
+
+Two side effects to know:
+
+- **Switching branches** with `git checkout` deletes files the *old* branch tracked and the new one doesn't. That is how the `.agents/` folder vanished from the working tree; it had to be restored from the commit with `git restore --source=<sha> --worktree -- .agents`. A background job that runs `git checkout main` will do the same, so make edits for another branch in a separate worktree (`git worktree add`).
+- **`git rebase` and force-pushes** to shared branches or published tags may be blocked by the permission checks. Prefer merging `origin/main` into the branch (non-destructive) to resolve conflicts.
+
+## 8. Dependabot PRs
+
+`main` auto-merges Dependabot updates once every required check passes (`.github/workflows/dependabot-auto-merge.yml`). Patch, minor and security updates qualify, and so do npm **development-dependency** majors. Majors of shipped dependencies and of GitHub Actions get a comment and wait. Required checks come from the `main` ruleset: Test, the Grafana 11.0.0/12.0.0/13.1.0 API checks, and **E2E result**.
+
+When many Dependabot PRs pile up, especially majors that need code changes, don't merge them one by one. Each merge makes the others rebase and re-run CI, about 5 minutes each in sequence. Instead:
+
+1. Collect the target versions: `git diff origin/main...origin/<branch> -- package.json` for each PR.
+2. Apply them all on one branch, fix what breaks, and run CI once.
+3. Dependabot closes its own PRs once `main` has those versions, so nothing needs closing by hand. Closing them via `gh pr close` may be blocked by the permission checks anyway.
+
+Lockfile, override and vendoring rules are in `weathermap-dependencies`.
+
+## 9. Stacked PRs
 
 When PR B is built on PR A's commits and A is squash-merged, B's branch still carries A's original commits. Replay only B's own commits:
 
