@@ -14,18 +14,10 @@ on:
   # patches/, the vendored braces in vendor/). The tooltip fixes (#375, #377,
   # #380) changed only src/ and never got a browser run under the old
   # tests/-only filter.
+  # Runs on every PR so "E2E result" (below) always reports and can be a
+  # required check for Dependabot auto-merge. The `changes` job decides
+  # whether the browser suite actually needs to run.
   pull_request:
-    paths:
-      - 'src/**'
-      - '.config/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'patches/**'
-      - 'vendor/**'
-      - 'tsconfig.json'
-      - 'tests/**'
-      - 'playwright.config.ts'
-      - '.github/workflows/e2e.yml'
 
 permissions:
   contents: read
@@ -34,8 +26,40 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # Pull requests run the browser suite only when they touch something that
+  # can change what the browser sees; scheduled and manual runs always do.
+  changes:
+    name: Detect browser-relevant changes
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.diff.outputs.run }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Anything that changes the built plugin, not just the E2E suite (#227):
+          # source, build config, dependencies (lockfile, patches/, vendor/),
+          # the suite itself and this workflow.
+          if git diff --name-only "$BASE...$HEAD" | grep -qE '^(src/|\.config/|package\.json$|package-lock\.json$|patches/|vendor/|tsconfig\.json$|tests/|playwright\.config\.ts$|\.github/workflows/e2e\.yml$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   e2e:
     name: E2E (Grafana ${{ matrix.grafana-version }})
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     # Pinned: ubuntu-latest moved to Ubuntu 26.04 (from 2026-10-19), where
     # Playwright 1.58 refuses to install Chromium ("does not support chromium
     # on ubuntu26.04-x64"). Move back once Playwright is upgraded to a release
@@ -96,3 +120,20 @@ jobs:
       - name: Stop Grafana
         if: always()
         run: docker rm -f grafana
+
+  # One stable check for the ruleset: passes when the suite passed or wasn't
+  # needed, fails when it failed or was cancelled. A skipped matrix job never
+  # reports its expanded names, so those can't be required directly.
+  result:
+    name: E2E result
+    needs: [changes, e2e]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          CHANGES: ${{ needs.changes.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          echo "changes=$CHANGES e2e=$E2E"
+          [ "$CHANGES" = "success" ] || exit 1
+          [ "$E2E" = "success" ] || [ "$E2E" = "skipped" ] || exit 1

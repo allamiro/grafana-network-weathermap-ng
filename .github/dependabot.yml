@@ -1,0 +1,62 @@
+# Dependency updates. Patch and minor updates (and security fixes) are merged
+# automatically by .github/workflows/dependabot-auto-merge.yml once every
+# required check passes; major updates wait for a maintainer.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:00'
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    # One weekly PR for all patch/minor bumps instead of one per package.
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # The panel builds against the Grafana 11.x SDK (grafanaDependency
+      # >= 11.0.0). Moving to the 12/13 SDK is a deliberate upgrade.
+      - dependency-name: '@grafana/data'
+        versions: ['>=12.0.0']
+      - dependency-name: '@grafana/runtime'
+        versions: ['>=12.0.0']
+      - dependency-name: '@grafana/ui'
+        versions: ['>=12.0.0']
+      # Grafana provides React at runtime; the panel must stay on 18.
+      - dependency-name: react
+        versions: ['>=19.0.0']
+      - dependency-name: react-dom
+        versions: ['>=19.0.0']
+      # Patched local copies in vendor/; updated by hand when upstream
+      # publishes a fixed release.
+      - dependency-name: braces
+      - dependency-name: deepmerge
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:00'
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']
+
+  # Demo/test exporter only; never shipped in the plugin.
+  - package-ecosystem: gomod
+    directory: /testing/exporter
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:00'
+    commit-message:
+      prefix: chore(testing)
+    groups:
+      exporter:
+        patterns: ['*']

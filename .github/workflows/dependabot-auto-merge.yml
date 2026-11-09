@@ -1,0 +1,44 @@
+name: Dependabot auto-merge
+
+# Patch and minor dependency updates (including security fixes) merge on their
+# own once every check the `main` ruleset requires has passed: Test, the
+# Grafana API checks and E2E result. Nothing merges on a red or missing check,
+# and the merge is a squash authored by Dependabot.
+#
+# Major updates are left open with a comment for a maintainer to review.
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    # Only Dependabot's own PRs in this repository; fork PRs never qualify.
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'allamiro/grafana-network-weathermap-ng'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Read the update's metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge patch and minor updates when checks pass
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
+
+      - name: Leave major updates for review
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          DEPS: ${{ steps.meta.outputs.dependency-names }}
+        run: |
+          gh pr comment "$PR_URL" --body "Major version update ($DEPS): not merged automatically. Check the release notes for breaking changes, then merge by hand."
