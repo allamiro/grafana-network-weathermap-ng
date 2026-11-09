@@ -1,25 +1,20 @@
 // ESLint 9 flat config. Replaces .eslintrc and .config/.eslintrc, which
 // @grafana/eslint-config 10 no longer supports.
+import { fileURLToPath } from 'node:url';
+import { includeIgnoreFile } from '@eslint/compat';
 import grafanaConfig from '@grafana/eslint-config';
 
+const gitignore = fileURLToPath(new URL('.gitignore', import.meta.url));
+
 export default [
+  // Everything .gitignore'd (build and test output), read from the file so the
+  // two can't drift apart; ESLint 8's lint script did this with
+  // --ignore-path .gitignore.
+  includeIgnoreFile(gitignore),
   {
-    // What the ESLint 8 setup skipped: the .gitignore'd build and test output
-    // (the lint script passed --ignore-path .gitignore), the old
-    // ignorePatterns, and dot-folders such as .config/ (ESLint 8 ignored those
-    // by default; ESLint 9 doesn't).
+    // The old .eslintrc ignorePatterns, plus dot-folders such as .config/
+    // (ESLint 8 ignored those by default; ESLint 9 doesn't).
     ignores: [
-      'node_modules/',
-      'dist/',
-      'coverage/',
-      'artifacts/',
-      'work/',
-      'ci/',
-      'e2e-results/',
-      'playwright-report/',
-      'test-results/',
-      'playwright/.auth/',
-      'website/site/',
       '.config/',
       'jest.config.js',
       'jest-setup.js',
