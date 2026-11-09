@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.22](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.22) (2026-11-09)
+
+A dependency and tooling release. There are no behaviour changes, no dashboard migration, and no new settings.
+
+### Dependencies
+
+* **Bundled in the plugin** ([PR #417](https://github.com/allamiro/grafana-network-weathermap-ng/pull/417)): Grafana SDK 11.6.16 (`@grafana/data`, `@grafana/runtime`, `@grafana/ui`), react-draggable 4.7.2 (node and waypoint dragging) and tslib 2.9.1. The minimum Grafana version (>= 11.0.0) is unchanged.
+* **Build and test tooling** ([PR #416](https://github.com/allamiro/grafana-network-weathermap-ng/pull/416), [PR #417](https://github.com/allamiro/grafana-network-weathermap-ng/pull/417)): SWC 1.16, webpack 5.112, webpack-cli 7, css-loader 7, fork-ts-checker 9, Jest 30 (with jest-environment-jsdom 30), jest-dom 7, Playwright 1.65 and typescript-eslint 8.72. Newer SWC requires an absolute `baseUrl`, which the webpack config now passes.
+* **ESLint 9** ([PR #417](https://github.com/allamiro/grafana-network-weathermap-ng/pull/417)): `@grafana/eslint-config` 10 only ships a flat config, so linting moves from ESLint 8 and `.eslintrc` to ESLint 9 with `eslint.config.mjs`, covering the same files. `eslint-plugin-react-hooks` 7 adds React Compiler rules; three of them flag existing panel patterns and warn for now.
+* **Building from source now needs Node 22.22.2+ or 24.15+** ([PR #417](https://github.com/allamiro/grafana-network-weathermap-ng/pull/417)): the new lint and build tooling requires it, and Node 20 is end-of-life. This doesn't affect Grafana or the installed plugin.
+* `npm audit` reports no vulnerabilities. Jest 30 brought back older `glob` and `minimatch` versions, which are lifted to the patched releases.
+
+### CI
+
+* **Dependency updates merge themselves once every check passes** ([PR #403](https://github.com/allamiro/grafana-network-weathermap-ng/pull/403), [PR #416](https://github.com/allamiro/grafana-network-weathermap-ng/pull/416)). Dependabot runs weekly for npm, GitHub Actions and the test exporter. Patch and minor updates, security fixes and development-tool majors auto-merge after Test, the Grafana API checks and E2E pass. Majors of shipped dependencies and GitHub Actions still wait for review. A weekly `npm audit` flags advisories Dependabot can't fix.
+* The E2E workflow reports a single **E2E result** check on every pull request, so it can be required.
+* GitHub Actions updated to their current majors: checkout, setup-node and setup-python 7, Pages 5, and Grafana's build-plugin 2.0.0 ([PR #417](https://github.com/allamiro/grafana-network-weathermap-ng/pull/417)).
+
 ## [1.6.21](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.21) (2026-11-09)
 
 ### Fixed
