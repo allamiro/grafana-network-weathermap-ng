@@ -16,7 +16,7 @@ on:
       - 'jest-setup.js'
       - 'jest-polyfills.js'
       - 'playwright.config.ts'
-      - '.eslintrc'
+      - 'eslint.config.mjs'
       - '.prettierrc.js'
       # Root configs proxy into .config/ (jest, webpack, tsconfig, eslint) —
       # changes there alter build/test outcomes too.

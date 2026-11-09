@@ -78,7 +78,7 @@
     "webpack-livereload-plugin": "^3.0.2"
   },
   "engines": {
-    "node": "^20 || >=22 <=24",
+    "node": "^22.22.2 || >=24.15.0 <25",
     "npm": ">=9"
   },
   "dependencies": {
@@ -126,7 +126,18 @@
       "minimatch": "^11.0.5"
     },
     "deepmerge": "$deepmerge",
-    "glob@>=9.0.0 <14.0.2": "^14.0.4",
-    "minimatch@>=7.0.0 <11.0.1": "^11.0.5"
+    "@jest/reporters": {
+      "glob": "^14.0.4"
+    },
+    "jest-config": {
+      "glob": "^14.0.4"
+    },
+    "jest-runtime": {
+      "glob": "^14.0.4"
+    },
+    "test-exclude": {
+      "glob": "^14.0.4",
+      "minimatch": "^11.0.5"
+    }
   }
 }
