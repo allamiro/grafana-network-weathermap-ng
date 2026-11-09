@@ -1,6 +1,6 @@
 {
   "name": "tamirsuliman-weathermap-panel",
-  "version": "1.6.22",
+  "version": "1.6.23",
   "description": "A modernized, actively maintained network weathermap plugin for Grafana. Continuation of the original knightss27-weathermap-panel.",
   "scripts": {
     "postinstall": "patch-package",
@@ -92,7 +92,6 @@
     "prettier": "^2.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-draggable": "^4.7.2",
     "tslib": "2.9.1",
     "typescript": "^5.4.0",
     "uuid": "^11.1.1"
