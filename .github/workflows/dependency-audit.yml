@@ -1,0 +1,25 @@
+name: Dependency audit
+
+# Weekly check for advisories Dependabot can't fix on its own: packages held by
+# an `overrides` pin, or with no patched release (as with braces and deepmerge,
+# now vendored). A failing run emails the maintainer. The Grafana catalog
+# review reads the lockfile, so findings here can block a release.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: npm audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      # npm audit reads package-lock.json; nothing needs to be installed.
+      - run: npm audit --audit-level=low
