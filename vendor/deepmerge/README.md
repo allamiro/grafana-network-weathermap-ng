@@ -8,4 +8,4 @@ It is development-only here: Jest (`jest-config`) and `fork-ts-checker-webpack-p
 
 Drop this folder and the override once upstream publishes a fixed release. `src/vendor.deepmerge.test.ts` checks the fix.
 
-`dist/cjs.js`, `index.d.ts` and `license.txt` are the upstream 4.3.1 files; only `dist/cjs.js` is changed.
+`index.js` is upstream 4.3.1's `dist/cjs.js` (moved because the repo ignores `dist/` folders), with the guard added. `index.d.ts` and `license.txt` are unchanged upstream files.

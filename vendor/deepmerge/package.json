@@ -2,7 +2,7 @@
   "name": "deepmerge",
   "version": "4.3.2",
   "description": "Local deepmerge 4.3.2: the 4.3.1 sources plus a __proto__ guard in mergeObject. Upstream 4.3.1 is the last published release and is inside GHSA-gcqx-w48m-w2h4.",
-  "main": "dist/cjs.js",
+  "main": "index.js",
   "types": "index.d.ts",
   "license": "MIT",
   "engines": {
