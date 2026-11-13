@@ -3,6 +3,7 @@ import { InlineFieldRow, Button, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
 import { Weathermap } from 'types';
 import { css } from '@emotion/css';
+import { getExportSvg } from 'exportSvgRegistry';
 
 interface Settings {}
 
@@ -29,7 +30,10 @@ export const ExportForm = ({ value, onChange }: Props) => {
   };
 
   const handleSVGExport = async () => {
-    const svg = document.getElementById(`nw-${value.id}_`);
+    // The panel registers its own <svg> (held in a ref) while in edit mode.
+    // Never search the global document for it: a document-wide lookup can
+    // match another panel's element or Grafana's own.
+    const svg = getExportSvg(value.id);
 
     // The SVG element may be missing (e.g. panel not yet rendered). Guard
     // against it so the editor does not crash on export.
@@ -59,7 +63,7 @@ export const ExportForm = ({ value, onChange }: Props) => {
       try {
         // Resolves relative, root-relative, and absolute URLs correctly
         // (the old origin + '/' + href concatenation broke absolute URLs).
-        const iconURL = new URL(href, document.location.origin);
+        const iconURL = new URL(href, window.location.origin);
         const iconData = await fetch(iconURL.toString());
         if (!iconData.ok) {
           continue;

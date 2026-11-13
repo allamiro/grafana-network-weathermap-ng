@@ -45,3 +45,30 @@ test('grafanaDependency matches the oldest Grafana version CI checks', () => {
   expect(checked.length).toBeGreaterThan(0);
   expect([...checked].sort(byVersion)[0]).toBe(declared);
 });
+
+// Grafana's plugin review (1.6.23) rejected a document-wide lookup: the SVG
+// export called document.getElementById() to find the panel's map. A global
+// query can match another panel's elements or Grafana's own, so plugin code
+// reaches its elements through refs. Creating a detached element
+// (document.createElement for text measuring) is not a query and is allowed.
+test('plugin code does not query the global document', () => {
+  const globalQuery =
+    /\b(?:window\.)?document\s*\.\s*(?:getElementById|getElementsBy\w+|querySelector(?:All)?|body|head|documentElement|activeElement|forms|images|links)\b/;
+  const offenders: string[] = [];
+  const testHelpers = path.join(__dirname, 'test') + path.sep;
+  for (const file of sourceFiles(__dirname)) {
+    if (file.startsWith(testHelpers)) {
+      continue;
+    }
+    fs.readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        // Comments may mention the old pattern to explain why it is gone.
+        const code = line.replace(/\/\/.*$/, '');
+        if (!/^\s*\*/.test(code) && globalQuery.test(code)) {
+          offenders.push(`${path.relative(repoRoot, file)}:${i + 1}: ${line.trim()}`);
+        }
+      });
+  }
+  expect(offenders).toEqual([]);
+});

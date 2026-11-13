@@ -3,6 +3,7 @@ import {
   dateTimeFormat,
   getTimeZone,
   getValueFormat,
+  GrafanaTheme2,
   LoadingState,
   PanelProps,
 } from '@grafana/data';
@@ -73,6 +74,7 @@ import {
   pathGradientStops,
 } from 'utils';
 import MapNode from './components/MapNode';
+import { registerExportSvg, unregisterExportSvg } from './exportSvgRegistry';
 import ColorScale from 'components/ColorScale';
 import { LinkTooltipGraph } from './components/LinkTooltipGraph';
 
@@ -836,6 +838,20 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
     }
   };
 
+  // Expose this panel's SVG to the Export editor while in panel edit mode, so
+  // ExportForm gets the element from this ref instead of searching the global
+  // document by id. Runs after every render: registering is a Map set, and it
+  // keeps the entry pointing at the element actually mounted right now.
+  const exportSvgId = wm && isEditMode ? wm.id : undefined;
+  useEffect(() => {
+    const el = svgElRef.current;
+    if (!exportSvgId || !el) {
+      return;
+    }
+    registerExportSvg(exportSvgId, el);
+    return () => unregisterExportSvg(exportSvgId, el);
+  });
+
   const [isDragging, setDragging] = useState(false);
 
   let aspectX = wm ? wm.settings.panel.panelSize.width / width2 : 1;
@@ -1219,6 +1235,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       return (anim?.enabled ?? false) || wm.links.some((l) => l.animation === 'enabled');
     })();
 
+    // One row of the animation legend: a swatch followed by its description.
+    const legendRowClass = css`
+      display: flex;
+      align-items: center;
+      gap: ${theme.spacing(0.75)};
+      line-height: ${theme.typography.bodySmall.lineHeight};
+    `;
+
     return (
       <div
         ref={wrapperRef}
@@ -1449,32 +1473,32 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             `}
             data-testid="animation-legend"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '18px' }}>
+            <div className={legendRowClass}>
               <span
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: theme.colors.success.main,
-                  display: 'inline-block',
-                }}
+                className={css`
+                  width: ${theme.spacing(1)};
+                  height: ${theme.spacing(1)};
+                  border-radius: ${theme.shape.radius.circle};
+                  background-color: ${theme.colors.success.main};
+                  display: inline-block;
+                `}
               ></span>
               moving dots — live traffic (speed &amp; density follow utilization)
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '18px' }}>
+            <div className={legendRowClass}>
               <span
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  border: `1.5px solid ${theme.colors.text.secondary}`,
-                  color: theme.colors.text.primary,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '9px',
-                  fontWeight: 'bold',
-                }}
+                className={css`
+                  width: ${theme.spacing(1.5)};
+                  height: ${theme.spacing(1.5)};
+                  border-radius: ${theme.shape.radius.circle};
+                  border: 1.5px solid ${theme.colors.text.secondary};
+                  color: ${theme.colors.text.primary};
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: ${theme.typography.pxToRem(9)};
+                  font-weight: ${theme.typography.fontWeightBold};
+                `}
               >
                 ✕
               </span>
@@ -1503,15 +1527,15 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
             data-testid="status-legend"
           >
             {wm.settings.statusLegend.items.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '18px' }}>
+              <div key={i} className={legendRowClass}>
                 <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '2px',
-                    backgroundColor: item.color,
-                    display: 'inline-block',
-                  }}
+                  className={css`
+                    width: ${theme.spacing(1.25)};
+                    height: ${theme.spacing(1.25)};
+                    border-radius: ${theme.shape.radius.default};
+                    display: inline-block;
+                  `}
+                  style={{ backgroundColor: item.color }}
                 ></span>
                 {item.label}
               </div>
@@ -2607,14 +2631,19 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   right: 0;
                   display: flex;
                   align-items: center;
-                  gap: 8px;
-                  padding: 6px 10px;
+                  gap: ${theme.spacing(1)};
+                  padding: ${theme.spacing(0.75, 1.25)};
                   background-color: ${theme.colors.background.secondary};
                   border-top: 1px solid ${theme.colors.border.weak};
                 `}
               >
                 <span
-                  style={{ fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0, minWidth: '128px' }}
+                  className={css`
+                    font-size: ${theme.typography.bodySmall.fontSize};
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                    min-width: ${theme.spacing(16)};
+                  `}
                 >
                   {useTimeline ? dateTimeFormat(current, { timeZone: getTimeZone() }) : 'Live (latest)'}
                 </span>
@@ -2640,18 +2669,14 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
   }
 };
 
-const getStyles = () => {
+const getStyles = (theme: GrafanaTheme2) => {
   return {
+    // The map's base text size. Node and link labels set their own sizes;
+    // this only covers text that inherits from the wrapper.
     wrapper: css`
       position: relative;
-      font-size: 10px;
+      font-size: ${theme.typography.pxToRem(10)};
       font-family: sans-serif;
-    `,
-    textBox: css`
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      padding: 10px;
     `,
     nodeText: css`
       -webkit-touch-callout: none;
@@ -2667,8 +2692,8 @@ const getStyles = () => {
       bottom: 0;
       right: 0;
       color: black;
-      padding: 5px 10px;
-      font-size: 12px;
+      padding: ${theme.spacing(0.625, 1.25)};
+      font-size: ${theme.typography.bodySmall.fontSize};
     `,
     noSelect: css`
       -webkit-user-select: none;
