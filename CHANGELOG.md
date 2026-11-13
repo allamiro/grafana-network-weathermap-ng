@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.24](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.24) (2026-11-13)
+
+### Fixed
+
+* **Export SVG no longer searches the whole Grafana page for the map** ([PR #422](https://github.com/allamiro/grafana-network-weathermap-ng/pull/422)): the editor's Export SVG button found the panel's map with `document.getElementById()`. That lookup could pick up another panel's map (a copied panel keeps the same map id) or an element of Grafana's own, and Grafana's plugin review doesn't allow plugins to query the global document. While in edit mode, the panel now hands the `<svg>` it renders to the export editor through a ref. The exported file is the same as before.
+
+### Changed
+
+* **Panel overlays use Grafana theme spacing and typography** ([PR #422](https://github.com/allamiro/grafana-network-weathermap-ng/pull/422)): the timeline bar, the animation and status legends, and the timestamp now take their padding, gaps, font sizes and swatch sizes from the Grafana theme instead of fixed pixel values. Each value maps to the theme token of the same size, so nothing should look different. The map's label font is unchanged.
+
+No dashboard migration or new setting is needed.
+
+### Tests
+
+* The export takes the registered element even when a decoy with the old id is in the document, and never calls `getElementById`/`querySelector`. The panel registers its own `<svg>` only in edit mode and removes it on unmount. A source scan fails if any plugin file queries the global document again ([PR #422](https://github.com/allamiro/grafana-network-weathermap-ng/pull/422)).
+
 ## [1.6.23](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.23) (2026-11-10)
 
 ### Changed

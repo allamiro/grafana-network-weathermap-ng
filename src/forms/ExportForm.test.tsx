@@ -4,11 +4,12 @@ import { StandardEditorProps } from '@grafana/data';
 import { Weathermap } from 'types';
 import { getData, theme } from 'testData';
 import { ExportForm } from './ExportForm';
+import { getExportSvg, registerExportSvg, unregisterExportSvg } from 'exportSvgRegistry';
 
 test('SVG export does not crash when the SVG element is missing', async () => {
-  // Ensure the expected SVG element is not present in the DOM.
+  // Nothing registered for this map: the panel has not rendered in edit mode.
   const value = getData(theme);
-  expect(document.getElementById(`nw-${value.id}_`)).toBeNull();
+  expect(getExportSvg(value.id)).toBeUndefined();
 
   const createObjectURL = jest.fn(() => 'blob:mock');
   // jsdom does not implement createObjectURL; provide a spy either way.
@@ -68,15 +69,18 @@ test('the download anchor is owned by React and no stray node is left in the doc
 });
 
 describe('SVG export URL handling (#203)', () => {
+  const registered: Array<[string, SVGSVGElement]> = [];
+  // Stands in for the panel: builds its <svg> and registers it the way
+  // WeathermapPanel does in edit mode.
   const setupSvg = (value: Weathermap, hrefs: string[]) => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('id', `nw-${value.id}_`);
     for (const href of hrefs) {
       const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       image.setAttribute('href', href);
       svg.appendChild(image);
     }
-    document.body.appendChild(svg);
+    registerExportSvg(value.id, svg);
+    registered.push([value.id, svg]);
     return svg;
   };
 
@@ -88,6 +92,7 @@ describe('SVG export URL handling (#203)', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    registered.splice(0).forEach(([id, el]) => unregisterExportSvg(id, el));
     document.querySelectorAll('svg').forEach((el) => el.remove());
   });
 
@@ -141,5 +146,76 @@ describe('SVG export URL handling (#203)', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(blobSpy).toHaveBeenCalled();
+  });
+});
+
+// Grafana review of 1.6.23: plugins must not query the global document. The
+// export used document.getElementById(`nw-<id>_`), which can match another
+// panel's element (a copied panel keeps the same map id) or Grafana's own.
+describe('SVG export takes the panel SVG from the registry, not the document', () => {
+  const svgWithImage = (href: string) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    image.setAttribute('href', href);
+    svg.appendChild(image);
+    return svg;
+  };
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    document.querySelectorAll('svg').forEach((el) => el.remove());
+  });
+
+  test('exports the registered element even when a decoy with the old id is in the document', async () => {
+    const value = getData(theme);
+    // A decoy carrying the id the old lookup searched for. If the export ever
+    // goes back to the document, it picks this one up.
+    const decoy = svgWithImage('data:image/svg+xml;base64,DECOY');
+    decoy.setAttribute('id', `nw-${value.id}_`);
+    document.body.appendChild(decoy);
+
+    const own = svgWithImage('data:image/svg+xml;base64,OWN');
+    registerExportSvg(value.id, own);
+
+    const getById = jest.spyOn(document, 'getElementById');
+    const query = jest.spyOn(document, 'querySelector');
+    (URL as unknown as { createObjectURL: unknown }).createObjectURL = jest.fn(() => 'blob:mock');
+    let blobContent = '';
+    const RealBlob = global.Blob;
+    jest.spyOn(global, 'Blob').mockImplementation((parts?: BlobPart[], opts?: BlobPropertyBag) => {
+      blobContent = ((parts ?? []) as string[]).join('');
+      return new RealBlob(parts, opts);
+    });
+
+    try {
+      const props = { value, onChange: jest.fn() } as unknown as StandardEditorProps<Weathermap>;
+      render(<ExportForm {...props} />);
+      fireEvent.click(screen.getByText('Export SVG'));
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(blobContent).toContain('OWN');
+      expect(blobContent).not.toContain('DECOY');
+      expect(getById).not.toHaveBeenCalled();
+      expect(query).not.toHaveBeenCalled();
+    } finally {
+      unregisterExportSvg(value.id, own);
+    }
+  });
+
+  test('a decoy with the old id alone is not exported', async () => {
+    const value = getData(theme);
+    const decoy = svgWithImage('data:image/svg+xml;base64,DECOY');
+    decoy.setAttribute('id', `nw-${value.id}_`);
+    document.body.appendChild(decoy);
+
+    const createObjectURL = jest.fn(() => 'blob:mock');
+    (URL as unknown as { createObjectURL: unknown }).createObjectURL = createObjectURL;
+
+    const props = { value, onChange: jest.fn() } as unknown as StandardEditorProps<Weathermap>;
+    render(<ExportForm {...props} />);
+    fireEvent.click(screen.getByText('Export SVG'));
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 });
