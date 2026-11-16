@@ -72,7 +72,7 @@ jobs:
       # branch. This repo writes its changelog by hand.
       - name: Build, sign, and attest plugin
         id: build
-        uses: grafana/plugin-actions/build-plugin@build-plugin/v2.0.0
+        uses: grafana/plugin-actions/build-plugin@build-plugin/v2.0.1
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
           attestation: true
