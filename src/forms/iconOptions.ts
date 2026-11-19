@@ -1088,6 +1088,8 @@ export const VendorIcons = [
   'ubiquiti',
   'ubiquiti-switch',
   'ubiquiti-wireless',
+  'vmware',
+  'vmware-server',
 ];
 
 // Cloud provider set (#215): CC0 brand logos from Simple Icons plus

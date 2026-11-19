@@ -86,7 +86,7 @@ Classic weathermap design language, so teams migrating from the old tooling feel
 </td>
 <td valign="top">
 
-**🖼️ 1064 bundled icons**<br>
+**🖼️ 1066 bundled icons**<br>
 Twelve icon sets served by the plugin itself — no external image hosting, air-gap friendly.
 
 </td>
@@ -148,7 +148,7 @@ Twelve icon sets served by the plugin itself — no external image hosting, air-
 <img src="src/icons/flags/us.svg" width="42" alt="us flag">&nbsp;
 <img src="src/icons/flags/de.svg" width="42" alt="de flag">
 
-**1064 icons · 12 sets** — every one served by the plugin itself
+**1066 icons · 12 sets** — every one served by the plugin itself
 
 ![Cisco](https://img.shields.io/badge/Cisco-289-1BA0D7?style=flat-square)
 ![Flags](https://img.shields.io/badge/Country_Flags-522-4E9F3D?style=flat-square)

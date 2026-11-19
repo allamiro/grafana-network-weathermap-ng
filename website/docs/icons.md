@@ -1,6 +1,6 @@
 # Icon Reference
 
-The plugin bundles **1064 icons** across 12 sets, selectable per node in the editor
+The plugin bundles **1066 icons** across 12 sets, selectable per node in the editor
 (**Nodes → Icon**). Every icon has an id of the form `set/name` — that id is what the
 panel stores, and the icon is served from the plugin itself
 (`public/plugins/tamirsuliman-weathermap-panel/icons/<set>/<name>.svg`), so maps need no
@@ -164,10 +164,10 @@ used for identification only.
 
 ---
 
-## Vendors (49)
+## Vendors (51)
 
 Network and server hardware vendors — Juniper, F5, Fortinet, Palo Alto,
-MikroTik, Ubiquiti, Huawei, Dell, HP, Lenovo, Supermicro, and more. Plain
+MikroTik, Ubiquiti, Huawei, Dell, HP, Lenovo, Supermicro, VMware, and more. Plain
 names (`vendors/juniper`) are brand logos (from the CC0-licensed
 [Simple Icons](https://github.com/simple-icons/simple-icons) project, filled
 with the brand color); `vendors/<vendor>-<device>` names
@@ -225,6 +225,8 @@ trademarks of their respective owners, used for identification only.
 <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/vendors/ubiquiti.svg" alt="ubiquiti" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">ubiquiti</code></div>
 <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/vendors/ubiquiti-switch.svg" alt="ubiquiti-switch" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">ubiquiti-switch</code></div>
 <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/vendors/ubiquiti-wireless.svg" alt="ubiquiti-wireless" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">ubiquiti-wireless</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/vendors/vmware.svg" alt="vmware" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">vmware</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:10px 6px;border:1px solid rgba(128,128,128,.25);border-radius:6px;text-align:center;background:#14161c;"><img src="../img/icons/vendors/vmware-server.svg" alt="vmware-server" style="width:44px;max-width:100%;height:auto;" loading="lazy"><code style="font-size:.62rem;word-break:break-all;">vmware-server</code></div>
 </div>
 
 ---
