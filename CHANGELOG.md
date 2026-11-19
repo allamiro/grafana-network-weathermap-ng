@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.26](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.26) (2026-11-19)
+
+### Dependencies
+
+* **uuid 11 to 14** ([PR #432](https://github.com/allamiro/grafana-network-weathermap-ng/pull/432)): the only runtime change. The panel uses `v4()` for new node and link ids, which works the same; uuid 12 and later ship ES modules only, which the bundled plugin handles.
+* **prettier 2 to 3** ([PR #429](https://github.com/allamiro/grafana-network-weathermap-ng/pull/429)): development only. The scaffolded `.config/.prettierrc.js` pins `trailingComma: 'es5'`, so formatting is unchanged.
+* **@testing-library/react 14 to 16** ([PR #427](https://github.com/allamiro/grafana-network-weathermap-ng/pull/427)): development only. Version 16 moved `@testing-library/dom` to a peer dependency, so it is now a dev dependency (10.4.2).
+* **ESLint 9 to 10** ([PR #431](https://github.com/allamiro/grafana-network-weathermap-ng/pull/431)): development only. `eslint-plugin-react` 7.37.5, its newest release, still calls `context.getFilename()`, which ESLint 10 removed. `eslint.config.mjs` wraps that one plugin with `@eslint/compat` `fixupPluginRules` until it supports ESLint 10. Lint results are unchanged and the React rules still report.
+
+No dashboard migration or new setting is needed.
+
 ## [1.6.25](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.25) (2026-11-19)
 
 ### Added
