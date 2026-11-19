@@ -38,7 +38,7 @@ The panel does considerably more than the archived original, and every capabilit
 - **View-mode zoom & pan** — an opt-in setting that lets dashboard viewers zoom and pan without opening the editor.
 - **Faceplate & rack generators** — one-click **Generate Port Grid** (switch faceplates, patch panels, PDU strips, blade chassis) and **Generate Rack Elevation** (devices laid out by rack unit) build whole port boards as editable nodes in a single step.
 - **Richer nodes & labels** — larger node sizing, scalable font color with an optional background box, and per-side port-label positioning to keep labels clear of icons and parallel links.
-- **1064 bundled icons across 12 sets** — networking, cloud, vendors, platforms, databases, country flags and more, all served by the plugin itself (air-gap friendly). Browse the [Icon Reference](icons.md).
+- **1066 bundled icons across 12 sets** — networking, cloud, vendors, platforms, databases, country flags and more, all served by the plugin itself (air-gap friendly). Browse the [Icon Reference](icons.md).
 - **Runnable demos** — a Docker demo stack provisions every scenario (WAN utilization, incident replay, rack boards, the world-map backbone) against Prometheus, InfluxDB, Elasticsearch, and Zabbix. Explore them in the [Use Cases guide](guide/use-cases.md).
 - **Dashboard backup/restore utility** — a dependency-free tool to snapshot your existing Grafana dashboards, queries, and data sources before installing or upgrading.
 
