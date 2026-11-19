@@ -5,5 +5,10 @@ providers:
     org_id: 1
     folder: ''
     type: 'file'
+    # Let the demo dashboards be edited and saved from the UI (persisted to the
+    # Grafana DB) instead of being locked read-only as provisioned files — so
+    # you can toggle panel options like View Mode Zoom & Pan or Port Label
+    # Offset and save them to try the features.
+    allowUiUpdates: true
     options:
       path: '/var/lib/grafana/dashboards'
