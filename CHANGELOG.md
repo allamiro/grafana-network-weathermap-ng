@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.25](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.25) (2026-11-19)
+
+### Added
+
+* **VMware vendor icons** ([#434](https://github.com/allamiro/grafana-network-weathermap-ng/issues/434), [PR #435](https://github.com/allamiro/grafana-network-weathermap-ng/pull/435)): `vendors/vmware` is the VMware logo from Simple Icons (CC0) in the brand colour, and `vendors/vmware-server` is the Networking virtual server with a VMware corner badge, for vCenter and ESXi nodes. The VMware wordmark is grey and wide, so its badge has a light background and a larger logo than the other vendor badges to stay readable at node size. Both are in the node editor's Vendors list and the icon reference (1066 icons, 51 vendors).
+
+No dashboard migration or new setting is needed.
+
 ## [1.6.24](https://github.com/allamiro/grafana-network-weathermap-ng/releases/tag/v1.6.24) (2026-11-13)
 
 ### Fixed
