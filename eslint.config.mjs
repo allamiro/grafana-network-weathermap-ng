@@ -1,7 +1,7 @@
 // ESLint 9 flat config. Replaces .eslintrc and .config/.eslintrc, which
 // @grafana/eslint-config 10 no longer supports.
 import { fileURLToPath } from 'node:url';
-import { includeIgnoreFile } from '@eslint/compat';
+import { fixupPluginRules, includeIgnoreFile } from '@eslint/compat';
 import grafanaConfig from '@grafana/eslint-config';
 
 const gitignore = fileURLToPath(new URL('.gitignore', import.meta.url));
@@ -29,7 +29,12 @@ export default [
       'vendor/',
     ],
   },
-  ...grafanaConfig,
+  // eslint-plugin-react 7.37.5 (its newest release) still calls context.getFilename(),
+  // which ESLint 10 removed; fixupPluginRules puts the old context methods back for
+  // that plugin only. Drop this once eslint-plugin-react supports ESLint 10.
+  ...grafanaConfig.map((c) =>
+    c.plugins?.react ? { ...c, plugins: { ...c.plugins, react: fixupPluginRules(c.plugins.react) } } : c
+  ),
   {
     // ESLint 9 only lints .js/.mjs/.cjs unless a config names other files;
     // ESLint 8 got these from the lint script's --ext flag.
